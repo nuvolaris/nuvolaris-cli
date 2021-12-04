@@ -19,7 +19,7 @@
 -->
 # nuvolaris-cli
 
-This repo includes our test suite and the scripts to build our test environments.
+This repo discuss the Command Line Interface to Nuvolaris.
 
-You can discuss it in the #[nuvolaris-training](https://discord.gg/JWqFJJfvED) discord channel and in the forum under the category [training](https://github.com/nuvolaris/nuvolaris/discussions/categories/training).
+You can discuss it in the #[nuvolaris-cli](https://discord.gg/JWqFJJfvED) discord channel and in the forum under the category [CLI](https://github.com/nuvolaris/nuvolaris/discussions/categories/cli).
 
