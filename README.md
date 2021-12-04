@@ -17,7 +17,7 @@
   ~ under the License.
   ~
 -->
-# nuvolaris-training
+# nuvolaris-cli
 
 This repo includes our test suite and the scripts to build our test environments.
 
