@@ -1,3 +1,3 @@
-module github.com/nuvolaris-cli/nuv
+module github.com/msciabarra/nuv
 
 go 1.17
