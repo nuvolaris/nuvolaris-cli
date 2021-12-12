@@ -21,5 +21,20 @@ header:
     copyright-owner: Apache Software Foundation
 
   paths-ignore:
-    - 'LICENSE'
+    - '**/*.json'
+    - '**/node_modules/**'
+    - '**/build/**'
+    - '**/target/**'
+    - '**/package-lock.json'
+    - '**/LICENSE'
+    - '**/.*-version'
+    - '.obsidian/**'
+    - 'controller/openwhisk/**'
+    - 'runtimes/apache/**'
+    - 'testing/parthenon/**'
+    - 'controller/nodesource_setup.sh'
  
+dependency:
+  files:
+    - go.mod
+    - package.json 
