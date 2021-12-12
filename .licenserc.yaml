@@ -21,18 +21,18 @@ header:
     copyright-owner: Apache Software Foundation
 
   paths-ignore:
+    - 'nodesource_setup.sh'
+    - '**/pdm.lock'
+    - '**/LICENSE'
+    - '**/package-lock.json'
+    - '**/.*-version'
     - '**/*.json'
     - '**/node_modules/**'
     - '**/build/**'
     - '**/target/**'
-    - '**/package-lock.json'
-    - '**/LICENSE'
-    - '**/.*-version'
-    - '.obsidian/**'
-    - 'controller/openwhisk/**'
-    - 'runtimes/apache/**'
-    - 'testing/parthenon/**'
-    - 'controller/nodesource_setup.sh'
+    - '**/openwhisk/**'
+    - '**/openwhisk-*/**'
+    - '**/parthenon/**'
  
 dependency:
   files:
