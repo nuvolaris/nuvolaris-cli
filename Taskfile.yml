@@ -18,8 +18,13 @@
 version: '3'
 
 tasks:
+
   setup:
     deps: [build]
+  status:
+    - test -f ~/bin/nuv
+
+  
 
   build:
     dir: ./nuv
