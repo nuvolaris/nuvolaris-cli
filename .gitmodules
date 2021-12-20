@@ -1,0 +1,6 @@
+[submodule "openwhisk-cli"]
+	path = openwhisk-cli
+	url = https://github.com/nuvolaris/openwhisk-cli
+[submodule "task"]
+	path = task
+	url = https://github.com/nuvolaris/task
