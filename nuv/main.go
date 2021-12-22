@@ -17,8 +17,34 @@
 //
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/apache/openwhisk-client-go/whisk"
+)
 
 func main() {
-  fmt.Println("Hello")
+	client, err := whisk.NewClient(http.DefaultClient, nil)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+
+	options := &whisk.ActionListOptions{
+		Limit: 10,
+		Skip:  0,
+	}
+
+	fmt.Printf("Retrieving actions list...  \n")
+
+	actions, resp, err := client.Actions.List("", options)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+
+	fmt.Println("Returned with status: ", resp.Status)
+	fmt.Printf("Returned actions: \n %+v", actions)
 }
