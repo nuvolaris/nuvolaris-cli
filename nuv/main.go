@@ -18,19 +18,27 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/apache/openwhisk-client-go/whisk"
+	"github.com/go-task/task/v3"
 	"github.com/go-task/task/v3/taskfile"
 )
 
 func runTaskInteractionSample() {
 	fmt.Println("Doing something with task...")
 
-	t := taskfile.Task{Label: "test"}
-	fmt.Println("Task name: " + t.Name() + "\n")
+	te := task.Executor{}
+	err := te.Setup()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	te.RunTask(context.Background(), taskfile.Call{Task: "setup"})
 }
 
 func runWskApiInteractionSample() {
