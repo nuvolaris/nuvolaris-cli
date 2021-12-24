@@ -18,14 +18,32 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/apache/openwhisk-client-go/whisk"
+	"github.com/go-task/task/v3"
+	"github.com/go-task/task/v3/taskfile"
 )
 
-func main() {
+func runTaskInteractionSample() {
+	fmt.Println("Doing something with task...")
+
+	te := task.Executor{}
+	err := te.Setup()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	te.RunTask(context.Background(), taskfile.Call{Task: "setup"})
+}
+
+func runWskApiInteractionSample() {
+	fmt.Println("Doing something with wsk...")
+
 	client, err := whisk.NewClient(http.DefaultClient, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -47,4 +65,9 @@ func main() {
 
 	fmt.Println("Returned with status: ", resp.Status)
 	fmt.Printf("Returned actions: \n %+v", actions)
+}
+
+func main() {
+	runTaskInteractionSample()
+	runWskApiInteractionSample()
 }
