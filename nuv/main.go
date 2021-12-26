@@ -23,25 +23,11 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/alecthomas/kong"
 	"github.com/apache/openwhisk-client-go/whisk"
 	"github.com/go-task/task/v3"
 	"github.com/go-task/task/v3/taskfile"
-
-	"github.com/alecthomas/kong"
 )
-
-var CLI struct {
-	Wsk struct {
-		Force     bool `help:"Force removal."`
-		Recursive bool `help:"Recursively remove files."`
-
-		Paths []string `arg:"" name:"path" help:"Paths to remove." type:"path"`
-	} `cmd:"" help:"Remove files."`
-
-	Task struct {
-		Paths []string `arg:"" optional:"" name:"path" help:"Paths to list." type:"path"`
-	} `cmd:"" help:"List paths."`
-}
 
 func runTaskInteractionSample() {
 	fmt.Println("Doing something with task...")
@@ -83,15 +69,15 @@ func runWskApiInteractionSample() {
 }
 
 func main() {
-	ctx := kong.Parse(&CLI)
+	ctx := kong.Parse(&CLI{})
 
 	switch ctx.Command() {
-	case "wsk <path>":
+	case "wsk":
+		runWskApiInteractionSample()
 	case "task":
+		runTaskInteractionSample()
 	default:
 		panic(ctx.Command())
 	}
 
-	runTaskInteractionSample()
-	runWskApiInteractionSample()
 }
