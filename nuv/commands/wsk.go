@@ -15,14 +15,46 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
+package commands
 
 import (
-	"github.com/alecthomas/kong"
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/apache/openwhisk-client-go/whisk"
 )
 
-func main() {
-	ctx := kong.Parse(&CLI{})
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
+type WskCmd struct {
+}
+
+func (wsk *WskCmd) Run() error {
+	runWskApiInteractionSample()
+	return nil
+}
+
+func runWskApiInteractionSample() {
+	fmt.Println("Doing something with wsk...")
+
+	client, err := whisk.NewClient(http.DefaultClient, nil)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+
+	options := &whisk.ActionListOptions{
+		Limit: 10,
+		Skip:  0,
+	}
+
+	fmt.Printf("Retrieving actions list...  \n")
+
+	actions, resp, err := client.Actions.List("", options)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+
+	fmt.Println("Returned with status: ", resp.Status)
+	fmt.Printf("Returned actions: \n %+v", actions)
 }

@@ -15,14 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
+package commands
 
 import (
-	"github.com/alecthomas/kong"
+	"context"
+	"fmt"
+
+	"github.com/go-task/task/v3"
+	"github.com/go-task/task/v3/taskfile"
 )
 
-func main() {
-	ctx := kong.Parse(&CLI{})
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
+type TaskCmd struct {
+}
+
+func (t *TaskCmd) Run() error {
+	runTaskInteractionSample()
+	return nil
+}
+
+func runTaskInteractionSample() {
+	fmt.Println("Doing something with task...")
+
+	te := task.Executor{}
+	err := te.Setup()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	te.RunTask(context.Background(), taskfile.Call{Task: "setup"})
 }
