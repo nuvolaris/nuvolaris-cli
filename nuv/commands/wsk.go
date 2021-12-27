@@ -26,6 +26,14 @@ import (
 )
 
 type WskCmd struct {
+	Apihost    string `help:"whisk API HOST" short:"C"`
+	Apiversion string `help:"whisk API VERSION"`
+	Auth       string `help:"authorization KEY" short:"u"`
+	Cert       string `help:"client cert"`
+	Debug      bool   `help:"debug level output" short:"d"`
+	Insecure   bool   `help:"bypass certificate checking" short:"i"`
+	Key        string `help:"client key"`
+	Verbose    bool   `help:"verbose output" short:"v"`
 }
 
 func (wsk *WskCmd) Run() error {
@@ -36,7 +44,10 @@ func (wsk *WskCmd) Run() error {
 func runWskApiInteractionSample() {
 	fmt.Println("Doing something with wsk...")
 
-	client, err := whisk.NewClient(http.DefaultClient, nil)
+	client, err := whisk.NewClient(http.DefaultClient, &whisk.Config{
+		Host:      "",
+		AuthToken: "",
+	})
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
