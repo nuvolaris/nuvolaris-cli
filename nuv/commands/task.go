@@ -31,7 +31,6 @@ type TaskCmd struct {
 	Dir         string `help:"sets directory of execution" short:"d"`
 	Dry         bool   `help:"compiles and prints tasks in the order that they would be run, without executing them"`
 	Force       bool   `help:"forces execution even when the task is up-to-date" short:"f"`
-	Help        bool   `help:"shows Task usage" short:"h"`
 	Init        bool   `help:"creates a new Taskfile.yml in the current folder" short:"i"`
 	List        bool   `help:"lists tasks with description of current Taskfile" short:"l"`
 	Output      string `help:"sets output style: [interleaved|group|prefixed]" short:"o"`
@@ -43,6 +42,7 @@ type TaskCmd struct {
 	Verbose     bool   `help:"enables verbose mode" short:"v"`
 	Version     bool   `help:"show Task version"`
 	Watch       bool   `help:"enables watch of the given task" short:"w"`
+	// Help        bool   `help:"" short:"h"`
 }
 
 func (t *TaskCmd) Run() error {
