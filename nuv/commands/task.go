@@ -39,7 +39,7 @@ type TaskCmd struct {
 	Silent      bool   `help:"disables echoing" short:"s"`
 	Status      bool   `help:"exits with non-zero exit code if any of the given tasks is not up-to-date"`
 	Summary     bool   `help:"show summary about a task"`
-	Taskfile    string `help:"choose which Taskfile to run. Defaults to Taskfile.yml"`
+	Taskfile    string `help:"choose which Taskfile to run. Defaults to Taskfile.yml" type:"existingfile"`
 	Verbose     bool   `help:"enables verbose mode" short:"v"`
 	Version     bool   `help:"show Task version"`
 	Watch       bool   `help:"enables watch of the given task" short:"w"`
