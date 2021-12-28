@@ -27,6 +27,10 @@ func main() {
 		kong.Name("nuv"),
 		kong.Description("TODO a description for nuv"),
 		kong.UsageOnError(),
+		kong.ConfigureHelp(kong.HelpOptions{
+			Compact:             true,
+			NoExpandSubcommands: true,
+		}),
 	)
 	err := ctx.Run()
 	ctx.FatalIfErrorf(err)
