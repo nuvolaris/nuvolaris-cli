@@ -34,6 +34,19 @@ type WskCmd struct {
 	Insecure   bool   `help:"bypass certificate checking" short:"i"`
 	Key        string `help:"client key"`
 	Verbose    bool   `help:"verbose output" short:"v"`
+
+	Action     struct{} `cmd:"" help:"wsk action subcommand."`
+	Activation struct{} `cmd:"" help:"wsk activation subcommand."`
+	Api        struct{} `cmd:"" help:"wsk api subcommand."`
+	Help       struct{} `cmd:"" help:"wsk help subcommand."`
+	List       struct{} `cmd:"" help:"wsk list subcommand."`
+	Namespace  struct{} `cmd:"" help:"wsk namespace subcommand."`
+	Package    struct{} `cmd:"" help:"wsk package subcommand."`
+	Project    struct{} `cmd:"" help:"wsk project subcommand."`
+	Property   struct{} `cmd:"" help:"wsk property subcommand."`
+	Rule       struct{} `cmd:"" help:"wsk rule subcommand."`
+	Sdk        struct{} `cmd:"" help:"wsk sdk subcommand."`
+	Trigger    struct{} `cmd:"" help:"wsk trigger subcommand."`
 }
 
 func (wsk *WskCmd) Run() error {
