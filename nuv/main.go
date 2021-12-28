@@ -22,7 +22,12 @@ import (
 )
 
 func main() {
-	ctx := kong.Parse(&CLI{})
+	cli := CLI{}
+	ctx := kong.Parse(&cli,
+		kong.Name("nuv"),
+		kong.Description("TODO a description for nuv"),
+		kong.UsageOnError(),
+	)
 	err := ctx.Run()
 	ctx.FatalIfErrorf(err)
 }

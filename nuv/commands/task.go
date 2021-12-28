@@ -42,7 +42,6 @@ type TaskCmd struct {
 	Verbose     bool   `help:"enables verbose mode" short:"v"`
 	Version     bool   `help:"show Task version"`
 	Watch       bool   `help:"enables watch of the given task" short:"w"`
-	// Help        bool   `help:"" short:"h"`
 }
 
 func (t *TaskCmd) Run() error {
