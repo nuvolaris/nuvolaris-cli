@@ -16,10 +16,10 @@
 // under the License.
 {
 	"name": "nuvolaris-cli",
-	"image": "ghcr.io/nuvolaris/nuvolaris-devkit:neo-2021.1219.1900",
+	"image": "ghcr.io/nuvolaris/nuvolaris-devkit:neo-21.1228.12",
 	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"],
 	"remoteUser": "nuvolaris",
 	"overrideCommand": false,
-	"runArgs": ["--name=nuvolaris-cli"],
+	"runArgs": ["--network=host"],
 	"extensions": ["golang.go"]
 }
