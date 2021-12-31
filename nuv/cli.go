@@ -17,21 +17,9 @@
 //
 package main
 
-import (
-	"github.com/alecthomas/kong"
-)
+import cmds "github.com/nuvolaris/nuvolaris-cli/nuv/commands"
 
-func main() {
-	cli := CLI{}
-	ctx := kong.Parse(&cli,
-		kong.Name("nuv"),
-		kong.Description("TODO a description for nuv"),
-		kong.UsageOnError(),
-		kong.ConfigureHelp(kong.HelpOptions{
-			Compact:             true,
-			NoExpandSubcommands: true,
-		}),
-	)
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
+type CLI struct {
+	Wsk  cmds.WskCmd  `cmd:"" help:"wsk subcommand."`
+	Task cmds.TaskCmd `cmd:"" help:"task subcommand."`
 }

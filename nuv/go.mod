@@ -22,6 +22,7 @@ go 1.17
 replace github.com/go-task/task/v3 => ../task
 
 require (
+	github.com/alecthomas/kong v0.2.22
 	github.com/apache/openwhisk-client-go v0.0.0-20211007130743-38709899040b
 	github.com/go-task/task/v3 v3.9.2
 )
@@ -39,6 +40,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/nicksnyder/go-i18n v1.10.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/radovskyb/watcher v1.0.7 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
