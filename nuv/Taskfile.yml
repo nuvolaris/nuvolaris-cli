@@ -16,9 +16,19 @@
 # under the License.
 #
 version: '3'
+vars:
+ NUV:
+   sh: echo $GOBIN/nuv
+
 
 tasks:
-  setup: 
-    cmds: 
-      - task
-    dir: ./nuv
+
+  default:
+    cmds:
+      - go build -o {{.NUV}}
+    sources:
+      - "*.go"
+    generates:
+      - "{{.NUV}}"
+
+  clean: rm {{.NUV}}

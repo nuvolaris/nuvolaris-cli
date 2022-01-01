@@ -1,7 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": "nuv"
+		},
+		{
+			"path": "openwhisk-cli"
 		}
 	],
 	"settings": {

@@ -15,42 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package commands
+package main
 
 import (
 	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/apache/openwhisk-cli/commands"
+	"github.com/apache/openwhisk-cli/wski18n"
 	"github.com/apache/openwhisk-client-go/whisk"
+	goi18n "github.com/nicksnyder/go-i18n/i18n"
 )
 
 type WskCmd struct {
-	Apihost    string `help:"whisk API HOST" short:"C"`
-	Apiversion string `help:"whisk API VERSION"`
-	Auth       string `help:"authorization KEY" short:"u"`
-	Cert       string `help:"client cert"`
-	Debug      bool   `help:"debug level output" short:"d"`
-	Insecure   bool   `help:"bypass certificate checking" short:"i"`
-	Key        string `help:"client key"`
-	Verbose    bool   `help:"verbose output" short:"v"`
-
-	Action     struct{} `cmd:"" help:"wsk action subcommand."`
-	Activation struct{} `cmd:"" help:"wsk activation subcommand."`
-	Api        struct{} `cmd:"" help:"wsk api subcommand."`
-	Help       struct{} `cmd:"" help:"wsk help subcommand."`
-	List       struct{} `cmd:"" help:"wsk list subcommand."`
-	Namespace  struct{} `cmd:"" help:"wsk namespace subcommand."`
-	Package    struct{} `cmd:"" help:"wsk package subcommand."`
-	Project    struct{} `cmd:"" help:"wsk project subcommand."`
-	Property   struct{} `cmd:"" help:"wsk property subcommand."`
-	Rule       struct{} `cmd:"" help:"wsk rule subcommand."`
-	Sdk        struct{} `cmd:"" help:"wsk sdk subcommand."`
-	Trigger    struct{} `cmd:"" help:"wsk trigger subcommand."`
+	Args []string `arg:"" name:"args" help:"wsk subcommand args"`
 }
 
 func (wsk *WskCmd) Run() error {
-	runWskApiInteractionSample()
+	fmt.Printf("wsk %v\n", wsk.Args)
+	//runWskApiInteractionSample()
 	return nil
 }
 
@@ -81,4 +65,38 @@ func runWskApiInteractionSample() {
 
 	fmt.Println("Returned with status: ", resp.Status)
 	fmt.Printf("Returned actions: \n %+v", actions)
+}
+
+// CLI_BUILD_TIME holds the time of the CLI build.  During gradle builds,
+// this value will be overwritten via the command:
+//     go build -ldflags "-X main.CLI_BUILD_TIME=nnnnn"   // nnnnn is the new timestamp
+var CLI_BUILD_TIME string = "not set"
+
+var cliDebug = os.Getenv("WSK_CLI_DEBUG") // Useful for tracing init() code
+
+var T goi18n.TranslateFunc
+
+func init() {
+	if len(cliDebug) > 0 {
+		whisk.SetDebug(true)
+	}
+
+	T = wski18n.T
+
+	// Rest of CLI uses the Properties struct, so set the build time there
+	commands.Properties.CLIVersion = CLI_BUILD_TIME
+}
+
+func WskMain() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			fmt.Println(T("Application exited unexpectedly"))
+		}
+	}()
+
+	if err := commands.Execute(); err != nil {
+		commands.ExitOnError(err)
+	}
+	return
 }

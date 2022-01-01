@@ -17,9 +17,33 @@
 //
 package main
 
-import cmds "github.com/nuvolaris/nuvolaris-cli/nuv/commands"
+import (
+	"context"
+	"fmt"
 
-type CLI struct {
-	Wsk  cmds.WskCmd  `cmd:"" help:"wsk subcommand."`
-	Task cmds.TaskCmd `cmd:"" help:"task subcommand."`
+	"github.com/go-task/task/v3"
+	"github.com/go-task/task/v3/taskfile"
+)
+
+type TaskCmd struct {
+	Args []string `arg:"" name:"args" help:"task subcommand args"`
+}
+
+func (task *TaskCmd) Run() error {
+	fmt.Printf("task %v\n", task.Args)
+	//runWskApiInteractionSample()
+	return nil
+}
+
+func runTaskInteractionSample() {
+	fmt.Println("Doing something with task...")
+
+	te := task.Executor{}
+	err := te.Setup()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	te.RunTask(context.Background(), taskfile.Call{Task: "setup"})
 }
