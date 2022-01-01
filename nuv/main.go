@@ -4,6 +4,10 @@ import (
 	"github.com/alecthomas/kong"
 )
 
+// CLI_VERSION holds the current version, to be set by the build with
+//  go build -ldflags "-X main.CLI_VERSION=<version>"
+var CLI_VERSION string = "latest"
+
 type CLI struct {
 	Task TaskCmd `cmd:"" help:"task subcommand."`
 	Wsk  WskCmd  `cmd:"" help:"wsk subcommand."`

@@ -18,11 +18,7 @@
 package main
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/go-task/task/v3"
-	"github.com/go-task/task/v3/taskfile"
+	taskmain "github.com/go-task/task/cmd/task"
 )
 
 type TaskCmd struct {
@@ -30,20 +26,6 @@ type TaskCmd struct {
 }
 
 func (task *TaskCmd) Run() error {
-	fmt.Printf("task %v\n", task.Args)
-	//runWskApiInteractionSample()
+	taskmain.TaskMain(task.Args)
 	return nil
-}
-
-func runTaskInteractionSample() {
-	fmt.Println("Doing something with task...")
-
-	te := task.Executor{}
-	err := te.Setup()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	te.RunTask(context.Background(), taskfile.Call{Task: "setup"})
 }

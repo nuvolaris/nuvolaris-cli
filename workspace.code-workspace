@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "openwhisk-cli"
+		},
+		{
+			"path": "task"
 		}
 	],
 	"settings": {

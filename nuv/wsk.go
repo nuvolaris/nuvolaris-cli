@@ -19,7 +19,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/apache/openwhisk-cli/commands"
@@ -31,46 +30,6 @@ import (
 type WskCmd struct {
 	Args []string `arg:"" name:"args" help:"wsk subcommand args"`
 }
-
-func (wsk *WskCmd) Run() error {
-	fmt.Printf("wsk %v\n", wsk.Args)
-	//runWskApiInteractionSample()
-	return nil
-}
-
-func runWskApiInteractionSample() {
-	fmt.Println("Doing something with wsk...")
-
-	client, err := whisk.NewClient(http.DefaultClient, &whisk.Config{
-		Host:      "",
-		AuthToken: "",
-	})
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-
-	options := &whisk.ActionListOptions{
-		Limit: 10,
-		Skip:  0,
-	}
-
-	fmt.Printf("Retrieving actions list...  \n")
-
-	actions, resp, err := client.Actions.List("", options)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-
-	fmt.Println("Returned with status: ", resp.Status)
-	fmt.Printf("Returned actions: \n %+v", actions)
-}
-
-// CLI_BUILD_TIME holds the time of the CLI build.  During gradle builds,
-// this value will be overwritten via the command:
-//     go build -ldflags "-X main.CLI_BUILD_TIME=nnnnn"   // nnnnn is the new timestamp
-var CLI_BUILD_TIME string = "not set"
 
 var cliDebug = os.Getenv("WSK_CLI_DEBUG") // Useful for tracing init() code
 
@@ -84,10 +43,14 @@ func init() {
 	T = wski18n.T
 
 	// Rest of CLI uses the Properties struct, so set the build time there
-	commands.Properties.CLIVersion = CLI_BUILD_TIME
+	commands.Properties.CLIVersion = CLI_VERSION
 }
 
-func WskMain() {
+func (wsk *WskCmd) Run() error {
+	os.Args = wsk.Args
+
+	//fmt.Printf("wsk %v\n", wsk.Args)
+
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
@@ -95,8 +58,5 @@ func WskMain() {
 		}
 	}()
 
-	if err := commands.Execute(); err != nil {
-		commands.ExitOnError(err)
-	}
-	return
+	return commands.Execute()
 }
