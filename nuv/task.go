@@ -22,7 +22,7 @@ import (
 )
 
 type TaskCmd struct {
-	Args []string `optional:"" name:"args" help:"task subcommand args"`
+	Args []string `arg:"" optional:"" name:"args" help:"task subcommand args"`
 }
 
 func Task(args ...string) error {

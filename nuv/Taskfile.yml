@@ -34,5 +34,19 @@ tasks:
     generates:
       - "{{.NUV}}"
 
-  clean: rm {{.NUV}}
+  vendor:
+    cmds:
+      - go mod vendor
+    status:
+      - test -d vendor
+
+  debug:
+    deps:
+      - vendor
+    cmds:
+      - go build -gcflags '-N -l' -mod=vendor -ldflags "-X main.CLI_VERSION={{.TAG}}" -o {{.NUV}}-debug
+    generates:
+      - "{{.NUV}}-debug"
+
+  clean: rm -f {{.NUV}} {{.NUV}}-debug
   setup: {silent:true} 

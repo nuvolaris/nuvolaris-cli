@@ -28,7 +28,7 @@ import (
 )
 
 type WskCmd struct {
-	Args []string `optional:"" name:"args" help:"wsk subcommand args"`
+	Args []string `arg:"" optional:"" name:"args" help:"wsk subcommand args"`
 }
 
 var cliDebug = os.Getenv("WSK_CLI_DEBUG") // Useful for tracing init() code

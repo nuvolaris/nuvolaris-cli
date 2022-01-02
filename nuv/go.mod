@@ -15,6 +15,7 @@ require (
 	github.com/apache/openwhisk-client-go v0.0.0-20211007130743-38709899040b
 	github.com/go-task/task/cmd/task v0.0.0-00010101000000-000000000000
 	github.com/nicksnyder/go-i18n v1.10.1
+	sigs.k8s.io/kind v0.11.1
 )
 
 require (
@@ -49,6 +50,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/apimachinery v0.20.2 // indirect
 	mvdan.cc/sh/v3 v3.4.2 // indirect
-	sigs.k8s.io/kind v0.11.1 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
