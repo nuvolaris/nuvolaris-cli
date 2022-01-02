@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "task"
+		},
+		{
+			"path": "kind"
 		}
 	],
 	"settings": {

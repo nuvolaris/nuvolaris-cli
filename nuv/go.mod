@@ -18,9 +18,12 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/apache/openwhisk-wskdeploy v0.0.0-20211214002128-60983d9412cc // indirect
 	github.com/cloudfoundry/jibber_jabber v0.0.0-20151120183258-bcc4c8345a21 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/evanphx/json-patch/v5 v5.2.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
@@ -44,5 +47,8 @@ require (
 	golang.org/x/term v0.0.0-20210916214954-140adaaadfaf // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	k8s.io/apimachinery v0.20.2 // indirect
 	mvdan.cc/sh/v3 v3.4.2 // indirect
+	sigs.k8s.io/kind v0.11.1 // indirect
+	sigs.k8s.io/yaml v1.2.0 // indirect
 )

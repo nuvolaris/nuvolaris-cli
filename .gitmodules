@@ -21,3 +21,6 @@
 [submodule "task"]
 	path = task
 	url = https://github.com/nuvolaris/task
+[submodule "kind"]
+	path = kind
+	url = https://github.com/nuvolaris/kind

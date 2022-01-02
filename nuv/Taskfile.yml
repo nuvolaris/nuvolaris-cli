@@ -30,7 +30,9 @@ tasks:
       - go build -ldflags "-X main.CLI_VERSION={{.TAG}}" -o {{.NUV}}
     sources:
       - "*.go"
+      - "embed/*"
     generates:
       - "{{.NUV}}"
 
   clean: rm {{.NUV}}
+  setup: {silent:true} 

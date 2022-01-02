@@ -18,18 +18,22 @@
 package main
 
 import (
-	taskmain "github.com/go-task/task/cmd/task"
+	"os"
+
+	"sigs.k8s.io/kind/cmd/kind/app"
 )
 
-type TaskCmd struct {
-	Args []string `optional:"" name:"args" help:"task subcommand args"`
+type KindCmd struct {
+	Args []string `optional:"" name:"args" help:"kind subcommand args"`
 }
 
-func Task(args ...string) error {
-	taskmain.TaskMain(append([]string{"task"}, args...))
+func Kind(args ...string) error {
+	os.Args = append([]string{"kind"}, args...)
+	app.Main()
 	return nil
+
 }
 
-func (task *TaskCmd) Run() error {
-	return Task(task.Args...)
+func (kind *KindCmd) Run() error {
+	return Kind(kind.Args...)
 }

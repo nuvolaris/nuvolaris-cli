@@ -9,8 +9,11 @@ import (
 var CLI_VERSION string = "latest"
 
 type CLI struct {
-	Task TaskCmd `cmd:"" help:"task subcommand."`
-	Wsk  WskCmd  `cmd:"" help:"wsk subcommand."`
+	Deploy  DeployCmd  `cmd:"" help:"deploy a nuvolaris cluster"`
+	Destroy DestroyCmd `cmd:"" help:"destroy a nuvolaris cluster"`
+	Wsk     WskCmd     `cmd:"" help:"wsk subcommand."`
+	Task    TaskCmd    `cmd:"" help:"task subcommand."`
+	Kind    KindCmd    `cmd:"" help:"kind subcommand"`
 }
 
 func main() {

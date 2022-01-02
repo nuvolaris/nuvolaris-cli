@@ -28,7 +28,7 @@ import (
 )
 
 type WskCmd struct {
-	Args []string `arg:"" name:"args" help:"wsk subcommand args"`
+	Args []string `optional:"" name:"args" help:"wsk subcommand args"`
 }
 
 var cliDebug = os.Getenv("WSK_CLI_DEBUG") // Useful for tracing init() code
@@ -46,17 +46,17 @@ func init() {
 	commands.Properties.CLIVersion = CLI_VERSION
 }
 
-func (wsk *WskCmd) Run() error {
-	os.Args = wsk.Args
-
-	//fmt.Printf("wsk %v\n", wsk.Args)
-
+func Wsk(args ...string) error {
+	os.Args = append([]string{"wsk"}, args...)
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
 			fmt.Println(T("Application exited unexpectedly"))
 		}
 	}()
-
 	return commands.Execute()
+}
+
+func (wsk *WskCmd) Run() error {
+	return Wsk(wsk.Args...)
 }
