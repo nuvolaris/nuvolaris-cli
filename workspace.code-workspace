@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "kind"
+		},
+		{
+			"path": ".github"
 		}
 	],
 	"settings": {

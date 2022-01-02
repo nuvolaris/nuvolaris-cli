@@ -18,7 +18,8 @@
 version: '3'
 
 tasks:
-  setup: 
+  default: 
     cmds: 
       - task
     dir: ./nuv
+  setup: {"silent": true} 
