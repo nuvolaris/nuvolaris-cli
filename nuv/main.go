@@ -36,8 +36,8 @@ type CLI struct {
 func main() {
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
-		kong.Name("nuv"),
-		kong.Description("nuv is the command line tool to manage Nuvolaris"),
+		kong.Name(Name),
+		kong.Description(Description),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Compact:             true,
