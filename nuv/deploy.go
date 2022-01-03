@@ -21,13 +21,32 @@ import (
 	_ "embed"
 	"fmt"
 	"io/ioutil"
+
+	log "github.com/sirupsen/logrus"
 )
 
 //go:embed embed/nuvolaris.yml
 var NuvolarisYml []byte
 
 type DeployCmd struct {
-	Args []string `optional:"" name:"args" help:"kind subcommand args"`
+	Args              []string `optional:"" name:"args" help:"kind subcommand args"`
+	NoPreflightChecks bool     `help:"Disable preflight checks."`
+}
+
+// AfterApply is an hook that gets called after parsing the command but before Run
+// useful to run (or not) preflight checks
+func (d DeployCmd) AfterApply() error {
+	if d.NoPreflightChecks {
+		return nil
+	}
+	// TODO preflight checks
+	log.Info("PREFLIGHT CHECKS")
+	res, err := Preflight(false, "/home/nuvolaris")
+	if err != nil {
+		return err
+	}
+	log.Info(res)
+	return nil
 }
 
 func (*DeployCmd) Run() error {
