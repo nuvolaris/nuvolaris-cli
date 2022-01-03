@@ -23,6 +23,7 @@ header:
   paths-ignore:
     - 'nodesource_setup.sh'
     - 'go.sum'
+    - '**/.task/**'
     - '**/pdm.lock'
     - '**/LICENSE'
     - '**/package-lock.json'
@@ -34,7 +35,10 @@ header:
     - '**/openwhisk/**'
     - '**/openwhisk-*/**'
     - '**/parthenon/**'
+    - '**/openwhisk-cli/**'
     - '**/task/**'
+    - '**/kind/**'
+    - '**/vendor/**'
  
 dependency:
   files:
