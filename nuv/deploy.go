@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	preflight "github.com/nuvolaris/nuvolaris-cli/nuv/preflight"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,7 +42,7 @@ func (d DeployCmd) AfterApply() error {
 	}
 	// TODO preflight checks
 	log.Info("PREFLIGHT CHECKS")
-	res, err := Preflight(false, "/home/nuvolaris")
+	res, err := preflight.RunPreflightChecks(false, "/home/nuvolaris")
 	if err != nil {
 		return err
 	}

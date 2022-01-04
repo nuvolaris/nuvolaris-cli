@@ -15,12 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
+package preflight
 
-import "fmt"
+import (
+	"fmt"
+
+	. "github.com/nuvolaris/nuvolaris-cli/nuv/globals"
+	utils "github.com/nuvolaris/nuvolaris-cli/nuv/utils"
+)
 
 func ExampleEnsureDockerVersion() {
-	DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
+	utils.DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
 	fmt.Println(EnsureDockerVersion(true))
 	fmt.Println(EnsureDockerVersion(true))
 	fmt.Println(EnsureDockerVersion(true))
@@ -36,7 +41,7 @@ func ExampleEnsureDockerVersion() {
 	// no docker
 }
 
-func ExampleInHomePath() {
+func ExampleIsInHomePath() {
 	fmt.Println(IsInHomePath("/home/nuvolaris"))
 	fmt.Println(IsInHomePath("/var/run"))
 	fmt.Println(IsInHomePath(""))

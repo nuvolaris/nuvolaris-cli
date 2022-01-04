@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
+package preflight
 
 import (
 	"fmt"
@@ -28,10 +28,12 @@ import (
 	"github.com/mitchellh/go-homedir"
 
 	log "github.com/sirupsen/logrus"
+
+	globals "github.com/nuvolaris/nuvolaris-cli/nuv/globals"
 )
 
-// Preflight perform preflight checks
-func Preflight(skipDockerVersion bool, dir string) (string, error) {
+// RunPreflightChecks perform preflight checks
+func RunPreflightChecks(skipDockerVersion bool, dir string) (string, error) {
 	info, err := DockerInfo(false)
 	if err != nil {
 		return "", err
@@ -58,7 +60,7 @@ func EnsureDockerVersion(dryRun bool) error {
 	if err != nil {
 		return err
 	}
-	vA := semver.New(MinDockerVersion)
+	vA := semver.New(globals.MinDockerVersion)
 	vB := semver.New(strings.TrimSpace(version))
 	if vB.Compare(*vA) == -1 {
 		return fmt.Errorf("installed docker version %s is no longer supported", vB)
@@ -100,7 +102,7 @@ func CheckDockerMemory(info string) error {
 	}
 	log.Debug("mem:", n)
 	//fmt.Println(n)
-	if n <= int64(MinDockerMem) {
+	if n <= int64(globals.MinDockerMem) {
 		return fmt.Errorf("nuv needs 4GB memory allocatable on docker")
 	}
 	return nil
