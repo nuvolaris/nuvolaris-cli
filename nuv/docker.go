@@ -19,7 +19,7 @@ package main
 
 import "fmt"
 
-func dockerInfo(dryRun bool) (string, error) {
+func DockerInfo(dryRun bool) (string, error) {
 	var out string
 	var err error
 	if dryRun {
@@ -33,7 +33,7 @@ func dockerInfo(dryRun bool) (string, error) {
 	return out, nil
 }
 
-func dockerVersion(dryRun bool) (string, error) {
+func DockerVersion(dryRun bool) (string, error) {
 	if dryRun {
 		return DryRunSysErr("@docker version --format {{.Server.Version}}")
 	}

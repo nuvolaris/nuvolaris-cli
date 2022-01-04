@@ -19,12 +19,12 @@ package main
 
 import "fmt"
 
-func ExamplePreflightEnsureDockerVersion() {
+func ExampleEnsureDockerVersion() {
 	DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
-	fmt.Println(ensureDockerVersion(true))
-	fmt.Println(ensureDockerVersion(true))
-	fmt.Println(ensureDockerVersion(true))
-	fmt.Println(ensureDockerVersion(true))
+	fmt.Println(EnsureDockerVersion(true))
+	fmt.Println(EnsureDockerVersion(true))
+	fmt.Println(EnsureDockerVersion(true))
+	fmt.Println(EnsureDockerVersion(true))
 	// Output:
 	// docker version --format {{.Server.Version}}
 	// <nil>
@@ -37,9 +37,9 @@ func ExamplePreflightEnsureDockerVersion() {
 }
 
 func ExampleInHomePath() {
-	fmt.Println(isInHomePath("/home/nuvolaris"))
-	fmt.Println(isInHomePath("/var/run"))
-	fmt.Println(isInHomePath(""))
+	fmt.Println(IsInHomePath("/home/nuvolaris"))
+	fmt.Println(IsInHomePath("/var/run"))
+	fmt.Println(IsInHomePath(""))
 	// Output:
 	// <nil>
 	// work directory /var/run should be below your home directory /home/nuvolaris;
@@ -47,9 +47,9 @@ func ExampleInHomePath() {
 	// <nil>
 }
 
-func ExamplePreflightDockerMemory() {
-	fmt.Println(checkDockerMemory("\nTotal Memory: 11GiB\n"))
-	fmt.Println(checkDockerMemory("\nTotal Memory: 3GiB\n"))
+func ExampleCheckDockerMemory() {
+	fmt.Println(CheckDockerMemory("\nTotal Memory: 11GiB\n"))
+	fmt.Println(CheckDockerMemory("\nTotal Memory: 3GiB\n"))
 	// Output:
 	// <nil>
 	// nuv needs 4GB memory allocatable on docker

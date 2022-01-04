@@ -22,7 +22,7 @@ import "fmt"
 func ExampleDockerVersion() {
 	//*DryRunFlag = false
 	DryRunPush("19.03.5", "!no docker")
-	out, err := dockerVersion(true)
+	out, err := DockerVersion(true)
 	fmt.Println(out, err)
 	// out, err = dockerVersion(true)
 	// fmt.Println(out, err)
@@ -35,9 +35,9 @@ func ExampleDockerVersion() {
 
 func ExampleDockerInfo() {
 	DryRunPush("!bad", "Info: hello")
-	out, err := dockerInfo(true)
+	out, err := DockerInfo(true)
 	fmt.Println(err, out+"*")
-	out, err = dockerInfo(true)
+	out, err = DockerInfo(true)
 	fmt.Println(err, out+"*")
 	// Output:
 	// docker info

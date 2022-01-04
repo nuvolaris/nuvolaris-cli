@@ -32,29 +32,29 @@ import (
 
 // Preflight perform preflight checks
 func Preflight(skipDockerVersion bool, dir string) (string, error) {
-	info, err := dockerInfo(false)
+	info, err := DockerInfo(false)
 	if err != nil {
 		return "", err
 	}
-	err = checkDockerMemory(info)
+	err = CheckDockerMemory(info)
 	if err != nil {
 		return "", err
 	}
 	if !skipDockerVersion {
-		err = ensureDockerVersion(false)
+		err = EnsureDockerVersion(false)
 		if err != nil {
 			return "", err
 		}
 	}
-	err = isInHomePath(dir)
+	err = IsInHomePath(dir)
 	if err != nil {
 		return "", err
 	}
 	return info, nil
 }
 
-func ensureDockerVersion(dryRun bool) error {
-	version, err := dockerVersion(dryRun)
+func EnsureDockerVersion(dryRun bool) error {
+	version, err := DockerVersion(dryRun)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func ensureDockerVersion(dryRun bool) error {
 	return nil
 }
 
-func isInHomePath(dir string) error {
+func IsInHomePath(dir string) error {
 	// do not check if the directory is empty
 	if dir == "" {
 		return nil
@@ -85,8 +85,8 @@ func isInHomePath(dir string) error {
 	return nil
 }
 
-// checkDockerMemory checks docker memory
-func checkDockerMemory(info string) error {
+// CheckDockerMemory checks docker memory
+func CheckDockerMemory(info string) error {
 	var search = regexp.MustCompile(`Total Memory: (.*)`)
 	result := search.FindString(string(info))
 	if result == "" {

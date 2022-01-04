@@ -27,7 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// buffer for dry run rusults
+// buffer for dry run results
 var dryRunBuf = []string{}
 
 // DryRunPush saves dummy results for dry run execution
@@ -36,7 +36,7 @@ func DryRunPush(buf ...string) {
 }
 
 // DryRunPop returns a value from the buffer of dry run results
-// returns an empty string if the  buffer is empty
+// returns an empty string if the buffer is empty
 func DryRunPop(buf ...string) string {
 	res := ""
 	if len(dryRunBuf) > 0 {
