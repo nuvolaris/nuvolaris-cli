@@ -32,79 +32,100 @@ import (
 	globals "github.com/nuvolaris/nuvolaris-cli/nuv/globals"
 )
 
+type PreflightChecksPipeline struct {
+	dryRun            bool
+	skipDockerVersion bool
+	dir               string
+	dockerData        string
+	err               error
+}
+
+type checkStep func(pd *PreflightChecksPipeline)
+
+func (p *PreflightChecksPipeline) step(f checkStep) {
+	if p.err != nil {
+		return
+	}
+	f(p)
+}
+
 // RunPreflightChecks perform preflight checks
 func RunPreflightChecks(skipDockerVersion bool, dir string) (string, error) {
-	info, err := DockerInfo(false)
-	if err != nil {
-		return "", err
+
+	// Preflight Checks pipeline
+	pp := PreflightChecksPipeline{skipDockerVersion: skipDockerVersion, dryRun: false, dir: dir}
+
+	pp.step(extractDockerInfo)
+	pp.step(checkDockerMemory)
+	pp.step(ensureDockerVersion)
+	pp.step(isInHomePath)
+
+	if pp.err != nil {
+		return "", pp.err
 	}
-	err = CheckDockerMemory(info)
-	if err != nil {
-		return "", err
-	}
-	if !skipDockerVersion {
-		err = EnsureDockerVersion(false)
-		if err != nil {
-			return "", err
-		}
-	}
-	err = IsInHomePath(dir)
-	if err != nil {
-		return "", err
-	}
-	return info, nil
+	return pp.dockerData, nil
 }
 
-func EnsureDockerVersion(dryRun bool) error {
-	version, err := DockerVersion(dryRun)
-	if err != nil {
-		return err
-	}
-	vA := semver.New(globals.MinDockerVersion)
-	vB := semver.New(strings.TrimSpace(version))
-	if vB.Compare(*vA) == -1 {
-		return fmt.Errorf("installed docker version %s is no longer supported", vB)
-	}
-	return nil
+func extractDockerInfo(p *PreflightChecksPipeline) {
+	p.dockerData, p.err = dockerInfo(p.dryRun)
 }
 
-func IsInHomePath(dir string) error {
-	// do not check if the directory is empty
-	if dir == "" {
-		return nil
-	}
-	homePath, err := homedir.Dir()
-	if err != nil {
-		return err
-	}
-	dir, err = filepath.Abs(dir)
-	if err != nil {
-		return err
-	}
-	if !strings.HasPrefix(dir, homePath) {
-		return fmt.Errorf("work directory %s should be below your home directory %s;\nthis is required to be accessible by Docker", dir, homePath)
-	}
-	return nil
-}
-
-// CheckDockerMemory checks docker memory
-func CheckDockerMemory(info string) error {
+func checkDockerMemory(p *PreflightChecksPipeline) {
 	var search = regexp.MustCompile(`Total Memory: (.*)`)
-	result := search.FindString(string(info))
+	result := search.FindString(string(p.dockerData))
 	if result == "" {
-		return fmt.Errorf("docker is not running")
+		p.err = fmt.Errorf("docker is not running")
+		return
 	}
 	mem := strings.Split(result, ":")
 	memory := strings.TrimSpace(mem[1])
 	n, err := units.ParseStrictBytes(memory)
 	if err != nil {
-		return err
+		p.err = err
+		return
 	}
 	log.Debug("mem:", n)
 	//fmt.Println(n)
 	if n <= int64(globals.MinDockerMem) {
-		return fmt.Errorf("nuv needs 4GB memory allocatable on docker")
+		p.err = fmt.Errorf("nuv needs 4GB memory allocatable on docker")
+		return
 	}
-	return nil
+}
 
+func ensureDockerVersion(p *PreflightChecksPipeline) {
+	if p.skipDockerVersion {
+		return
+	}
+	version, err := dockerVersion(p.dryRun)
+	if err != nil {
+		p.err = err
+		return
+	}
+	vA := semver.New(globals.MinDockerVersion)
+	vB := semver.New(strings.TrimSpace(version))
+	if vB.Compare(*vA) == -1 {
+		p.err = fmt.Errorf("installed docker version %s is no longer supported", vB)
+		return
+	}
+}
+
+func isInHomePath(p *PreflightChecksPipeline) {
+	// do not check if the directory is empty
+	if p.dir == "" {
+		return
+	}
+	homePath, err := homedir.Dir()
+	if err != nil {
+		p.err = err
+		return
+	}
+	dir, err := filepath.Abs(p.dir)
+	if err != nil {
+		p.err = err
+		return
+	}
+	if !strings.HasPrefix(dir, homePath) {
+		p.err = fmt.Errorf("work directory %s should be below your home directory %s;\nthis is required to be accessible by Docker", dir, homePath)
+		return
+	}
 }

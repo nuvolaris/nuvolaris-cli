@@ -24,12 +24,24 @@ import (
 	utils "github.com/nuvolaris/nuvolaris-cli/nuv/utils"
 )
 
-func ExampleEnsureDockerVersion() {
+func Example_ensureDockerVersion() {
 	utils.DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
-	fmt.Println(EnsureDockerVersion(true))
-	fmt.Println(EnsureDockerVersion(true))
-	fmt.Println(EnsureDockerVersion(true))
-	fmt.Println(EnsureDockerVersion(true))
+
+	p := PreflightChecksPipeline{dryRun: true}
+	p.step(ensureDockerVersion)
+	fmt.Println(p.err)
+
+	p = PreflightChecksPipeline{dryRun: true}
+	p.step(ensureDockerVersion)
+	fmt.Println(p.err)
+
+	p = PreflightChecksPipeline{dryRun: true}
+	p.step(ensureDockerVersion)
+	fmt.Println(p.err)
+
+	p = PreflightChecksPipeline{dryRun: true}
+	p.step(ensureDockerVersion)
+	fmt.Println(p.err)
 	// Output:
 	// docker version --format {{.Server.Version}}
 	// <nil>
@@ -41,10 +53,18 @@ func ExampleEnsureDockerVersion() {
 	// no docker
 }
 
-func ExampleIsInHomePath() {
-	fmt.Println(IsInHomePath("/home/nuvolaris"))
-	fmt.Println(IsInHomePath("/var/run"))
-	fmt.Println(IsInHomePath(""))
+func Example_isInHomePath() {
+	p := PreflightChecksPipeline{dir: "/home/nuvolaris"}
+	p.step(isInHomePath)
+	fmt.Println(p.err)
+
+	p = PreflightChecksPipeline{dir: "/var/run"}
+	p.step(isInHomePath)
+	fmt.Println(p.err)
+
+	p = PreflightChecksPipeline{dir: ""}
+	p.step(isInHomePath)
+	fmt.Println(p.err)
 	// Output:
 	// <nil>
 	// work directory /var/run should be below your home directory /home/nuvolaris;
@@ -52,9 +72,14 @@ func ExampleIsInHomePath() {
 	// <nil>
 }
 
-func ExampleCheckDockerMemory() {
-	fmt.Println(CheckDockerMemory("\nTotal Memory: 11GiB\n"))
-	fmt.Println(CheckDockerMemory("\nTotal Memory: 3GiB\n"))
+func Example_checkDockerMemory() {
+	p := PreflightChecksPipeline{dockerData: "\nTotal Memory: 11GiB\n"}
+	p.step(checkDockerMemory)
+	fmt.Println(p.err)
+
+	p = PreflightChecksPipeline{dockerData: "\nTotal Memory: 3GiB\n"}
+	p.step(checkDockerMemory)
+	fmt.Println(p.err)
 	// Output:
 	// <nil>
 	// nuv needs 4GB memory allocatable on docker

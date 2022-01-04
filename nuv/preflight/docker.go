@@ -23,7 +23,7 @@ import (
 	utils "github.com/nuvolaris/nuvolaris-cli/nuv/utils"
 )
 
-func DockerInfo(dryRun bool) (string, error) {
+func dockerInfo(dryRun bool) (string, error) {
 	var out string
 	var err error
 	if dryRun {
@@ -37,7 +37,7 @@ func DockerInfo(dryRun bool) (string, error) {
 	return out, nil
 }
 
-func DockerVersion(dryRun bool) (string, error) {
+func dockerVersion(dryRun bool) (string, error) {
 	if dryRun {
 		return utils.DryRunSysErr("@docker version --format {{.Server.Version}}")
 	}

@@ -23,10 +23,10 @@ import (
 	utils "github.com/nuvolaris/nuvolaris-cli/nuv/utils"
 )
 
-func ExampleDockerVersion() {
+func Example_dockerVersion() {
 	//*DryRunFlag = false
 	utils.DryRunPush("19.03.5", "!no docker")
-	out, err := DockerVersion(true)
+	out, err := dockerVersion(true)
 	fmt.Println(out, err)
 	// out, err = dockerVersion(true)
 	// fmt.Println(out, err)
@@ -37,11 +37,11 @@ func ExampleDockerVersion() {
 	//  no docker
 }
 
-func ExampleDockerInfo() {
+func Example_dockerInfo() {
 	utils.DryRunPush("!bad", "Info: hello")
-	out, err := DockerInfo(true)
+	out, err := dockerInfo(true)
 	fmt.Println(err, out+"*")
-	out, err = DockerInfo(true)
+	out, err = dockerInfo(true)
 	fmt.Println(err, out+"*")
 	// Output:
 	// docker info
