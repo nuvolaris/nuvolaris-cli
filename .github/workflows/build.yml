@@ -51,3 +51,6 @@ jobs:
       - name: Build
         run: |
           bash .github/cisetup.sh
+      - name: Test
+        run: |
+          go test -v ./...
