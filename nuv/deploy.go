@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	preflight "github.com/nuvolaris/nuvolaris-cli/nuv/preflight"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,19 +33,21 @@ type DeployCmd struct {
 	NoPreflightChecks bool     `help:"Disable preflight checks."`
 }
 
-// AfterApply is an hook that gets called after parsing the command but before Run
-// useful to run (or not) preflight checks
+// AfterApply is an hook that gets called after parsing the command but before Run is executed
+// used to run preflight checks
 func (d DeployCmd) AfterApply() error {
 	if d.NoPreflightChecks {
 		return nil
 	}
-	// TODO preflight checks
-	log.Info("PREFLIGHT CHECKS")
-	res, err := preflight.RunPreflightChecks(false, "/home/nuvolaris")
+	log.Info("Preflight checks...")
+
+	err := RunPreflightChecks("/home/nuvolaris")
+
 	if err != nil {
 		return err
 	}
-	log.Info(res)
+
+	log.Info("Preflight checks passed!")
 	return nil
 }
 

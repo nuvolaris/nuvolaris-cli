@@ -15,31 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package preflight
+package main
 
-import (
-	"fmt"
+import "fmt"
 
-	utils "github.com/nuvolaris/nuvolaris-cli/nuv/utils"
-)
-
-func dockerInfo(dryRun bool) (string, error) {
-	var out string
-	var err error
-	if dryRun {
-		out, err = utils.DryRunSysErr("@docker info")
-	} else {
-		out, err = utils.SysErr("@docker info")
-	}
-	if err != nil {
-		return "", fmt.Errorf("docker is not running")
-	}
-	return out, nil
+func Example_dockerVersion() {
+	//*DryRunFlag = false
+	DryRunPush("19.03.5", "!no docker")
+	out, err := dockerVersion(true)
+	fmt.Println(out, err)
+	// out, err = dockerVersion(true)
+	// fmt.Println(out, err)
+	// Output:
+	// docker version --format {{.Server.Version}}
+	// 19.03.5 <nil>
+	// docker version --format {{.Server.Version}}
+	//  no docker
 }
 
-func dockerVersion(dryRun bool) (string, error) {
-	if dryRun {
-		return utils.DryRunSysErr("@docker version --format {{.Server.Version}}")
-	}
-	return utils.SysErr("@docker version --format {{.Server.Version}}")
+func Example_dockerInfo() {
+	DryRunPush("!bad", "Info: hello")
+	out, err := dockerInfo(true)
+	fmt.Println(err, out+"*")
+	out, err = dockerInfo(true)
+	fmt.Println(err, out+"*")
+	// Output:
+	// docker info
+	// docker is not running *
+	// docker info
+	// <nil> Info: hello*
 }

@@ -19,7 +19,6 @@ package main
 
 import (
 	"github.com/alecthomas/kong"
-	globals "github.com/nuvolaris/nuvolaris-cli/nuv/globals"
 )
 
 // CLI_VERSION holds the current version, to be set by the build with
@@ -37,8 +36,8 @@ type CLI struct {
 func main() {
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
-		kong.Name(globals.Name),
-		kong.Description(globals.Description),
+		kong.Name(Name),
+		kong.Description(Description),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Compact:             true,

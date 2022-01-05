@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package globals
+package main
 
 // Name is the name of the CLI
 const Name = "nuv"

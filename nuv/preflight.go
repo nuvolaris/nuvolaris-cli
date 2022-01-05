@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package preflight
+package main
 
 import (
 	"fmt"
@@ -28,8 +28,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 
 	log "github.com/sirupsen/logrus"
-
-	globals "github.com/nuvolaris/nuvolaris-cli/nuv/globals"
 )
 
 type PreflightChecksPipeline struct {
@@ -50,20 +48,18 @@ func (p *PreflightChecksPipeline) step(f checkStep) {
 }
 
 // RunPreflightChecks perform preflight checks
-func RunPreflightChecks(skipDockerVersion bool, dir string) (string, error) {
+func RunPreflightChecks(dir string) error {
 
 	// Preflight Checks pipeline
-	pp := PreflightChecksPipeline{skipDockerVersion: skipDockerVersion, dryRun: false, dir: dir}
+	// TODO: keep skipDockerVersion and dryRun?
+	pp := PreflightChecksPipeline{skipDockerVersion: false, dryRun: false, dir: dir}
 
 	pp.step(extractDockerInfo)
 	pp.step(checkDockerMemory)
 	pp.step(ensureDockerVersion)
 	pp.step(isInHomePath)
 
-	if pp.err != nil {
-		return "", pp.err
-	}
-	return pp.dockerData, nil
+	return pp.err
 }
 
 func extractDockerInfo(p *PreflightChecksPipeline) {
@@ -86,7 +82,7 @@ func checkDockerMemory(p *PreflightChecksPipeline) {
 	}
 	log.Debug("mem:", n)
 	//fmt.Println(n)
-	if n <= int64(globals.MinDockerMem) {
+	if n <= int64(MinDockerMem) {
 		p.err = fmt.Errorf("nuv needs 4GB memory allocatable on docker")
 		return
 	}
@@ -101,7 +97,7 @@ func ensureDockerVersion(p *PreflightChecksPipeline) {
 		p.err = err
 		return
 	}
-	vA := semver.New(globals.MinDockerVersion)
+	vA := semver.New(MinDockerVersion)
 	vB := semver.New(strings.TrimSpace(version))
 	if vB.Compare(*vA) == -1 {
 		p.err = fmt.Errorf("installed docker version %s is no longer supported", vB)

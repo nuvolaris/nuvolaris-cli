@@ -15,17 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package preflight
+package main
 
 import (
 	"fmt"
-
-	. "github.com/nuvolaris/nuvolaris-cli/nuv/globals"
-	utils "github.com/nuvolaris/nuvolaris-cli/nuv/utils"
 )
 
 func Example_ensureDockerVersion() {
-	utils.DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
+	DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
 
 	p := PreflightChecksPipeline{dryRun: true}
 	p.step(ensureDockerVersion)
