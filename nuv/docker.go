@@ -17,33 +17,25 @@
 //
 package main
 
-import (
-	"github.com/alecthomas/kong"
-)
+import "fmt"
 
-// CLI_VERSION holds the current version, to be set by the build with
-//  go build -ldflags "-X main.CLI_VERSION=<version>"
-var CLI_VERSION string = "latest"
-
-type CLI struct {
-	Deploy  DeployCmd  `cmd:"" help:"deploy a nuvolaris cluster"`
-	Destroy DestroyCmd `cmd:"" help:"destroy a nuvolaris cluster"`
-	Wsk     WskCmd     `cmd:"" help:"wsk subcommand."`
-	Task    TaskCmd    `cmd:"" help:"task subcommand."`
-	Kind    KindCmd    `cmd:"" help:"kind subcommand"`
+func dockerInfo(dryRun bool) (string, error) {
+	var out string
+	var err error
+	if dryRun {
+		out, err = DryRunSysErr("@docker info")
+	} else {
+		out, err = SysErr("@docker info")
+	}
+	if err != nil {
+		return "", fmt.Errorf("docker is not running")
+	}
+	return out, nil
 }
 
-func main() {
-	cli := CLI{}
-	ctx := kong.Parse(&cli,
-		kong.Name(Name),
-		kong.Description(Description),
-		kong.UsageOnError(),
-		kong.ConfigureHelp(kong.HelpOptions{
-			Compact:             true,
-			NoExpandSubcommands: true,
-		}),
-	)
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
+func dockerVersion(dryRun bool) (string, error) {
+	if dryRun {
+		return DryRunSysErr("@docker version --format {{.Server.Version}}")
+	}
+	return SysErr("@docker version --format {{.Server.Version}}")
 }

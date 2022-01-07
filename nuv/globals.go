@@ -17,33 +17,14 @@
 //
 package main
 
-import (
-	"github.com/alecthomas/kong"
-)
+// Name is the name of the CLI
+const Name = "nuv"
 
-// CLI_VERSION holds the current version, to be set by the build with
-//  go build -ldflags "-X main.CLI_VERSION=<version>"
-var CLI_VERSION string = "latest"
+// Description is the description of the nuv CLI
+const Description = "nuv is the command line tool to manage Nuvolaris"
 
-type CLI struct {
-	Deploy  DeployCmd  `cmd:"" help:"deploy a nuvolaris cluster"`
-	Destroy DestroyCmd `cmd:"" help:"destroy a nuvolaris cluster"`
-	Wsk     WskCmd     `cmd:"" help:"wsk subcommand."`
-	Task    TaskCmd    `cmd:"" help:"task subcommand."`
-	Kind    KindCmd    `cmd:"" help:"kind subcommand"`
-}
+// MinDockerVersion required
+const MinDockerVersion = "18.06.3-ce"
 
-func main() {
-	cli := CLI{}
-	ctx := kong.Parse(&cli,
-		kong.Name(Name),
-		kong.Description(Description),
-		kong.UsageOnError(),
-		kong.ConfigureHelp(kong.HelpOptions{
-			Compact:             true,
-			NoExpandSubcommands: true,
-		}),
-	)
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
-}
+// MinDockerMem is the minimum amount of memory required by docker
+const MinDockerMem = (4 * 1000 * 1000 * 1000) - 1
