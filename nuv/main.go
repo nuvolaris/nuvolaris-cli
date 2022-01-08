@@ -33,8 +33,9 @@ type CLI struct {
 	Task       TaskCmd          `cmd:"" help:"task subcommand"`
 	Kind       KindCmd          `cmd:"" help:"kind subcommand"`
 	Devcluster DevClusterCmd    `cmd:"" help:"create or destroy kind k8s cluster"`
-	Setup      SetupCmd         `cmd:"" help:"setup nuvolaris"`
-	Version    kong.VersionFlag `short:"v" help:"print nuvolaris version"`
+	Setup      SetupCmd         `cmd:"" passthrough:"" help:"setup nuvolaris"`
+	Version    kong.VersionFlag `short:"v" help:"show nuvolaris version"`
+	Scan       ScanCmd          `cmd:"" help:"scan subcommand"`
 }
 
 func main() {
