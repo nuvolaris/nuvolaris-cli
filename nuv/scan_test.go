@@ -21,16 +21,45 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/spf13/afero"
 )
 
 func TestNuvScan(t *testing.T) {
 	t.Run("should have scan subcmd help", func(t *testing.T) {
 		var cli CLI
-
 		app := NewTestApp(t, &cli)
-		require.PanicsWithValue(t, true, func() {
+		require.PanicsWithValue(t, true, func() { // TODO: explain why needed
 			_, err := app.Parse([]string{"scan", "--help"})
 			require.NoError(t, err)
 		})
+	})
+
+	t.Run("", func(t *testing.T) {
+		var cli CLI
+		app := NewTestApp(t, &cli)
+		_, err := app.Parse([]string{"scan"})
+		require.NoError(t, err)
+	})
+}
+
+func Test_checkPackagesFolder(t *testing.T) {
+	t.Run("should return true if packages folder is found", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		appFS.MkdirAll("packages", 0755)
+
+		exists, err := checkPackagesFolder(appFS)
+
+		require.NoError(t, err)
+		require.True(t, exists)
+	})
+
+	t.Run("should return false with no error when packages not found", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+
+		exists, err := checkPackagesFolder(appFS)
+
+		require.False(t, exists)
+		require.NoError(t, err) // error in case file system operation failed
 	})
 }

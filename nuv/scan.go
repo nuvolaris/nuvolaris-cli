@@ -17,5 +17,20 @@
 //
 package main
 
+import (
+	"github.com/spf13/afero"
+)
+
 type ScanCmd struct {
+	// Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
+}
+
+func (s *ScanCmd) Run() error {
+	return nil
+}
+
+func checkPackagesFolder(fs afero.Fs) (bool, error) {
+	dir := "packages"
+	b, err := afero.DirExists(fs, dir)
+	return b, err
 }
