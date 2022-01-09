@@ -38,6 +38,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.23.4
 	k8s.io/client-go v0.23.4
+	github.com/spf13/afero v1.8.0
 	sigs.k8s.io/kind v0.11.1
 )
 
@@ -206,7 +207,6 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/spf13/afero v1.8.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
 
