@@ -47,7 +47,8 @@ func (p *PreflightChecksPipeline) step(f checkStep) {
 	f(p)
 }
 
-// RunPreflightChecks perform preflight checks
+// RunPreflightChecks performs preflight checks
+// checks docker version, available memory and dir paths
 func RunPreflightChecks(dir string) error {
 
 	// Preflight Checks pipeline

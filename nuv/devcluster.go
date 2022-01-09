@@ -17,17 +17,10 @@
 //
 package main
 
-import "fmt"
-
-func dockerInfo(dryRun bool) (string, error) {
-	out, err := sysErr(dryRun, "@docker info")
-
-	if err != nil {
-		return "", fmt.Errorf("docker is not running")
-	}
-	return out, nil
+type DevClusterCmd struct {
+	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
 }
 
-func dockerVersion(dryRun bool) (string, error) {
-	return sysErr(dryRun, "@docker version --format {{.Server.Version}}")
+func (devClusterCmd *DevClusterCmd) Run() error {
+	return manageKindCluster(devClusterCmd.Action)
 }

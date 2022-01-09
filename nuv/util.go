@@ -66,6 +66,7 @@ func sysErr(dryRun bool, cli string, args ...string) (string, error) {
 	re := regexp.MustCompile(`[\r\t\n\f ]+`)
 	a := strings.Split(re.ReplaceAllString(cli, " "), " ")
 	params := args
+	//fmt.Println(params)
 	if len(a) > 1 {
 		params = append(a[1:], args...)
 	}
