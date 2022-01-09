@@ -42,6 +42,7 @@ var osWriteFileFunc = os.WriteFile
 var osRemoveFunc = os.Remove
 var createClusterFunc = createCluster
 var destroyClusterFunc = destroyCluster
+var KindFunc = Kind
 
 func manageKindCluster(action string) error {
 
@@ -159,7 +160,7 @@ func rewriteKindConfigFile(configDir string) (string, error) {
 }
 
 func startCluster(configFile string) error {
-	if err := Kind("create", "cluster", "--wait=1m", "--config="+configFile); err != nil {
+	if err := KindFunc("create", "cluster", "--wait=1m", "--config="+configFile); err != nil {
 		return err
 	}
 	return nil
@@ -167,7 +168,7 @@ func startCluster(configFile string) error {
 }
 
 func stopCluster() error {
-	if err := Kind("delete", "cluster", "--name="+nuvolarisClusterName); err != nil {
+	if err := KindFunc("delete", "cluster", "--name="+nuvolarisClusterName); err != nil {
 		return err
 	}
 	return nil

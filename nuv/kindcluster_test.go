@@ -124,23 +124,32 @@ func Test_clusterAlreadyRunning(t *testing.T) {
 }
 
 func Test_startCluster(t *testing.T) {
+	realKindFunc := Kind
+
+	defer func() {
+		KindFunc = realKindFunc
+	}()
+
+	KindFunc = func(args ...string) error {
+		return nil
+	}
+
 	err := startCluster("./embed/kind.yaml")
 	assert.Equal(t, err, nil, "")
 	//output
 	//kind create cluster --wait=1m --config=./embed/kind.yaml
 }
 
-func Test_createCluster(t *testing.T) {
-	err := createCluster(true)
-	assert.Equal(t, err, nil, "")
-	//output
-	//kind get clusters
-	//starting nuvolaris kind cluster...hang tight
-	//kind create cluster --wait=1m --config=/home/nuvolaris/.nuvolaris/kind.yaml
-	//nuvolaris kind cluster started. Have a nice day! 👋
-}
+func Test_stopCluster(t *testing.T) {
+	realKindFunc := Kind
 
-func Test_destroyCluster(t *testing.T) {
+	defer func() {
+		KindFunc = realKindFunc
+	}()
+
+	KindFunc = func(args ...string) error {
+		return nil
+	}
 	err := destroyCluster(true)
 	assert.Equal(t, err, nil, "")
 	//kind get clusters

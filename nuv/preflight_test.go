@@ -41,10 +41,12 @@ func Example_ensureDockerVersion() {
 	fmt.Println(p.err)
 	// Output:
 	// docker version --format {{.Server.Version}}
+	// installed docker version 19.3.5 ok...
 	// <nil>
 	// docker version --format {{.Server.Version}}
 	// installed docker version 10.3.5 is no longer supported
 	// docker version --format {{.Server.Version}}
+	// installed docker version 18.6.3-ce ok...
 	// <nil>
 	// docker version --format {{.Server.Version}}
 	// no docker
@@ -79,6 +81,9 @@ func Example_checkDockerMemory() {
 	p.step(checkDockerMemory)
 	fmt.Println(p.err)
 	// Output:
+	// docker is running...
+	// enough memory to allocate...
 	// <nil>
+	// docker is running...
 	// nuv needs 4GB memory allocatable on docker
 }
