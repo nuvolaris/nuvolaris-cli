@@ -71,7 +71,7 @@ func createCluster(dryRun bool) (err error) {
 	if err != nil {
 		return err
 	}
-	if clusterIsRunning == true {
+	if clusterIsRunning {
 		fmt.Println("nuvolaris kind cluster is already running. Skipping...")
 		return nil
 	}
@@ -79,9 +79,12 @@ func createCluster(dryRun bool) (err error) {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("running preflight checks")
 	if err = RunPreflightChecks(homedir); err != nil {
 		return err
 	}
+	fmt.Println("preflight checks ok")
 
 	configDir, err := createNuvolarisConfigDirIfNotExists(homedir)
 	if err != nil {
@@ -94,7 +97,7 @@ func createCluster(dryRun bool) (err error) {
 	}
 
 	fmt.Println("starting nuvolaris kind cluster...hang tight")
-	if err = startCluster(dryRun, filePath); err != nil {
+	if err = startCluster(filePath); err != nil {
 		return err
 	}
 
@@ -107,8 +110,8 @@ func destroyCluster(dryRun bool) error {
 	if err != nil {
 		return err
 	}
-	if clusterIsRunning == true {
-		err := stopCluster(false)
+	if clusterIsRunning {
+		err := stopCluster()
 		if err != nil {
 			return err
 		}
@@ -120,7 +123,7 @@ func destroyCluster(dryRun bool) error {
 }
 
 func clusterAlreadyRunning(dryRun bool) (bool, error) {
-	out, err := sysErr(dryRun, "@kind get clusters")
+	out, err := sysErr(dryRun, "@nuv kind get clusters")
 
 	if err != nil {
 		return false, err
@@ -155,18 +158,16 @@ func rewriteKindConfigFile(configDir string) (string, error) {
 	return path, nil
 }
 
-func startCluster(dryRun bool, configFile string) error {
-	configFileParam := "--config=" + configFile
-	if _, err := sysErr(dryRun, "kind create cluster --wait=1m", configFileParam); err != nil {
+func startCluster(configFile string) error {
+	if err := Kind("create", "cluster", "--wait=1m", "--config="+configFile); err != nil {
 		return err
 	}
 	return nil
 
 }
 
-func stopCluster(dryRun bool) error {
-	clusterNameParam := "--name=" + nuvolarisClusterName
-	if _, err := sysErr(dryRun, "kind delete cluster", clusterNameParam); err != nil {
+func stopCluster() error {
+	if err := Kind("delete", "cluster", "--name="+nuvolarisClusterName); err != nil {
 		return err
 	}
 	return nil

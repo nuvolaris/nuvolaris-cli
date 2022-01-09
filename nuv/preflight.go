@@ -74,6 +74,7 @@ func checkDockerMemory(p *PreflightChecksPipeline) {
 		p.err = fmt.Errorf("docker is not running")
 		return
 	}
+	fmt.Println("docker is running...")
 	mem := strings.Split(result, ":")
 	memory := strings.TrimSpace(mem[1])
 	n, err := units.ParseStrictBytes(memory)
@@ -82,11 +83,11 @@ func checkDockerMemory(p *PreflightChecksPipeline) {
 		return
 	}
 	log.Debug("mem:", n)
-	//fmt.Println(n)
 	if n <= int64(MinDockerMem) {
 		p.err = fmt.Errorf("nuv needs 4GB memory allocatable on docker")
 		return
 	}
+	fmt.Println("enough memory to allocate...")
 }
 
 func ensureDockerVersion(p *PreflightChecksPipeline) {
@@ -104,6 +105,7 @@ func ensureDockerVersion(p *PreflightChecksPipeline) {
 		p.err = fmt.Errorf("installed docker version %s is no longer supported", vB)
 		return
 	}
+	fmt.Printf("installed docker version %s ok...\n", vB)
 }
 
 func isInHomePath(p *PreflightChecksPipeline) {
@@ -125,4 +127,5 @@ func isInHomePath(p *PreflightChecksPipeline) {
 		p.err = fmt.Errorf("work directory %s should be below your home directory %s;\nthis is required to be accessible by Docker", dir, homePath)
 		return
 	}
+	fmt.Println("dir tree ok...")
 }

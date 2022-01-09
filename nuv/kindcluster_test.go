@@ -124,7 +124,7 @@ func Test_clusterAlreadyRunning(t *testing.T) {
 }
 
 func Test_startCluster(t *testing.T) {
-	err := startCluster(true, "./embed/kind.yaml")
+	err := startCluster("./embed/kind.yaml")
 	assert.Equal(t, err, nil, "")
 	//output
 	//kind create cluster --wait=1m --config=./embed/kind.yaml
