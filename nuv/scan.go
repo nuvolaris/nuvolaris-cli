@@ -18,7 +18,11 @@
 package main
 
 import (
+	"fmt"
+	"path"
 	"path/filepath"
+	"strings"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -26,6 +30,20 @@ import (
 
 type ScanCmd struct {
 	// Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
+}
+
+type ProjectTree struct {
+	name    string
+	path    string
+	parent  *ProjectTree
+	folders []*ProjectTree
+	files   []*ProjectFile
+}
+
+type ProjectFile struct {
+	name   string
+	path   string
+	parent *ProjectTree
 }
 
 func (s *ScanCmd) Run() error {
@@ -59,14 +77,15 @@ func scanPackagesFolder(aferoFs afero.Fs, path string) (ProjectTree, error) {
 	return root, nil
 }
 
-func processDir(aferoFs afero.Fs, path string, dir string) (ProjectTree, error) {
+func processDir(aferoFs afero.Fs, parentPath string, dir string) (ProjectTree, error) {
+	// TODO add limit=2 cause sub sub folders are not needed to be parsed (they're multifile actions)
 
 	pt := ProjectTree{name: dir}
 	var folders []*ProjectTree
 	var files []*ProjectFile
 
-	filename := filepath.Join(path, dir)
-	children, err := afero.ReadDir(aferoFs, filename)
+	dirPath := filepath.Join(parentPath, dir)
+	children, err := afero.ReadDir(aferoFs, dirPath)
 
 	if err != nil {
 		return ProjectTree{}, err
@@ -74,30 +93,94 @@ func processDir(aferoFs afero.Fs, path string, dir string) (ProjectTree, error) 
 
 	for _, info := range children {
 		if info.IsDir() {
-			childPT, err := processDir(aferoFs, filename, info.Name())
+			childPT, err := processDir(aferoFs, dirPath, info.Name())
 			if err != nil {
 				return pt, err
 			}
 			childPT.parent = &pt
 			folders = append(folders, &childPT)
 		} else {
-			files = append(files, &ProjectFile{name: info.Name(), parent: &pt})
+			ext := path.Ext(info.Name())
+			actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
+			files = append(files, &ProjectFile{name: actionName, path: filepath.Join(dirPath, info.Name()), parent: &pt})
 		}
 	}
 
+	pt.path = dirPath
 	pt.folders = folders
 	pt.files = files
 	return pt, nil
 }
 
-type ProjectTree struct {
-	name    string
-	parent  *ProjectTree
-	folders []*ProjectTree
-	files   []*ProjectFile
+var wg sync.WaitGroup
+
+func parseProjectTree(projectRoot *ProjectTree) TaskTree {
+	taskRoot := TaskTree{}
+
+	// First level commands: actions from files
+	wg.Add(1)
+	parseSingleFileActions(projectRoot, &taskRoot)
+
+	// First level commands: packages from folders
+	parseSubFolders(projectRoot, &taskRoot)
+
+	wg.Wait()
+	return taskRoot
 }
 
-type ProjectFile struct {
-	name   string
-	parent *ProjectTree
+func parseSubFolders(projectRoot *ProjectTree, taskRoot *TaskTree) {
+	var tasks []*TaskTree
+	for _, subf := range projectRoot.folders {
+		t := TaskTree{parent: taskRoot, command: packageUpdate(subf.name)}
+
+		// Second level commands: single file actions from subfolders
+		wg.Add(1)
+		go parseSingleFileActions(subf, &t)
+
+		// Second level commands: multi file actions from subfolders
+		// TODO: Multi file actions heuristics
+
+		tasks = append(tasks, &t)
+	}
+	taskRoot.tasks = append(taskRoot.tasks, tasks...)
+}
+
+var extRuntimes = map[string]string{
+	".go":   "--kind go:default",
+	".java": "--kind java:default",
+	".js":   "--kind nodejs:default",
+	".py":   "--kind python:default",
+}
+
+func parseSingleFileActions(parent *ProjectTree, taskNode *TaskTree) {
+	defer wg.Done()
+
+	var tasks []*TaskTree
+
+	wskPkg := ""
+	if parent.parent != nil {
+		wskPkg = parent.name + "/"
+	}
+
+	for _, file := range parent.files {
+		runtime := extRuntimes[filepath.Ext(file.path)]
+		cmd := actionUpdate(wskPkg, file.name, file.path, runtime)
+		t := TaskTree{parent: taskNode, command: cmd}
+		tasks = append(tasks, &t)
+	}
+
+	taskNode.tasks = append(taskNode.tasks, tasks...)
+}
+
+func actionUpdate(pkg, actionName, filepath, runtime string) string {
+	return fmt.Sprintf("wsk action update %s%s %s %s", pkg, actionName, filepath, runtime)
+}
+func packageUpdate(pkgName string) string {
+	return fmt.Sprintf("wsk package update %s", pkgName)
+}
+
+type TaskTree struct {
+	parent  *TaskTree
+	tasks   []*TaskTree
+	command string
 }

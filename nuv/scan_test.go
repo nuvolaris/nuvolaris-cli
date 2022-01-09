@@ -68,7 +68,7 @@ func Test_scanPackagesFolder(t *testing.T) {
 		require.Empty(t, root.folders)
 		require.Empty(t, root.files)
 		require.Empty(t, root.parent)
-		require.Equal(t, root.name, "packages")
+		require.Equal(t, "packages", root.name)
 		require.NoError(t, err) // error in case file system operation failed
 	})
 
@@ -83,8 +83,8 @@ func Test_scanPackagesFolder(t *testing.T) {
 		require.Empty(t, root.files)
 		require.NotEmpty(t, root.folders)
 
-		require.Equal(t, root.folders[0].name, "subf1")
-		require.Equal(t, root.folders[1].name, "subf2")
+		require.Equal(t, "subf1", root.folders[0].name)
+		require.Equal(t, "subf2", root.folders[1].name)
 	})
 
 	t.Run("folder children should have the root as parent", func(t *testing.T) {
@@ -102,8 +102,8 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 	t.Run("should return a root with files children when packages has files", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/packages/a", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b", []byte("file b"), 0644)
+		afero.WriteFile(appFS, "/packages/a.js", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/b.py", []byte("file b"), 0644)
 
 		root, err := scanPackagesFolder(appFS, "/")
 
@@ -111,8 +111,8 @@ func Test_scanPackagesFolder(t *testing.T) {
 		require.Empty(t, root.folders)
 		require.NotEmpty(t, root.files)
 
-		require.Equal(t, root.files[0].name, "a")
-		require.Equal(t, root.files[1].name, "b")
+		require.Equal(t, "a", root.files[0].name)
+		require.Equal(t, "b", root.files[1].name)
 	})
 
 	t.Run("should return a root with files and folders when packages has both", func(t *testing.T) {
@@ -138,14 +138,116 @@ func Test_scanPackagesFolder(t *testing.T) {
 		afero.WriteFile(appFS, "/packages/a", []byte("file a"), 0644)
 		afero.WriteFile(appFS, "/packages/b", []byte("file b"), 0644)
 		afero.WriteFile(appFS, "/packages/subf1/c", []byte("file c"), 0644)
-		afero.WriteFile(appFS, "/packages/subf2/subsubf/d", []byte("file d"), 0644)
+		afero.WriteFile(appFS, "/packages/subf2/subsubf/d.js", []byte("file d"), 0644)
 
 		root, err := scanPackagesFolder(appFS, "/")
 
 		require.NoError(t, err) // error in case file system operation failed
 
-		require.Equal(t, root.folders[0].files[0].name, "c")
-		require.Equal(t, root.folders[1].folders[0].name, "subsubf")
-		require.Equal(t, root.folders[1].folders[0].files[0].name, "d")
+		require.Equal(t, "c", root.folders[0].files[0].name)
+		require.Equal(t, "subsubf", root.folders[1].folders[0].name)
+		require.Equal(t, "d", root.folders[1].folders[0].files[0].name)
+	})
+
+	t.Run("folders should have the complete path to them", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		appFS.MkdirAll("/packages/subf1", 0755)
+		appFS.MkdirAll("/packages/subf2", 0755)
+
+		root, err := scanPackagesFolder(appFS, "/")
+
+		require.NoError(t, err) // error in case file system operation failed
+		require.Equal(t, "/packages/subf1", root.folders[0].path)
+		require.Equal(t, "/packages/subf2", root.folders[1].path)
+	})
+
+	t.Run("files should have the complete path to the code", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/packages/a.py", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/b.js", []byte("file b"), 0644)
+
+		root, err := scanPackagesFolder(appFS, "/")
+
+		require.NoError(t, err) // error in case file system operation failed
+		require.Equal(t, "/packages/a.py", root.files[0].path)
+		require.Equal(t, "/packages/b.js", root.files[1].path)
+	})
+}
+
+func Test_parseProjectTree(t *testing.T) {
+	t.Run("should return an empty tree (just root node) of task commands when given an empty project tree", func(t *testing.T) {
+		root := ProjectTree{name: "packages"}
+
+		res := parseProjectTree(&root)
+
+		require.Empty(t, res.parent)
+		require.Empty(t, res.tasks)
+		require.Empty(t, res.command)
+	})
+
+	// t.Run("should return tree with child 'wsk package update' when given root with folder", func(t *testing.T) {
+	// 	root := ProjectTree{name: "packages"}
+	// 	subf := ProjectTree{name: "subf"}
+	// 	root.folders = []*ProjectTree{&subf}
+
+	// 	res := parseProjectTree(&root)
+
+	// 	require.Equal(t, "wsk package update subf", res.tasks[0].command)
+	// })
+
+	t.Run("should return tree with child 'wsk action update' when given root with file", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/packages/helloGo.go", []byte("hey there"), 0644)
+		afero.WriteFile(appFS, "/packages/helloJava.java", []byte("hey there"), 0644)
+		afero.WriteFile(appFS, "/packages/helloJs.js", []byte("hey there"), 0644)
+		afero.WriteFile(appFS, "/packages/helloPy.py", []byte("hey there"), 0644)
+
+		root, err := scanPackagesFolder(appFS, "/")
+
+		require.NoError(t, err) // error in case file system operation failed
+
+		res := parseProjectTree(&root)
+
+		require.Equal(t, "wsk action update helloGo /packages/helloGo.go --kind go:default", res.tasks[0].command)
+		require.Equal(t, "wsk action update helloJava /packages/helloJava.java --kind java:default", res.tasks[1].command)
+		require.Equal(t, "wsk action update helloJs /packages/helloJs.js --kind nodejs:default", res.tasks[2].command)
+		require.Equal(t, "wsk action update helloPy /packages/helloPy.py --kind python:default", res.tasks[3].command)
+	})
+
+	t.Run("should return tree with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+
+		appFS.MkdirAll("/packages/subf1", 0755)
+		appFS.MkdirAll("/packages/subf2", 0755)
+		afero.WriteFile(appFS, "/packages/a.js", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/b.py", []byte("file b"), 0644)
+
+		root, err := scanPackagesFolder(appFS, "/")
+
+		require.NoError(t, err) // error in case file system operation failed
+
+		res := parseProjectTree(&root)
+
+		require.Equal(t, "wsk action update a /packages/a.js --kind nodejs:default", res.tasks[0].command)
+		require.Equal(t, "wsk action update b /packages/b.py --kind python:default", res.tasks[1].command)
+		require.Equal(t, "wsk package update subf1", res.tasks[2].command)
+		require.Equal(t, "wsk package update subf2", res.tasks[3].command)
+	})
+
+	t.Run("should return tree with cmds to create single file actions in packages given tree with sub folders", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+
+		appFS.MkdirAll("/packages/subf", 0755)
+		afero.WriteFile(appFS, "/packages/subf/a.js", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/b.py", []byte("file b"), 0644)
+
+		root, err := scanPackagesFolder(appFS, "/")
+
+		require.NoError(t, err) // error in case file system operation failed
+
+		res := parseProjectTree(&root)
+
+		require.Equal(t, "wsk action update subf/a /packages/subf/a.js --kind nodejs:default", res.tasks[0].tasks[0].command)
+		require.Equal(t, "wsk action update subf/b /packages/subf/b.py --kind python:default", res.tasks[0].tasks[1].command)
 	})
 }
