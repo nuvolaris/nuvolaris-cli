@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"path"
 	"path/filepath"
 	"strings"
@@ -37,10 +38,12 @@ type ProjectTree struct {
 	path    string
 	parent  *ProjectTree
 	folders []*ProjectTree
-	files   []*ProjectFile
+
+	mfActions []*ProjectTreeAction
+	sfActions []*ProjectTreeAction
 }
 
-type ProjectFile struct {
+type ProjectTreeAction struct {
 	name   string
 	path   string
 	parent *ProjectTree
@@ -70,19 +73,18 @@ func checkPackagesFolder(fs afero.Fs, path string) (bool, error) {
 }
 
 func scanPackagesFolder(aferoFs afero.Fs, path string) (ProjectTree, error) {
-	root, err := processDir(aferoFs, path, "packages")
+	root, err := processDir(aferoFs, path, "packages", true)
 	if err != nil {
 		return ProjectTree{}, err
 	}
 	return root, nil
 }
 
-func processDir(aferoFs afero.Fs, parentPath string, dir string) (ProjectTree, error) {
-	// TODO add limit=2 cause sub sub folders are not needed to be parsed (they're multifile actions)
-
+func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool) (ProjectTree, error) {
 	pt := ProjectTree{name: dir}
 	var folders []*ProjectTree
-	var files []*ProjectFile
+	var mfActions []*ProjectTreeAction
+	var sfActions []*ProjectTreeAction
 
 	dirPath := filepath.Join(parentPath, dir)
 	children, err := afero.ReadDir(aferoFs, dirPath)
@@ -93,23 +95,34 @@ func processDir(aferoFs afero.Fs, parentPath string, dir string) (ProjectTree, e
 
 	for _, info := range children {
 		if info.IsDir() {
-			childPT, err := processDir(aferoFs, dirPath, info.Name())
-			if err != nil {
-				return pt, err
+			if rootLevel {
+				// root level: folders = packages and continue walk
+				childPT, err := processDir(aferoFs, dirPath, info.Name(), false)
+				if err != nil {
+					return pt, err
+				}
+				childPT.parent = &pt
+				folders = append(folders, &childPT)
+			} else {
+				// inner level: folders = multi file actions and stop
+				mfActions = appendNewAction(mfActions, info, dirPath, &pt)
 			}
-			childPT.parent = &pt
-			folders = append(folders, &childPT)
 		} else {
-			ext := path.Ext(info.Name())
-			actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
-			files = append(files, &ProjectFile{name: actionName, path: filepath.Join(dirPath, info.Name()), parent: &pt})
+			sfActions = appendNewAction(sfActions, info, dirPath, &pt)
 		}
 	}
 
 	pt.path = dirPath
 	pt.folders = folders
-	pt.files = files
+	pt.mfActions = mfActions
+	pt.sfActions = sfActions
 	return pt, nil
+}
+
+func appendNewAction(actions []*ProjectTreeAction, info fs.FileInfo, dirPath string, parent *ProjectTree) []*ProjectTreeAction {
+	ext := path.Ext(info.Name())
+	actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
+	return append(actions, &ProjectTreeAction{name: actionName, path: filepath.Join(dirPath, info.Name()), parent: parent})
 }
 
 var wg sync.WaitGroup
@@ -162,7 +175,7 @@ func parseSingleFileActions(parent *ProjectTree, taskNode *TaskTree) {
 		wskPkg = parent.name + "/"
 	}
 
-	for _, file := range parent.files {
+	for _, file := range parent.sfActions {
 		runtime := extRuntimes[filepath.Ext(file.path)]
 		cmd := actionUpdate(wskPkg, file.name, file.path, runtime)
 		t := TaskTree{parent: taskNode, command: cmd}
