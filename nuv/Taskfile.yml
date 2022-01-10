@@ -45,6 +45,7 @@ tasks:
       - vendor
     cmds:
       - go build -gcflags '-N -l' -mod=vendor -ldflags "-X main.CLI_VERSION={{.TAG}}" -o {{.NUV}}-debug
+      - "{{.NUV}}-debug kind delete clusters kind"
     generates:
       - "{{.NUV}}-debug"
 
