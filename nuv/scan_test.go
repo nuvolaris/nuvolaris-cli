@@ -375,7 +375,7 @@ func Test_parseProjectTree(t *testing.T) {
 		require.Equal(t, "wsk package update subf2", res.tasks[3].command)
 	})
 
-	t.Run("should return tree with cmds to create single file actions in packages given tree with sub folders", func(t *testing.T) {
+	t.Run("should return tree with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
 
 		appFS.MkdirAll("/packages/subf", 0755)
@@ -390,5 +390,54 @@ func Test_parseProjectTree(t *testing.T) {
 
 		require.Equal(t, "wsk action update subf/a /packages/subf/a.js --kind nodejs:default", res.tasks[0].tasks[0].command)
 		require.Equal(t, "wsk action update subf/b /packages/subf/b.py --kind python:default", res.tasks[0].tasks[1].command)
+	})
+
+	t.Run("should return tree with multi file action cmds given tree with mfActions", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+
+		appFS.MkdirAll("/packages/subf", 0755)
+		afero.WriteFile(appFS, "/packages/subf/mf1/a.js", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/mf2/b.py", []byte("file b"), 0644)
+
+		expected1 := "zip -r /packages/subf/mf1/mf1.zip /packages/subf/mf1/*\nwsk action update subf/mf1 /packages/subf/mf1/mf1.zip --kind nodejs:default"
+		expected2 := "zip -r /packages/subf/mf2/mf2.zip /packages/subf/mf2/*\nwsk action update subf/mf2 /packages/subf/mf2/mf2.zip --kind python:default"
+
+		root, err := scanPackagesFolder(appFS, "/")
+		require.NoError(t, err)
+
+		res := parseProjectTree(&root)
+		require.Equal(t, "wsk package update subf", res.tasks[0].command)
+		require.Equal(t, expected1, res.tasks[0].tasks[0].command)
+		require.Equal(t, expected2, res.tasks[0].tasks[1].command)
+	})
+
+	t.Run("should return tree with both sf and mf actions", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+
+		appFS.MkdirAll("/packages/subf", 0755)
+		afero.WriteFile(appFS, "/packages/subf/a.js", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/b.py", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/mf1/a.js", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/mf2/b.py", []byte("file b"), 0644)
+
+		expectedSF1 := "wsk action update subf/a /packages/subf/a.js --kind nodejs:default"
+		expectedSF2 := "wsk action update subf/b /packages/subf/b.py --kind python:default"
+		expectedMF1 := "zip -r /packages/subf/mf1/mf1.zip /packages/subf/mf1/*\nwsk action update subf/mf1 /packages/subf/mf1/mf1.zip --kind nodejs:default"
+		expectedMF2 := "zip -r /packages/subf/mf2/mf2.zip /packages/subf/mf2/*\nwsk action update subf/mf2 /packages/subf/mf2/mf2.zip --kind python:default"
+
+		root, err := scanPackagesFolder(appFS, "/")
+		require.NoError(t, err)
+
+		res := parseProjectTree(&root)
+
+		cmds := make([]string, 0)
+		for _, task := range res.tasks[0].tasks {
+			cmds = append(cmds, task.command)
+		}
+		expected := []string{
+			expectedSF1, expectedSF2,
+			expectedMF1, expectedMF2,
+		}
+		require.ElementsMatch(t, cmds, expected)
 	})
 }

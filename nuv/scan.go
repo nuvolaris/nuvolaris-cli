@@ -78,6 +78,12 @@ type ProjectTreeAction struct {
 	parent  *ProjectTree
 }
 
+type TaskTree struct {
+	parent  *TaskTree
+	tasks   []*TaskTree
+	command string
+}
+
 func checkPackagesFolder(fs afero.Fs, path string) (bool, error) {
 	dir := "packages"
 	filename := filepath.Join(path, dir)
@@ -173,57 +179,86 @@ func searchRuntime(fs afero.Fs, mfPath, ext, file string) (bool, error) {
 	return !b, err
 }
 
-var wg sync.WaitGroup
-
 func parseProjectTree(projectRoot *ProjectTree) TaskTree {
 	taskRoot := TaskTree{}
 
 	// First level commands: actions from files
-	wg.Add(1)
-	parseSingleFileActions(projectRoot, &taskRoot)
+	parseRootSingleFileActions(projectRoot, &taskRoot)
 
-	// First level commands: packages from folders
 	parseSubFolders(projectRoot, &taskRoot)
 
-	wg.Wait()
 	return taskRoot
 }
 
+func parseRootSingleFileActions(projectRoot *ProjectTree, taskRoot *TaskTree) {
+	childTasks := make([]*TaskTree, len(projectRoot.sfActions))
+	for i, sfAction := range projectRoot.sfActions {
+		cmd := actionUpdate("", sfAction.name, sfAction.path, extRuntimes[sfAction.runtime])
+		childTasks[i] = &TaskTree{command: cmd}
+	}
+	taskRoot.tasks = childTasks
+}
+
+var wg sync.WaitGroup
+
 func parseSubFolders(projectRoot *ProjectTree, taskRoot *TaskTree) {
-	var tasks []*TaskTree
-	for _, subf := range projectRoot.folders {
+	tasks := make([]*TaskTree, len(projectRoot.folders))
+
+	for i, subf := range projectRoot.folders {
+		taskQueue := make(chan *TaskTree, len(subf.sfActions)+len(subf.mfActions))
+
+		// First level commands: packages from folders
 		t := TaskTree{parent: taskRoot, command: packageUpdate(subf.name)}
 
 		// Second level commands: single file actions from subfolders
 		wg.Add(1)
-		go parseSingleFileActions(subf, &t)
+		go parseSingleFileActions(taskQueue, subf, &t)
 
 		// Second level commands: multi file actions from subfolders
-		// TODO: Multi file actions heuristics
+		wg.Add(1)
+		go parseMultiFileActions(taskQueue, subf, &t)
 
-		tasks = append(tasks, &t)
+		wg.Wait()
+		close(taskQueue)
+		appendTasks(taskQueue, &t)
+
+		tasks[i] = &t
 	}
 	taskRoot.tasks = append(taskRoot.tasks, tasks...)
 }
 
-func parseSingleFileActions(parent *ProjectTree, taskNode *TaskTree) {
+func appendTasks(taskQueue chan *TaskTree, taskNode *TaskTree) {
+	for subTask := range taskQueue {
+		taskNode.tasks = append(taskNode.tasks, subTask)
+	}
+
+}
+
+func parseSingleFileActions(taskQueue chan *TaskTree, parent *ProjectTree, taskNode *TaskTree) {
 	defer wg.Done()
 
-	var tasks []*TaskTree
+	wskPkg := parent.name + "/"
 
-	wskPkg := ""
-	if parent.parent != nil {
-		wskPkg = parent.name + "/"
-	}
-
-	for _, file := range parent.sfActions {
-		runtime := extRuntimes[filepath.Ext(file.path)]
-		cmd := actionUpdate(wskPkg, file.name, file.path, runtime)
+	for _, sfAction := range parent.sfActions {
+		cmd := actionUpdate(wskPkg, sfAction.name, sfAction.path, extRuntimes[sfAction.runtime])
 		t := TaskTree{parent: taskNode, command: cmd}
-		tasks = append(tasks, &t)
+		taskQueue <- &t
 	}
 
-	taskNode.tasks = append(taskNode.tasks, tasks...)
+}
+
+func parseMultiFileActions(taskQueue chan *TaskTree, parent *ProjectTree, taskNode *TaskTree) {
+	defer wg.Done()
+
+	wskPkg := parent.name + "/"
+
+	for _, mfAction := range parent.mfActions {
+		zipCmd := fmt.Sprintf("zip -r %s/%s.zip %s/*", mfAction.path, mfAction.name, mfAction.path)
+		zipPath := fmt.Sprintf("%s/%s.zip", mfAction.path, mfAction.name)
+		cmd := actionUpdate(wskPkg, mfAction.name, zipPath, extRuntimes[mfAction.runtime])
+		t := TaskTree{parent: taskNode, command: fmt.Sprintf("%s\n%s", zipCmd, cmd)}
+		taskQueue <- &t
+	}
 }
 
 func actionUpdate(pkg, actionName, filepath, runtime string) string {
@@ -231,10 +266,4 @@ func actionUpdate(pkg, actionName, filepath, runtime string) string {
 }
 func packageUpdate(pkgName string) string {
 	return fmt.Sprintf("wsk package update %s", pkgName)
-}
-
-type TaskTree struct {
-	parent  *TaskTree
-	tasks   []*TaskTree
-	command string
 }
