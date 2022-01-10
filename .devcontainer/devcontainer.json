@@ -16,7 +16,7 @@
 // under the License.
 {
 	"name": "nuvolaris-cli",
-	"image": "ghcr.io/nuvolaris/nuvolaris-devkit:neo-21.1228.12",
+	"image": "ghcr.io/nuvolaris/nuvolaris-devkit:neo-22.0109.20",
 	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"],
 	"remoteUser": "nuvolaris",
 	"overrideCommand": false,
