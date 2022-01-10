@@ -19,9 +19,9 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -31,22 +31,6 @@ import (
 
 type ScanCmd struct {
 	// Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
-}
-
-type ProjectTree struct {
-	name    string
-	path    string
-	parent  *ProjectTree
-	folders []*ProjectTree
-
-	mfActions []*ProjectTreeAction
-	sfActions []*ProjectTreeAction
-}
-
-type ProjectTreeAction struct {
-	name   string
-	path   string
-	parent *ProjectTree
 }
 
 func (s *ScanCmd) Run() error {
@@ -63,6 +47,35 @@ func (s *ScanCmd) Run() error {
 		return err
 	}
 	return nil
+}
+
+const goRuntime = ".go"
+const javaRuntime = ".java"
+const jsRuntime = ".js"
+const pyRuntime = ".py"
+
+var extRuntimes = map[string]string{
+	goRuntime:   "--kind go:default",
+	javaRuntime: "--kind java:default",
+	jsRuntime:   "--kind nodejs:default",
+	pyRuntime:   "--kind python:default",
+}
+
+type ProjectTree struct {
+	name    string
+	path    string
+	parent  *ProjectTree
+	folders []*ProjectTree
+
+	mfActions []*ProjectTreeAction
+	sfActions []*ProjectTreeAction
+}
+
+type ProjectTreeAction struct {
+	name    string
+	runtime string
+	path    string
+	parent  *ProjectTree
 }
 
 func checkPackagesFolder(fs afero.Fs, path string) (bool, error) {
@@ -105,10 +118,18 @@ func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool)
 				folders = append(folders, &childPT)
 			} else {
 				// inner level: folders = multi file actions and stop
-				mfActions = appendNewAction(mfActions, info, dirPath, &pt)
+				mfPath := filepath.Join(dirPath, info.Name())
+				runtime, err := findMfaRuntime(aferoFs, mfPath)
+				if err != nil {
+					return pt, err
+				}
+				mfActions = append(mfActions, &ProjectTreeAction{name: info.Name(), runtime: runtime, path: mfPath, parent: &pt})
+
 			}
 		} else {
-			sfActions = appendNewAction(sfActions, info, dirPath, &pt)
+			ext := path.Ext(info.Name())
+			actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
+			sfActions = append(sfActions, &ProjectTreeAction{name: actionName, runtime: ext, path: filepath.Join(dirPath, info.Name()), parent: &pt})
 		}
 	}
 
@@ -119,10 +140,37 @@ func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool)
 	return pt, nil
 }
 
-func appendNewAction(actions []*ProjectTreeAction, info fs.FileInfo, dirPath string, parent *ProjectTree) []*ProjectTreeAction {
-	ext := path.Ext(info.Name())
-	actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
-	return append(actions, &ProjectTreeAction{name: actionName, path: filepath.Join(dirPath, info.Name()), parent: parent})
+func findMfaRuntime(aferoFs afero.Fs, mfPath string) (string, error) {
+	found, err := searchRuntime(aferoFs, mfPath, jsRuntime, "package.json")
+	if found {
+		return jsRuntime, err
+	}
+	found, err = searchRuntime(aferoFs, mfPath, pyRuntime, "requirements.txt")
+	if found {
+		return pyRuntime, err
+	}
+	found, err = searchRuntime(aferoFs, mfPath, javaRuntime, "pom.xml")
+	if found {
+		return javaRuntime, err
+	}
+	found, err = searchRuntime(aferoFs, mfPath, goRuntime, "go.mod")
+	if found {
+		return goRuntime, err
+	}
+
+	if err != nil {
+		return "", err
+	}
+	return "", fmt.Errorf("no supported runtime found")
+}
+
+func searchRuntime(fs afero.Fs, mfPath, ext, file string) (bool, error) {
+	b, err := afero.Exists(fs, path.Join(mfPath, file))
+	if b {
+		return b, err
+	}
+	b, err = afero.IsEmpty(afero.NewRegexpFs(fs, regexp.MustCompile(fmt.Sprintf(`\%s$`, ext))), mfPath)
+	return !b, err
 }
 
 var wg sync.WaitGroup
@@ -156,13 +204,6 @@ func parseSubFolders(projectRoot *ProjectTree, taskRoot *TaskTree) {
 		tasks = append(tasks, &t)
 	}
 	taskRoot.tasks = append(taskRoot.tasks, tasks...)
-}
-
-var extRuntimes = map[string]string{
-	".go":   "--kind go:default",
-	".java": "--kind java:default",
-	".js":   "--kind nodejs:default",
-	".py":   "--kind python:default",
 }
 
 func parseSingleFileActions(parent *ProjectTree, taskNode *TaskTree) {

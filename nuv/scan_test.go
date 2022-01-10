@@ -212,6 +212,107 @@ func Test_scanPackagesFolder(t *testing.T) {
 		require.Equal(t, "/packages/b.js", root.sfActions[1].path)
 		require.Equal(t, "/packages/subf/sub", root.folders[0].mfActions[0].path)
 	})
+
+	t.Run("actions should hold runtime", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/packages/a.py", []byte("file a"), 0644)
+		afero.WriteFile(appFS, "/packages/b.js", []byte("file b"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/sub/package.json", []byte("file b"), 0644)
+		afero.WriteFile(appFS, "/packages/subf/sub/b.js", []byte("file b"), 0644)
+
+		root, err := scanPackagesFolder(appFS, "/")
+
+		require.NoError(t, err) // error in case file system operation failed
+		require.Equal(t, ".py", root.sfActions[0].runtime)
+		require.Equal(t, ".js", root.sfActions[1].runtime)
+		require.Equal(t, ".js", root.folders[0].mfActions[0].runtime)
+	})
+
+}
+func Test_findMfaRuntime(t *testing.T) {
+	t.Run("should return error when no runtime found", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/package", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.Empty(t, runtime)
+		require.Errorf(t, err, "no supported runtime found")
+	})
+	t.Run("should return .js runtime when package.json present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/package.json", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, jsRuntime, runtime)
+	})
+	t.Run("should return .js runtime when a .js file is present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/hello.js", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, jsRuntime, runtime)
+	})
+
+	t.Run("should return .py runtime when requirements.txt present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/requirements.txt", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, pyRuntime, runtime)
+	})
+	t.Run("should return .py runtime when a .py file is present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/hello.py", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, pyRuntime, runtime)
+	})
+
+	t.Run("should return .java runtime when pom.xml present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/pom.xml", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, javaRuntime, runtime)
+	})
+	t.Run("should return .java runtime when a .java file is present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/hello.java", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, javaRuntime, runtime)
+	})
+	t.Run("should return .go runtime when go.mod present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/go.mod", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, goRuntime, runtime)
+	})
+	t.Run("should return .go runtime when a .go file is present", func(t *testing.T) {
+		appFS := afero.NewMemMapFs()
+		afero.WriteFile(appFS, "/hello.go", []byte("file a"), 0644)
+
+		runtime, err := findMfaRuntime(appFS, "/")
+
+		require.NoError(t, err)
+		require.Equal(t, goRuntime, runtime)
+	})
 }
 
 func Test_parseProjectTree(t *testing.T) {
