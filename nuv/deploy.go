@@ -40,7 +40,7 @@ func (d DeployCmd) AfterApply() error {
 		return nil
 	}
 	log.Info("Preflight checks...")
-	homedir, _ := GetHomedir()
+	homedir, _ := GetHomeDir()
 
 	err := RunPreflightChecks(homedir)
 

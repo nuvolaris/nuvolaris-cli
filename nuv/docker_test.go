@@ -24,8 +24,8 @@ func Example_dockerVersion() {
 	DryRunPush("19.03.5", "!no docker")
 	out, err := dockerVersion(true)
 	fmt.Println(out, err)
-	// out, err = dockerVersion(true)
-	// fmt.Println(out, err)
+	out, err = dockerVersion(true)
+	fmt.Println(out, err)
 	// Output:
 	// docker version --format {{.Server.Version}}
 	// 19.03.5 <nil>

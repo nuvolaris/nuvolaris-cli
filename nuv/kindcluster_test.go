@@ -18,140 +18,246 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
+
+func Test_manageKindCluster(t *testing.T) {
+
+	realCreateCluster := createCluster
+	realDestroyCluster := destroyCluster
+
+	defer func() {
+		createCluster = realCreateCluster
+		destroyCluster = realDestroyCluster
+	}()
+
+	tests := []struct {
+		name           string
+		action         string
+		createCluster  func() error
+		destroyCluster func() error
+		expectedError  error
+		expectedOutput string
+	}{
+		{
+			name:          "successfully creating cluster",
+			action:        "create",
+			createCluster: func() error { return nil },
+			expectedError: nil,
+		},
+		{
+			name:           "successfully destroying cluster",
+			action:         "destroy",
+			destroyCluster: func() error { return nil },
+			expectedError:  nil,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			createCluster = test.createCluster
+			destroyCluster = test.destroyCluster
+			err := manageKindCluster(test.action)
+			if err != test.expectedError {
+				t.Errorf("Expected %v, got %v", test.expectedError, err)
+			}
+		})
+	}
+
+}
 
 func Test_createNuvolarisHomeDir(t *testing.T) {
 
-	realOsStatFunc := osStatFunc
-	realOsMkdirDirFunc := osMkdirFunc
-	realOsIsNotExistFunc := osIsNotExistFunc
+	realOsStat := osStat
+	realOsMkdir := osMkdir
+	realOsIsNotExist := osIsNotExist
 
 	defer func() {
-		osMkdirFunc = realOsMkdirDirFunc
-		osIsNotExistFunc = realOsIsNotExistFunc
-		osStatFunc = realOsStatFunc
+		osMkdir = realOsMkdir
+		osIsNotExist = realOsIsNotExist
+		osStat = realOsStat
 	}()
 
-	//case: dir does not exist yet
-	osStatFunc = func(path string) (fs.FileInfo, error) {
-		return nil, os.ErrNotExist
+	tests := []struct {
+		name         string
+		homedir      string
+		expectedErr  error
+		expectedDir  string
+		osStat       func(string) (fs.FileInfo, error)
+		osMkdir      func(string, fs.FileMode) error
+		osIsNotExist func(error) bool
+	}{
+		{
+			name:        ".nuvolaris dir does not exist yet",
+			homedir:     "/home/userdir",
+			expectedDir: "/home/userdir/.nuvolaris",
+			expectedErr: nil,
+			osStat: func(string) (fs.FileInfo, error) {
+				return nil, os.ErrNotExist
+			},
+			osMkdir: func(string, fs.FileMode) error {
+				return nil
+			},
+			osIsNotExist: func(error) bool {
+				return true
+			},
+		},
+		{
+			name:        ".nuvolaris dir already exists",
+			homedir:     "/home/userdir",
+			expectedDir: "/home/userdir/.nuvolaris",
+			expectedErr: nil,
+			osStat: func(string) (fs.FileInfo, error) {
+				return nil, nil
+			},
+			osMkdir: func(string, fs.FileMode) error {
+				return nil
+			},
+			osIsNotExist: func(error) bool {
+				return true
+			},
+		},
 	}
-
-	osMkdirFunc = func(name string, perm fs.FileMode) error {
-		return nil //dir created
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			osStat = test.osStat
+			osMkdir = test.osMkdir
+			osIsNotExist = test.osIsNotExist
+			result, err := createNuvolarisConfigDirIfNotExists(test.homedir)
+			if result != test.expectedDir {
+				t.Errorf("Expected %s, got %s", test.expectedDir, result)
+			}
+			if err != test.expectedErr {
+				t.Errorf("Expected %v, got %v", test.expectedErr, err)
+			}
+		})
 	}
-
-	osIsNotExistFunc = func(err error) bool {
-		return true
-	}
-
-	out, err := createNuvolarisConfigDirIfNotExists("/home/userdir")
-	assert.Equal(t, err, nil, "")
-	assert.Equal(t, out, "/home/userdir/.nuvolaris", "")
-
-	//case: dir already exists
-	osStatFunc = func(path string) (fs.FileInfo, error) {
-		return nil, nil
-	}
-	out, err = createNuvolarisConfigDirIfNotExists("/home/userdir")
-	assert.Equal(t, err, nil, "")
-	assert.Equal(t, out, "/home/userdir/.nuvolaris", "")
 
 }
 
 func Test_rewriteKindConfigFile(t *testing.T) {
-	realOsStatFunc := osStatFunc
-	realOsRemoveFunc := osRemoveFunc
-	realOsWriteFileFunc := osWriteFileFunc
+	realOsStatFunc := osStat
+	realOsRemoveFunc := osRemove
+	realOsWriteFileFunc := osWriteFile
 
 	defer func() {
-		osStatFunc = realOsStatFunc
-		osRemoveFunc = realOsRemoveFunc
-		osWriteFileFunc = realOsWriteFileFunc
+		osStat = realOsStatFunc
+		osRemove = realOsRemoveFunc
+		osWriteFile = realOsWriteFileFunc
 
 	}()
 
-	//case: config file does not exist yet
-	osStatFunc = func(path string) (fs.FileInfo, error) {
-		return nil, os.ErrNotExist
+	tests := []struct {
+		name           string
+		path           string
+		expectedErr    error
+		expectedResult string
+		osStat         func(string) (fs.FileInfo, error)
+		osWriteFile    func(string, []byte, fs.FileMode) error
+		osRemove       func(string) error
+	}{
+		{
+			name:           "config file does not exist yet",
+			path:           "/home/userdir/.nuvolaris",
+			expectedResult: "/home/userdir/.nuvolaris/kind.yaml",
+			expectedErr:    nil,
+			osStat: func(string) (fs.FileInfo, error) {
+				return nil, os.ErrNotExist
+			},
+			osWriteFile: func(string, []byte, fs.FileMode) error {
+				return nil
+			},
+			osRemove: func(string) error {
+				return nil
+			},
+		},
+		{
+			name:           "config file already exists",
+			path:           "/home/userdir/.nuvolaris",
+			expectedResult: "/home/userdir/.nuvolaris/kind.yaml",
+			expectedErr:    nil,
+			osStat: func(string) (fs.FileInfo, error) {
+				return nil, nil
+			},
+			osWriteFile: func(string, []byte, fs.FileMode) error {
+				return nil
+			},
+			osRemove: func(string) error {
+				return nil
+			},
+		},
 	}
-
-	osWriteFileFunc = func(name string, data []byte, perm fs.FileMode) error {
-		return nil
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			osStat = test.osStat
+			osWriteFile = test.osWriteFile
+			osRemove = test.osRemove
+			result, err := rewriteKindConfigFile(test.path)
+			if result != test.expectedResult {
+				t.Errorf("Expected %s, got %s", test.expectedResult, result)
+			}
+			if err != test.expectedErr {
+				t.Errorf("Expected %v, got %v", test.expectedErr, err)
+			}
+		})
 	}
-
-	out, err := rewriteKindConfigFile("/home/userdir/.nuvolaris")
-	assert.Equal(t, err, nil, "")
-	assert.Equal(t, out, "/home/userdir/.nuvolaris/kind.yaml", "")
-
-	//case: config file already exists
-	osRemoveFunc = func(name string) error {
-		return nil
-	}
-	out, err = rewriteKindConfigFile("/home/userdir/.nuvolaris")
-	assert.Equal(t, err, nil, "")
-	assert.Equal(t, out, "/home/userdir/.nuvolaris/kind.yaml", "")
-
 }
 
 func Test_clusterAlreadyRunning(t *testing.T) {
-	DryRunPush("")
-	out, err := clusterAlreadyRunning(true)
-	assert.Equal(t, out, false, "")
-	assert.Equal(t, err, nil, "")
-
-	DryRunPush("nuvolaris")
-	out, err = clusterAlreadyRunning(true)
-	assert.Equal(t, out, true, "")
-	assert.Equal(t, err, nil, "")
-
-	DryRunPush("kind nuvolaris keep adding cluster names")
-	out, err = clusterAlreadyRunning(true)
-	assert.Equal(t, out, true, "")
-	assert.Equal(t, err, nil, "")
-
-	DryRunPush("kind")
-	out, err = clusterAlreadyRunning(true)
-	assert.Equal(t, out, false, "")
-	assert.Equal(t, err, nil, "")
-	//output
-	//kind get clusters
-}
-
-func Test_startCluster(t *testing.T) {
-	realKindFunc := Kind
+	realKind := kind
 
 	defer func() {
-		KindFunc = realKindFunc
+		kind = realKind
 	}()
 
-	KindFunc = func(args ...string) error {
-		return nil
+	tests := []struct {
+		name           string
+		result         string
+		expectedResult bool
+		kind           func(...string) error
+	}{
+		{
+			name:           "no running clusters",
+			expectedResult: false,
+			kind: func(...string) error {
+				fmt.Println("")
+				return nil
+			},
+		},
+		{
+			name:           "nuvolaris cluster running",
+			expectedResult: true,
+			kind: func(...string) error {
+				fmt.Println("nuvolaris")
+				return nil
+			},
+		},
+		{
+			name:           "nuvolaris and other clusters running",
+			expectedResult: true,
+			kind: func(...string) error {
+				fmt.Println("kind nuvolaris keep adding cluster names")
+				return nil
+			},
+		},
+		{
+			name:           "other cluster running but not nuvolaris",
+			expectedResult: false,
+			kind: func(...string) error {
+				fmt.Println("kind")
+				return nil
+			},
+		},
 	}
-
-	err := startCluster("./embed/kind.yaml")
-	assert.Equal(t, err, nil, "")
-	//output
-	//kind create cluster --wait=1m --config=./embed/kind.yaml
-}
-
-func Test_stopCluster(t *testing.T) {
-	realKindFunc := Kind
-
-	defer func() {
-		KindFunc = realKindFunc
-	}()
-
-	KindFunc = func(args ...string) error {
-		return nil
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			kind = test.kind
+			result, _ := clusterAlreadyRunning()
+			if result != test.expectedResult {
+				t.Errorf("Expected %t, got %t", test.expectedResult, result)
+			}
+		})
 	}
-	err := destroyCluster(true)
-	assert.Equal(t, err, nil, "")
-	//kind get clusters
-	//kind cluster nuvolaris not found. Skipping...
 }

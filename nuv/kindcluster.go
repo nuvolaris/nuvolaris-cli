@@ -20,6 +20,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,25 +35,23 @@ const (
 //go:embed embed/kind.yaml
 var KindYaml []byte
 
-//functions declared as vars for mocking in unit tests
-var osMkdirFunc = os.Mkdir
-var osStatFunc = os.Stat
-var osIsNotExistFunc = os.IsNotExist
-var osWriteFileFunc = os.WriteFile
-var osRemoveFunc = os.Remove
-var createClusterFunc = createCluster
-var destroyClusterFunc = destroyCluster
-var KindFunc = Kind
+//monkey patching functions for unit tests
+var osMkdir = os.Mkdir
+var osStat = os.Stat
+var osIsNotExist = os.IsNotExist
+var osWriteFile = os.WriteFile
+var osRemove = os.Remove
+var kind = Kind
 
-func manageKindCluster(action string) error {
+var manageKindCluster = func(action string) error {
 
 	switch action {
 	case "create":
-		if err := createClusterFunc(false); err != nil {
+		if err := createCluster(); err != nil {
 			return err
 		}
 	case "destroy":
-		if err := destroyClusterFunc(false); err != nil {
+		if err := destroyCluster(); err != nil {
 			return err
 		}
 	default:
@@ -61,14 +60,14 @@ func manageKindCluster(action string) error {
 	return nil
 }
 
-func createCluster(dryRun bool) (err error) {
+var createCluster = func() (err error) {
 	defer func() {
 		if err != nil {
 			fmt.Errorf("error in create cluster: %w", err)
 		}
 	}()
 
-	clusterIsRunning, err := clusterAlreadyRunning(dryRun)
+	clusterIsRunning, err := clusterAlreadyRunning()
 	if err != nil {
 		return err
 	}
@@ -76,7 +75,7 @@ func createCluster(dryRun bool) (err error) {
 		fmt.Println("nuvolaris kind cluster is already running. Skipping...")
 		return nil
 	}
-	homedir, err := GetHomedir()
+	homedir, err := GetHomeDir()
 	if err != nil {
 		return err
 	}
@@ -106,14 +105,13 @@ func createCluster(dryRun bool) (err error) {
 	return nil
 }
 
-func destroyCluster(dryRun bool) error {
-	clusterIsRunning, err := clusterAlreadyRunning(dryRun)
+var destroyCluster = func() error {
+	clusterIsRunning, err := clusterAlreadyRunning()
 	if err != nil {
 		return err
 	}
 	if clusterIsRunning {
-		err := stopCluster()
-		if err != nil {
+		if err := stopCluster(); err != nil {
 			return err
 		}
 		fmt.Println("kind cluster nuvolaris destroyed")
@@ -123,52 +121,60 @@ func destroyCluster(dryRun bool) error {
 	return nil
 }
 
-func clusterAlreadyRunning(dryRun bool) (bool, error) {
-	out, err := sysErr(dryRun, "@nuv kind get clusters")
+var clusterAlreadyRunning = func() (bool, error) {
+	//capture cmd output
+	rescueStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	err := kind("get", "clusters")
+
+	w.Close()
+	out, _ := ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
 
 	if err != nil {
 		return false, err
 	}
-
-	if strings.Contains(out, nuvolarisClusterName) {
+	if strings.Contains(string(out), nuvolarisClusterName) {
 		return true, nil
 	} else {
 		return false, nil
 	}
 }
 
-func createNuvolarisConfigDirIfNotExists(homedir string) (string, error) {
+var createNuvolarisConfigDirIfNotExists = func(homedir string) (string, error) {
 	fullPath := filepath.Join(homedir, nuvolarisConfigDir)
-	_, err := osStatFunc(fullPath)
-	if osIsNotExistFunc(err) {
-		if err := osMkdirFunc(fullPath, 0777); err != nil {
+	_, err := osStat(fullPath)
+	if osIsNotExist(err) {
+		if err := osMkdir(fullPath, 0777); err != nil {
 			return "", err
 		}
 	}
 	return fullPath, nil
 }
 
-func rewriteKindConfigFile(configDir string) (string, error) {
+var rewriteKindConfigFile = func(configDir string) (string, error) {
 	path := filepath.Join(configDir, kindConfigFile)
-	if _, err := osStatFunc(path); err == nil {
-		osRemoveFunc(path)
+	if _, err := osStat(path); err == nil {
+		osRemove(path)
 	}
-	if err := osWriteFileFunc(path, KindYaml, 0600); err != nil {
+	if err := osWriteFile(path, KindYaml, 0600); err != nil {
 		return "", err
 	}
 	return path, nil
 }
 
-func startCluster(configFile string) error {
-	if err := KindFunc("create", "cluster", "--wait=1m", "--config="+configFile); err != nil {
+var startCluster = func(configFile string) error {
+	if err := kind("create", "cluster", "--wait=1m", "--config="+configFile); err != nil {
 		return err
 	}
 	return nil
 
 }
 
-func stopCluster() error {
-	if err := KindFunc("delete", "cluster", "--name="+nuvolarisClusterName); err != nil {
+var stopCluster = func() error {
+	if err := kind("delete", "cluster", "--name="+nuvolarisClusterName); err != nil {
 		return err
 	}
 	return nil

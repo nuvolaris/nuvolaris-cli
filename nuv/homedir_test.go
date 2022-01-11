@@ -25,23 +25,24 @@ import (
 )
 
 func TestGetHomedir(t *testing.T) {
-	realHomeDirFunc := homeDirFunc
+
+	realHomeDir := GetHomeDir
 	defer func() {
-		homeDirFunc = realHomeDirFunc
+		GetHomeDir = realHomeDir
 	}()
-	homeDirFunc = func() (string, error) {
+	GetHomeDir = func() (string, error) {
 		return "/home/userdir", nil
 	}
 
-	home, err := GetHomedir()
+	home, err := GetHomeDir()
 	assert.Equal(t, home, "/home/userdir", "")
 	assert.Equal(t, err, nil, "")
 
-	homeDirFunc = func() (string, error) {
+	GetHomeDir = func() (string, error) {
 		return "", fmt.Errorf("some error returned from homedir")
 	}
 
-	home, err = GetHomedir()
+	home, err = GetHomeDir()
 	assert.Equal(t, home, "", "")
 	assert.Equal(t, err.Error(), "some error returned from homedir", "")
 

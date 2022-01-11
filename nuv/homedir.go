@@ -21,11 +21,9 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-var homeDirFunc = homedir.Dir
-
 //detects the user's home directory in cross-compilation environments
-func GetHomedir() (string, error) {
-	homedir, err := homeDirFunc()
+var GetHomeDir = func() (string, error) {
+	homedir, err := homedir.Dir()
 	if err != nil {
 		return "", err
 	}
