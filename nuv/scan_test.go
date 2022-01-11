@@ -8,7 +8,7 @@
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing,
+// Unless assertd by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
@@ -20,6 +20,7 @@ package main
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/spf13/afero"
@@ -43,8 +44,8 @@ func Test_checkPackagesFolder(t *testing.T) {
 
 		exists, err := checkPackagesFolder(appFS, "/")
 
-		require.NoError(t, err)
-		require.True(t, exists)
+		assert.NoError(t, err)
+		assert.True(t, exists)
 	})
 
 	t.Run("should return false with no error when packages not found", func(t *testing.T) {
@@ -52,8 +53,8 @@ func Test_checkPackagesFolder(t *testing.T) {
 
 		exists, err := checkPackagesFolder(appFS, "./")
 
-		require.False(t, exists)
-		require.NoError(t, err) // error in case file system operation failed
+		assert.False(t, exists)
+		assert.NoError(t, err) // error in case file system operation failed
 	})
 }
 
@@ -65,12 +66,12 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.Empty(t, root.folders)
-		require.Empty(t, root.mfActions)
-		require.Empty(t, root.sfActions)
-		require.Empty(t, root.parent)
-		require.Equal(t, "packages", root.name)
-		require.NoError(t, err) // error in case file system operation failed
+		assert.Empty(t, root.folders)
+		assert.Empty(t, root.mfActions)
+		assert.Empty(t, root.sfActions)
+		assert.Empty(t, root.parent)
+		assert.Equal(t, "packages", root.name)
+		assert.NoError(t, err) // error in case file system operation failed
 	})
 
 	t.Run("should return a root with folders when packages has subfolders", func(t *testing.T) {
@@ -80,13 +81,13 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.Empty(t, root.mfActions)
-		require.Empty(t, root.sfActions)
-		require.NotEmpty(t, root.folders)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.Empty(t, root.mfActions)
+		assert.Empty(t, root.sfActions)
+		assert.NotEmpty(t, root.folders)
 
-		require.Equal(t, "subf1", root.folders[0].name)
-		require.Equal(t, "subf2", root.folders[1].name)
+		assert.Equal(t, "subf1", root.folders[0].name)
+		assert.Equal(t, "subf2", root.folders[1].name)
 	})
 
 	t.Run("children folders should have the root as parent", func(t *testing.T) {
@@ -96,9 +97,9 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
+		assert.NoError(t, err) // error in case file system operation failed
 		for _, c := range root.folders {
-			require.Equal(t, &root, c.parent)
+			assert.Equal(t, &root, c.parent)
 		}
 	})
 
@@ -109,13 +110,13 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.Empty(t, root.folders)
-		require.Empty(t, root.mfActions)
-		require.NotEmpty(t, root.sfActions)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.Empty(t, root.folders)
+		assert.Empty(t, root.mfActions)
+		assert.NotEmpty(t, root.sfActions)
 
-		require.Equal(t, "a", root.sfActions[0].name)
-		require.Equal(t, "b", root.sfActions[1].name)
+		assert.Equal(t, "a", root.sfActions[0].name)
+		assert.Equal(t, "b", root.sfActions[1].name)
 	})
 
 	t.Run("should return a root with sf actions and folders when 'packages' has both", func(t *testing.T) {
@@ -127,10 +128,10 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.NotEmpty(t, root.folders)
-		require.NotEmpty(t, root.sfActions)
-		require.Empty(t, root.mfActions)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.NotEmpty(t, root.folders)
+		assert.NotEmpty(t, root.sfActions)
+		assert.Empty(t, root.mfActions)
 	})
 
 	t.Run("should return a tree with folders and mfActions when 'packages' has sub sub folders", func(t *testing.T) {
@@ -145,19 +146,19 @@ func Test_scanPackagesFolder(t *testing.T) {
 		afero.WriteFile(appFS, "/packages/subf1/a2/package.json", []byte("json a2"), 0644)
 		afero.WriteFile(appFS, "/packages/subf1/a2/a2.js", []byte("a2"), 0644)
 
-		afero.WriteFile(appFS, "/packages/subf2/b1/requirements.txt", []byte("requirements"), 0644)
+		afero.WriteFile(appFS, "/packages/subf2/b1/assertments.txt", []byte("assertments"), 0644)
 		afero.WriteFile(appFS, "/packages/subf2/b1/b1.py", []byte("b1"), 0644)
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.Empty(t, root.sfActions)
-		require.NotEmpty(t, root.folders)
-		require.Empty(t, root.mfActions)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.Empty(t, root.sfActions)
+		assert.NotEmpty(t, root.folders)
+		assert.Empty(t, root.mfActions)
 
-		require.Equal(t, "a1", root.folders[0].mfActions[0].name)
-		require.Equal(t, "a2", root.folders[0].mfActions[1].name)
-		require.Equal(t, "b1", root.folders[1].mfActions[0].name)
+		assert.Equal(t, "a1", root.folders[0].mfActions[0].name)
+		assert.Equal(t, "a2", root.folders[0].mfActions[1].name)
+		assert.Equal(t, "b1", root.folders[1].mfActions[0].name)
 	})
 
 	t.Run("should return a complete tree representing the packages folder", func(t *testing.T) {
@@ -173,18 +174,18 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
+		assert.NoError(t, err) // error in case file system operation failed
 
-		require.Equal(t, "a", root.sfActions[0].name)
-		require.Equal(t, "b", root.sfActions[1].name)
-		require.Equal(t, "c", root.folders[0].sfActions[0].name)
-		require.Equal(t, "subsubf", root.folders[1].mfActions[0].name)
+		assert.Equal(t, "a", root.sfActions[0].name)
+		assert.Equal(t, "b", root.sfActions[1].name)
+		assert.Equal(t, "c", root.folders[0].sfActions[0].name)
+		assert.Equal(t, "subsubf", root.folders[1].mfActions[0].name)
 
-		require.Len(t, root.sfActions, 2)
-		require.Len(t, root.folders, 2)
-		require.Empty(t, root.mfActions)
-		require.Len(t, root.folders[0].sfActions, 1)
-		require.Len(t, root.folders[1].mfActions, 1)
+		assert.Len(t, root.sfActions, 2)
+		assert.Len(t, root.folders, 2)
+		assert.Empty(t, root.mfActions)
+		assert.Len(t, root.folders[0].sfActions, 1)
+		assert.Len(t, root.folders[1].mfActions, 1)
 	})
 
 	t.Run("folders should have the complete path to them", func(t *testing.T) {
@@ -194,9 +195,9 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.Equal(t, "/packages/subf1", root.folders[0].path)
-		require.Equal(t, "/packages/subf2", root.folders[1].path)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.Equal(t, "/packages/subf1", root.folders[0].path)
+		assert.Equal(t, "/packages/subf2", root.folders[1].path)
 	})
 
 	t.Run("actions should have the complete path to the code", func(t *testing.T) {
@@ -207,10 +208,10 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.Equal(t, "/packages/a.py", root.sfActions[0].path)
-		require.Equal(t, "/packages/b.js", root.sfActions[1].path)
-		require.Equal(t, "/packages/subf/sub", root.folders[0].mfActions[0].path)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.Equal(t, "/packages/a.py", root.sfActions[0].path)
+		assert.Equal(t, "/packages/b.js", root.sfActions[1].path)
+		assert.Equal(t, "/packages/subf/sub", root.folders[0].mfActions[0].path)
 	})
 
 	t.Run("actions should hold runtime", func(t *testing.T) {
@@ -222,10 +223,10 @@ func Test_scanPackagesFolder(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
-		require.Equal(t, ".py", root.sfActions[0].runtime)
-		require.Equal(t, ".js", root.sfActions[1].runtime)
-		require.Equal(t, ".js", root.folders[0].mfActions[0].runtime)
+		assert.NoError(t, err) // error in case file system operation failed
+		assert.Equal(t, ".py", root.sfActions[0].runtime)
+		assert.Equal(t, ".js", root.sfActions[1].runtime)
+		assert.Equal(t, ".js", root.folders[0].mfActions[0].runtime)
 	})
 
 }
@@ -236,8 +237,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.Empty(t, runtime)
-		require.Errorf(t, err, "no supported runtime found")
+		assert.Empty(t, runtime)
+		assert.Errorf(t, err, "no supported runtime found")
 	})
 	t.Run("should return .js runtime when package.json present", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
@@ -245,8 +246,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, jsRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, jsRuntime, runtime)
 	})
 	t.Run("should return .js runtime when a .js file is present", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
@@ -254,8 +255,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, jsRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, jsRuntime, runtime)
 	})
 
 	t.Run("should return .py runtime when requirements.txt present", func(t *testing.T) {
@@ -264,8 +265,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, pyRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, pyRuntime, runtime)
 	})
 	t.Run("should return .py runtime when a .py file is present", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
@@ -273,8 +274,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, pyRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, pyRuntime, runtime)
 	})
 
 	t.Run("should return .java runtime when pom.xml present", func(t *testing.T) {
@@ -283,8 +284,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, javaRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, javaRuntime, runtime)
 	})
 	t.Run("should return .java runtime when a .java file is present", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
@@ -292,8 +293,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, javaRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, javaRuntime, runtime)
 	})
 	t.Run("should return .go runtime when go.mod present", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
@@ -301,8 +302,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, goRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, goRuntime, runtime)
 	})
 	t.Run("should return .go runtime when a .go file is present", func(t *testing.T) {
 		appFS := afero.NewMemMapFs()
@@ -310,8 +311,8 @@ func Test_findMfaRuntime(t *testing.T) {
 
 		runtime, err := findMfaRuntime(appFS, "/")
 
-		require.NoError(t, err)
-		require.Equal(t, goRuntime, runtime)
+		assert.NoError(t, err)
+		assert.Equal(t, goRuntime, runtime)
 	})
 }
 
@@ -321,9 +322,9 @@ func Test_parseProjectTree(t *testing.T) {
 
 		res := parseProjectTree(&root)
 
-		require.Empty(t, res.parent)
-		require.Empty(t, res.tasks)
-		require.Empty(t, res.command)
+		assert.Empty(t, res.parent)
+		assert.Empty(t, res.tasks)
+		assert.Empty(t, res.command)
 	})
 
 	t.Run("should return tree with child 'wsk package update' when given root with folder", func(t *testing.T) {
@@ -333,7 +334,7 @@ func Test_parseProjectTree(t *testing.T) {
 
 		res := parseProjectTree(&root)
 
-		require.Equal(t, "wsk package update subf", res.tasks[0].command)
+		assert.Equal(t, "wsk package update subf", res.tasks[0].command)
 	})
 
 	t.Run("should return tree with child 'wsk action update' when given root with file", func(t *testing.T) {
@@ -345,14 +346,14 @@ func Test_parseProjectTree(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
+		assert.NoError(t, err) // error in case file system operation failed
 
 		res := parseProjectTree(&root)
 
-		require.Equal(t, "wsk action update helloGo /packages/helloGo.go --kind go:default", res.tasks[0].command)
-		require.Equal(t, "wsk action update helloJava /packages/helloJava.java --kind java:default", res.tasks[1].command)
-		require.Equal(t, "wsk action update helloJs /packages/helloJs.js --kind nodejs:default", res.tasks[2].command)
-		require.Equal(t, "wsk action update helloPy /packages/helloPy.py --kind python:default", res.tasks[3].command)
+		assert.Equal(t, "wsk action update helloGo /packages/helloGo.go --kind go:default", res.tasks[0].command)
+		assert.Equal(t, "wsk action update helloJava /packages/helloJava.java --kind java:default", res.tasks[1].command)
+		assert.Equal(t, "wsk action update helloJs /packages/helloJs.js --kind nodejs:default", res.tasks[2].command)
+		assert.Equal(t, "wsk action update helloPy /packages/helloPy.py --kind python:default", res.tasks[3].command)
 	})
 
 	t.Run("should return tree with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
@@ -365,14 +366,14 @@ func Test_parseProjectTree(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
+		assert.NoError(t, err) // error in case file system operation failed
 
 		res := parseProjectTree(&root)
 
-		require.Equal(t, "wsk action update a /packages/a.js --kind nodejs:default", res.tasks[0].command)
-		require.Equal(t, "wsk action update b /packages/b.py --kind python:default", res.tasks[1].command)
-		require.Equal(t, "wsk package update subf1", res.tasks[2].command)
-		require.Equal(t, "wsk package update subf2", res.tasks[3].command)
+		assert.Equal(t, "wsk action update a /packages/a.js --kind nodejs:default", res.tasks[0].command)
+		assert.Equal(t, "wsk action update b /packages/b.py --kind python:default", res.tasks[1].command)
+		assert.Equal(t, "wsk package update subf1", res.tasks[2].command)
+		assert.Equal(t, "wsk package update subf2", res.tasks[3].command)
 	})
 
 	t.Run("should return tree with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
@@ -384,12 +385,12 @@ func Test_parseProjectTree(t *testing.T) {
 
 		root, err := scanPackagesFolder(appFS, "/")
 
-		require.NoError(t, err) // error in case file system operation failed
+		assert.NoError(t, err) // error in case file system operation failed
 
 		res := parseProjectTree(&root)
 
-		require.Equal(t, "wsk action update subf/a /packages/subf/a.js --kind nodejs:default", res.tasks[0].tasks[0].command)
-		require.Equal(t, "wsk action update subf/b /packages/subf/b.py --kind python:default", res.tasks[0].tasks[1].command)
+		assert.Equal(t, "wsk action update subf/a /packages/subf/a.js --kind nodejs:default", res.tasks[0].tasks[0].command)
+		assert.Equal(t, "wsk action update subf/b /packages/subf/b.py --kind python:default", res.tasks[0].tasks[1].command)
 	})
 
 	t.Run("should return tree with multi file action cmds given tree with mfActions", func(t *testing.T) {
@@ -403,12 +404,12 @@ func Test_parseProjectTree(t *testing.T) {
 		expected2 := "zip -r /packages/subf/mf2/mf2.zip /packages/subf/mf2/*\nwsk action update subf/mf2 /packages/subf/mf2/mf2.zip --kind python:default"
 
 		root, err := scanPackagesFolder(appFS, "/")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		res := parseProjectTree(&root)
-		require.Equal(t, "wsk package update subf", res.tasks[0].command)
-		require.Equal(t, expected1, res.tasks[0].tasks[0].command)
-		require.Equal(t, expected2, res.tasks[0].tasks[1].command)
+		assert.Equal(t, "wsk package update subf", res.tasks[0].command)
+		assert.Equal(t, expected1, res.tasks[0].tasks[0].command)
+		assert.Equal(t, expected2, res.tasks[0].tasks[1].command)
 	})
 
 	t.Run("should return tree with both sf and mf actions", func(t *testing.T) {
@@ -426,7 +427,7 @@ func Test_parseProjectTree(t *testing.T) {
 		expectedMF2 := "zip -r /packages/subf/mf2/mf2.zip /packages/subf/mf2/*\nwsk action update subf/mf2 /packages/subf/mf2/mf2.zip --kind python:default"
 
 		root, err := scanPackagesFolder(appFS, "/")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		res := parseProjectTree(&root)
 
@@ -438,6 +439,6 @@ func Test_parseProjectTree(t *testing.T) {
 			expectedSF1, expectedSF2,
 			expectedMF1, expectedMF2,
 		}
-		require.ElementsMatch(t, cmds, expected)
+		assert.ElementsMatch(t, cmds, expected)
 	})
 }
