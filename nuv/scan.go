@@ -46,21 +46,29 @@ func (s *ScanCmd) Run() error {
 		return err
 	}
 
-	// TODO: ignore non code files (files without supported runtimes)
-	// projectTree, err := scanPackagesFolder(fs, "./")
-	// if err != nil {
-	// 	return err
-	// }
+	projectTree, err := scanPackagesFolder("./")
+	if err != nil {
+		return err
+	}
 
-	// taskTree := parseProjectTree(&projectTree)
+	tasks := parseProjectTree(&projectTree)
 
-	// for _, st := range taskTree.tasks {
-	// 	log.Info(st.command)
-	// 	for _, stt := range st.tasks {
-	// 		log.Info(stt.command)
-	// 	}
-	// }
+	mergeIntoYaml(tasks)
+
 	return nil
+}
+
+func mergeIntoYaml(tasks []string) {
+	taskfile := "version: 3\n\ntasks:\n  default:\n    cmds:"
+
+	for _, t := range tasks {
+		taskfile = fmt.Sprintf("%s\n      - %s", taskfile, t)
+	}
+
+	err := os.WriteFile("Taskfile.yml", []byte(taskfile), 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 const goRuntime = ".go"
@@ -78,7 +86,6 @@ var extRuntimes = map[string]string{
 type ProjectTree struct {
 	name    string
 	path    string
-	parent  *ProjectTree
 	folders []*ProjectTree
 
 	mfActions []*ProjectTreeAction
@@ -89,13 +96,6 @@ type ProjectTreeAction struct {
 	name    string
 	runtime string
 	path    string
-	parent  *ProjectTree
-}
-
-type TaskTree struct {
-	parent  *TaskTree
-	tasks   []*TaskTree
-	command string
 }
 
 func packagesFolderExists(path string) (bool, error) {
@@ -137,7 +137,6 @@ func processDir(parentPath string, dir string, rootLevel bool) (ProjectTree, err
 				if err != nil {
 					return pt, err
 				}
-				childPT.parent = &pt
 				folders = append(folders, &childPT)
 			} else {
 				// inner level: folders = multi file actions and stop
@@ -146,13 +145,16 @@ func processDir(parentPath string, dir string, rootLevel bool) (ProjectTree, err
 				if err != nil {
 					return pt, err
 				}
-				mfActions = append(mfActions, &ProjectTreeAction{name: info.Name(), runtime: runtime, path: mfPath, parent: &pt})
+				mfActions = append(mfActions, &ProjectTreeAction{name: info.Name(), runtime: runtime, path: mfPath})
 
 			}
 		} else {
 			ext := path.Ext(info.Name())
+			if extRuntimes[ext] == "" {
+				return pt, fmt.Errorf("no supported runtime found for file %s", info.Name())
+			}
 			actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
-			sfActions = append(sfActions, &ProjectTreeAction{name: actionName, runtime: ext, path: filepath.Join(dirPath, info.Name()), parent: &pt})
+			sfActions = append(sfActions, &ProjectTreeAction{name: actionName, runtime: ext, path: filepath.Join(dirPath, info.Name())})
 		}
 	}
 
@@ -205,75 +207,75 @@ func searchRuntime(mfPath, ext, file string) (bool, error) {
 	}
 }
 
-func parseProjectTree(projectRoot *ProjectTree) TaskTree {
-	taskRoot := TaskTree{}
+func parseProjectTree(projectRoot *ProjectTree) []string {
 
 	// First level commands: actions from files
-	parseRootSingleFileActions(projectRoot, &taskRoot)
+	rootTasks := parseRootSingleFileActions(projectRoot)
 
-	parseSubFolders(projectRoot, &taskRoot)
+	subTasks := parseSubFolders(projectRoot)
 
-	return taskRoot
+	return append(rootTasks, subTasks...)
 }
 
-func parseRootSingleFileActions(projectRoot *ProjectTree, taskRoot *TaskTree) {
-	childTasks := make([]*TaskTree, len(projectRoot.sfActions))
+func parseRootSingleFileActions(projectRoot *ProjectTree) []string {
+	childTasks := make([]string, len(projectRoot.sfActions))
 	for i, sfAction := range projectRoot.sfActions {
 		cmd := actionUpdate("", sfAction.name, sfAction.path, extRuntimes[sfAction.runtime])
-		childTasks[i] = &TaskTree{command: cmd}
+		childTasks[i] = cmd
 	}
-	taskRoot.tasks = childTasks
+	return childTasks
 }
 
 var wg sync.WaitGroup
 
-func parseSubFolders(projectRoot *ProjectTree, taskRoot *TaskTree) {
-	tasks := make([]*TaskTree, len(projectRoot.folders))
+func parseSubFolders(projectRoot *ProjectTree) []string {
+	tasks := make([]string, len(projectRoot.folders))
+	var subTasks []string
 
 	for i, subf := range projectRoot.folders {
-		taskQueue := make(chan *TaskTree, len(subf.sfActions)+len(subf.mfActions))
+		taskQueue := make(chan string, len(subf.sfActions)+len(subf.mfActions))
 
 		// First level commands: packages from folders
-		t := TaskTree{parent: taskRoot, command: packageUpdate(subf.name)}
+		t := packageUpdate(subf.name)
 
 		// Second level commands: single file actions from subfolders
 		wg.Add(1)
-		go parseSingleFileActions(taskQueue, subf, &t)
+		go parseSingleFileActions(taskQueue, subf)
 
 		// Second level commands: multi file actions from subfolders
 		wg.Add(1)
-		go parseMultiFileActions(taskQueue, subf, &t)
+		go parseMultiFileActions(taskQueue, subf)
 
 		wg.Wait()
 		close(taskQueue)
-		appendTasks(taskQueue, &t)
+		subTasks = appendTasks(taskQueue)
 
-		tasks[i] = &t
+		tasks[i] = t
 	}
-	taskRoot.tasks = append(taskRoot.tasks, tasks...)
+	tasks = append(tasks, subTasks...)
+	return tasks
 }
 
-func appendTasks(taskQueue chan *TaskTree, taskNode *TaskTree) {
+func appendTasks(taskQueue chan string) []string {
+	tasks := make([]string, 0)
 	for subTask := range taskQueue {
-		taskNode.tasks = append(taskNode.tasks, subTask)
+		tasks = append(tasks, subTask)
 	}
-
+	return tasks
 }
 
-func parseSingleFileActions(taskQueue chan *TaskTree, parent *ProjectTree, taskNode *TaskTree) {
+func parseSingleFileActions(taskQueue chan string, parent *ProjectTree) {
 	defer wg.Done()
 
 	wskPkg := parent.name + "/"
-
 	for _, sfAction := range parent.sfActions {
 		cmd := actionUpdate(wskPkg, sfAction.name, sfAction.path, extRuntimes[sfAction.runtime])
-		t := TaskTree{parent: taskNode, command: cmd}
-		taskQueue <- &t
+		taskQueue <- cmd
 	}
 
 }
 
-func parseMultiFileActions(taskQueue chan *TaskTree, parent *ProjectTree, taskNode *TaskTree) {
+func parseMultiFileActions(taskQueue chan string, parent *ProjectTree) {
 	defer wg.Done()
 
 	wskPkg := parent.name + "/"
@@ -282,8 +284,7 @@ func parseMultiFileActions(taskQueue chan *TaskTree, parent *ProjectTree, taskNo
 		zipCmd := fmt.Sprintf("zip -r %s/%s.zip %s/*", mfAction.path, mfAction.name, mfAction.path)
 		zipPath := fmt.Sprintf("%s/%s.zip", mfAction.path, mfAction.name)
 		cmd := actionUpdate(wskPkg, mfAction.name, zipPath, extRuntimes[mfAction.runtime])
-		t := TaskTree{parent: taskNode, command: fmt.Sprintf("%s\n%s", zipCmd, cmd)}
-		taskQueue <- &t
+		taskQueue <- fmt.Sprintf("%s && %s", zipCmd, cmd)
 	}
 }
 

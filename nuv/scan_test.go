@@ -98,7 +98,6 @@ func (s *nuvScanTestSuite) Test_scanPackagesFolder() {
 		s.Assert().Empty(root.folders)
 		s.Assert().Empty(root.mfActions)
 		s.Assert().Empty(root.sfActions)
-		s.Assert().Empty(root.parent)
 		s.Assert().Equal("packages", root.name)
 		s.Assert().NoError(err) // error in case file system operation failed
 	})
@@ -119,17 +118,6 @@ func (s *nuvScanTestSuite) Test_scanPackagesFolder() {
 			s.Assert().Equal(expected2, root.folders[1].name)
 		})
 
-	})
-
-	s.T().Run("children folders should have the root as parent", func(t *testing.T) {
-		testWithFs([]string{"subf1", "subf2"}, []string{}, func() {
-			root, err := scanPackagesFolder(testFolder)
-
-			s.Assert().NoError(err) // error in case file system operation failed
-			for _, c := range root.folders {
-				s.Assert().Equal(&root, c.parent)
-			}
-		})
 	})
 
 	s.T().Run("should return a root with single file actions when packages has files", func(t *testing.T) {
@@ -244,7 +232,6 @@ func (s *nuvScanTestSuite) Test_scanPackagesFolder() {
 //  *** findMfaRuntime function tests ***
 func helpTestForRuntime(s *nuvScanTestSuite, searchFor, expectedRuntime string) {
 	s.T().Helper()
-
 	testWithFs([]string{}, []string{searchFor}, func() {
 		runtime, err := findMfaRuntime(pkgPath)
 
@@ -262,30 +249,14 @@ func (s *nuvScanTestSuite) Test_findMfaRuntime() {
 		})
 	})
 
-	s.T().Run("should return .js runtime when package.json present", func(t *testing.T) {
+	s.T().Run("should return correct runtime when present", func(t *testing.T) {
 		helpTestForRuntime(s, "package.json", jsRuntime)
-	})
-	s.T().Run("should return .js runtime when a .js file is present", func(t *testing.T) {
 		helpTestForRuntime(s, "a.js", jsRuntime)
-	})
-
-	s.T().Run("should return .py runtime when requirements.txt present", func(t *testing.T) {
 		helpTestForRuntime(s, "requirements.txt", pyRuntime)
-	})
-	s.T().Run("should return .py runtime when a .py file is present", func(t *testing.T) {
 		helpTestForRuntime(s, "a.py", pyRuntime)
-	})
-
-	s.T().Run("should return .java runtime when pom.xml present", func(t *testing.T) {
 		helpTestForRuntime(s, "pom.xml", javaRuntime)
-	})
-	s.T().Run("should return .java runtime when a .java file is present", func(t *testing.T) {
 		helpTestForRuntime(s, "a.java", javaRuntime)
-	})
-	s.T().Run("should return .go runtime when go.mod present", func(t *testing.T) {
 		helpTestForRuntime(s, "go.mod", goRuntime)
-	})
-	s.T().Run("should return .go runtime when a .go file is present", func(t *testing.T) {
 		helpTestForRuntime(s, "a.go", goRuntime)
 	})
 }
@@ -294,27 +265,25 @@ func (s *nuvScanTestSuite) Test_findMfaRuntime() {
 
 //  *** parseProjectTree function tests ***
 func (s *nuvScanTestSuite) Test_parseProjectTree() {
-	s.T().Run("should return an empty tree (just root node) of task commands when given an empty project tree", func(t *testing.T) {
+	s.T().Run("should return an empty slice of commands when given an empty project tree", func(t *testing.T) {
 		root := ProjectTree{name: "packages"}
 
 		res := parseProjectTree(&root)
 
-		s.Assert().Empty(res.parent)
-		s.Assert().Empty(res.tasks)
-		s.Assert().Empty(res.command)
+		s.Assert().Empty(res)
 	})
 
-	s.T().Run("should return tree with child 'wsk package update' when given root with folder", func(t *testing.T) {
+	s.T().Run("should return slice with 'wsk package update' when given root with folder", func(t *testing.T) {
 		root := ProjectTree{name: "packages"}
 		subf := ProjectTree{name: "subf"}
 		root.folders = []*ProjectTree{&subf}
 
 		res := parseProjectTree(&root)
 
-		s.Assert().Equal("wsk package update subf", res.tasks[0].command)
+		s.Assert().Equal("wsk package update subf", res[0])
 	})
 
-	s.T().Run("should return tree with child 'wsk action update' when given root with file", func(t *testing.T) {
+	s.T().Run("should return slice with 'wsk action update' when given root with file", func(t *testing.T) {
 		testWithFs(
 			[]string{},
 			[]string{
@@ -334,14 +303,14 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 
 				res := parseProjectTree(&root)
 
-				s.Assert().Equal(expectedGo, res.tasks[0].command)
-				s.Assert().Equal(expectedjava, res.tasks[1].command)
-				s.Assert().Equal(expectedJs, res.tasks[2].command)
-				s.Assert().Equal(expectedPy, res.tasks[3].command)
+				s.Assert().Equal(expectedGo, res[0])
+				s.Assert().Equal(expectedjava, res[1])
+				s.Assert().Equal(expectedJs, res[2])
+				s.Assert().Equal(expectedPy, res[3])
 			})
 	})
 
-	s.T().Run("should return tree with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
+	s.T().Run("should return slice with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
 		testWithFs(
 			[]string{"subf1"},
 			[]string{
@@ -356,12 +325,12 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 
 				res := parseProjectTree(&root)
 
-				s.Assert().Equal(expectedJs, res.tasks[0].command)
-				s.Assert().Equal(expectedPkg, res.tasks[1].command)
+				s.Assert().Equal(expectedJs, res[0])
+				s.Assert().Equal(expectedPkg, res[1])
 			})
 	})
 
-	s.T().Run("should return tree with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
+	s.T().Run("should return slice with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
 		testWithFs(
 			[]string{"subf"},
 			[]string{
@@ -375,11 +344,11 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 
 				res := parseProjectTree(&root)
 
-				s.Assert().Equal(expectedJs, res.tasks[0].tasks[0].command)
+				s.Assert().Equal(expectedJs, res[1])
 			})
 	})
 
-	s.T().Run("should return tree with multi file action cmds given tree with mfActions", func(t *testing.T) {
+	s.T().Run("should return slice with multi file action cmds given tree with mfActions", func(t *testing.T) {
 		testWithFs(
 			[]string{"subf/mf"},
 			[]string{
@@ -388,18 +357,18 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 
 				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
 				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind nodejs:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
-				expected := fmt.Sprintf("%s\n%s", zipcmd, mfacmd)
+				expected := fmt.Sprintf("%s && %s", zipcmd, mfacmd)
 
 				root, err := scanPackagesFolder(testFolder)
 				s.Assert().NoError(err)
 
 				res := parseProjectTree(&root)
-				s.Assert().Equal("wsk package update subf", res.tasks[0].command)
-				s.Assert().Equal(expected, res.tasks[0].tasks[0].command)
+				s.Assert().Equal("wsk package update subf", res[0])
+				s.Assert().Equal(expected, res[1])
 			})
 	})
 
-	s.T().Run("should return tree with both sf and mf actions", func(t *testing.T) {
+	s.T().Run("should return slice with both sf and mf actions", func(t *testing.T) {
 		testWithFs(
 			[]string{"subf/mf"},
 			[]string{"subf/a.js", "subf/mf/b.py"},
@@ -408,20 +377,14 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 
 				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
 				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind python:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
-				expectedMF := fmt.Sprintf("%s\n%s", zipcmd, mfacmd)
+				expectedMF := fmt.Sprintf("%s && %s", zipcmd, mfacmd)
 
 				root, err := scanPackagesFolder(testFolder)
 				s.Assert().NoError(err)
 				res := parseProjectTree(&root)
 
-				cmds := make([]string, 0)
-				for _, task := range res.tasks[0].tasks {
-					cmds = append(cmds, task.command)
-				}
-				expected := []string{
-					expectedSF, expectedMF,
-				}
-				s.Assert().ElementsMatch(cmds, expected)
+				expected := []string{"wsk package update subf", expectedSF, expectedMF}
+				s.Assert().ElementsMatch(res, expected)
 			})
 	})
 }
