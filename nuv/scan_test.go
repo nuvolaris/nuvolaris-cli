@@ -18,12 +18,13 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestNuvScan(t *testing.T) {
@@ -37,408 +38,390 @@ func TestNuvScan(t *testing.T) {
 	})
 }
 
-func Test_checkPackagesFolder(t *testing.T) {
-	t.Run("should return true if packages folder is found", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.MkdirAll("/packages", 0755)
+const testFolder = "./scan-tests"
+const pkgPath = testFolder + "/packages"
 
-		exists, err := checkPackagesFolder(appFS, "/")
+func testWithFs(folders []string, files []string, testFunction func()) {
+	for _, f := range folders {
+		os.MkdirAll(fmt.Sprintf("%s/%s", pkgPath, f), 0755)
+	}
+	for _, f := range files {
+		os.WriteFile(fmt.Sprintf("%s/%s", pkgPath, f), []byte("file"), 0755)
+	}
+	testFunction()
+	os.RemoveAll(pkgPath)
+	os.MkdirAll(pkgPath, 0755)
+}
 
-		assert.NoError(t, err)
-		assert.True(t, exists)
+type nuvScanTestSuite struct{ suite.Suite }
+
+func (s *nuvScanTestSuite) SetupTest() {
+	os.MkdirAll(pkgPath, 0755)
+}
+
+func (s *nuvScanTestSuite) TearDownTest() {
+	os.RemoveAll(testFolder)
+}
+
+// Test_nuvScanTestSuite is needed to actually run the tests of the suite
+func Test_nuvScanTestSuite(t *testing.T) {
+	suite.Run(t, new(nuvScanTestSuite))
+}
+
+//  *** packagesFolderExists function tests ***
+func (s *nuvScanTestSuite) Test_packagesFolderExists() {
+	s.T().Run("should return true if packages folder is found", func(t *testing.T) {
+		exists, err := packagesFolderExists(testFolder)
+
+		s.Assert().NoError(err)
+		s.Assert().True(exists)
 	})
 
-	t.Run("should return false with no error when packages not found", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
+	s.T().Run("should return false with error no such file or directory", func(t *testing.T) {
+		os.Remove(pkgPath)
 
-		exists, err := checkPackagesFolder(appFS, "./")
+		exists, err := packagesFolderExists(testFolder)
 
-		assert.False(t, exists)
-		assert.NoError(t, err) // error in case file system operation failed
+		s.Assert().False(exists)
+		s.Assert().Errorf(err, "no such file or directory")
 	})
 }
 
-func Test_scanPackagesFolder(t *testing.T) {
+//  *******************************************
+
+//  *** scanPackagesFolder function tests ***
+func (s *nuvScanTestSuite) Test_scanPackagesFolder() {
 	// No tests if 'packages' does not exist cause checkPackagesFolder stops the pipeline in that case
-	t.Run("should return a tree with just root node when packages folder is empty", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.Mkdir("/packages", 0755)
+	s.T().Run("should return a tree with just root node when packages folder is empty", func(t *testing.T) {
+		root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
-
-		assert.Empty(t, root.folders)
-		assert.Empty(t, root.mfActions)
-		assert.Empty(t, root.sfActions)
-		assert.Empty(t, root.parent)
-		assert.Equal(t, "packages", root.name)
-		assert.NoError(t, err) // error in case file system operation failed
+		s.Assert().Empty(root.folders)
+		s.Assert().Empty(root.mfActions)
+		s.Assert().Empty(root.sfActions)
+		s.Assert().Empty(root.parent)
+		s.Assert().Equal("packages", root.name)
+		s.Assert().NoError(err) // error in case file system operation failed
 	})
 
-	t.Run("should return a root with folders when packages has subfolders", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.MkdirAll("/packages/subf1", 0755)
-		appFS.MkdirAll("/packages/subf2", 0755)
+	s.T().Run("should return a root with folders when packages has subfolders", func(t *testing.T) {
+		testWithFs([]string{"subf1", "subf2"}, []string{}, func() {
+			expected1 := "subf1"
+			expected2 := "subf2"
 
-		root, err := scanPackagesFolder(appFS, "/")
+			root, err := scanPackagesFolder(testFolder)
 
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.Empty(t, root.mfActions)
-		assert.Empty(t, root.sfActions)
-		assert.NotEmpty(t, root.folders)
+			s.Assert().NoError(err) // error in case file system operation failed
+			s.Assert().Empty(root.mfActions)
+			s.Assert().Empty(root.sfActions)
+			s.Assert().NotEmpty(root.folders)
 
-		assert.Equal(t, "subf1", root.folders[0].name)
-		assert.Equal(t, "subf2", root.folders[1].name)
+			s.Assert().Equal(expected1, root.folders[0].name)
+			s.Assert().Equal(expected2, root.folders[1].name)
+		})
+
 	})
 
-	t.Run("children folders should have the root as parent", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.MkdirAll("/packages/subf1", 0755)
-		appFS.MkdirAll("/packages/subf2", 0755)
+	s.T().Run("children folders should have the root as parent", func(t *testing.T) {
+		testWithFs([]string{"subf1", "subf2"}, []string{}, func() {
+			root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
-
-		assert.NoError(t, err) // error in case file system operation failed
-		for _, c := range root.folders {
-			assert.Equal(t, &root, c.parent)
-		}
+			s.Assert().NoError(err) // error in case file system operation failed
+			for _, c := range root.folders {
+				s.Assert().Equal(&root, c.parent)
+			}
+		})
 	})
 
-	t.Run("should return a root with single file actions when packages has files", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/packages/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b.py", []byte("file b"), 0644)
+	s.T().Run("should return a root with single file actions when packages has files", func(t *testing.T) {
+		testWithFs([]string{}, []string{"a.js", "b.py"}, func() {
+			root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
+			s.Assert().NoError(err) // error in case file system operation failed
+			s.Assert().Empty(root.folders)
+			s.Assert().Empty(root.mfActions)
+			s.Assert().NotEmpty(root.sfActions)
 
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.Empty(t, root.folders)
-		assert.Empty(t, root.mfActions)
-		assert.NotEmpty(t, root.sfActions)
-
-		assert.Equal(t, "a", root.sfActions[0].name)
-		assert.Equal(t, "b", root.sfActions[1].name)
+			s.Assert().Equal("a", root.sfActions[0].name)
+			s.Assert().Equal("b", root.sfActions[1].name)
+		})
 	})
 
-	t.Run("should return a root with sf actions and folders when 'packages' has both", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.MkdirAll("/packages/subf1", 0755)
-		appFS.MkdirAll("/packages/subf2", 0755)
-		afero.WriteFile(appFS, "/packages/a", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b", []byte("file b"), 0644)
+	s.T().Run("should return a root with sf actions and folders when 'packages' has both", func(t *testing.T) {
+		testWithFs([]string{"subf1", "subf2"}, []string{"a.js", "b.py"}, func() {
+			root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
-
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.NotEmpty(t, root.folders)
-		assert.NotEmpty(t, root.sfActions)
-		assert.Empty(t, root.mfActions)
+			s.Assert().NoError(err) // error in case file system operation failed
+			s.Assert().NotEmpty(root.folders)
+			s.Assert().NotEmpty(root.sfActions)
+			s.Assert().Empty(root.mfActions)
+		})
 	})
 
-	t.Run("should return a tree with folders and mfActions when 'packages' has sub sub folders", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.MkdirAll("/packages/subf1/a1", 0755)
-		appFS.MkdirAll("/packages/subf1/a2", 0755)
-		appFS.MkdirAll("/packages/subf2/b1", 0755)
+	s.T().Run("should return a tree with folders and mfActions when 'packages' has sub sub folders", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf1/a1", "subf1/a2", "subf2/b1"},
+			[]string{"subf1/a1/package.json", "subf1/a1/a1.js", "subf1/a2/package.json", "subf1/a2/a2.js", "subf2/b1/assertments.txt", "subf2/b1/b1.py"},
+			func() {
+				root, err := scanPackagesFolder(testFolder)
 
-		afero.WriteFile(appFS, "/packages/subf1/a1/package.json", []byte("package json a1"), 0644)
-		afero.WriteFile(appFS, "/packages/subf1/a1/a1.js", []byte("a1"), 0644)
+				s.Assert().NoError(err) // error in case file system operation failed
+				s.Assert().Empty(root.sfActions)
+				s.Assert().NotEmpty(root.folders)
+				s.Assert().Empty(root.mfActions)
 
-		afero.WriteFile(appFS, "/packages/subf1/a2/package.json", []byte("json a2"), 0644)
-		afero.WriteFile(appFS, "/packages/subf1/a2/a2.js", []byte("a2"), 0644)
-
-		afero.WriteFile(appFS, "/packages/subf2/b1/assertments.txt", []byte("assertments"), 0644)
-		afero.WriteFile(appFS, "/packages/subf2/b1/b1.py", []byte("b1"), 0644)
-
-		root, err := scanPackagesFolder(appFS, "/")
-
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.Empty(t, root.sfActions)
-		assert.NotEmpty(t, root.folders)
-		assert.Empty(t, root.mfActions)
-
-		assert.Equal(t, "a1", root.folders[0].mfActions[0].name)
-		assert.Equal(t, "a2", root.folders[0].mfActions[1].name)
-		assert.Equal(t, "b1", root.folders[1].mfActions[0].name)
+				s.Assert().Equal("a1", root.folders[0].mfActions[0].name)
+				s.Assert().Equal("a2", root.folders[0].mfActions[1].name)
+				s.Assert().Equal("b1", root.folders[1].mfActions[0].name)
+			})
 	})
 
-	t.Run("should return a complete tree representing the packages folder", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
+	s.T().Run("should return a complete tree representing the packages folder", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf1", "subf1", "subf2/subsubf"},
+			[]string{"a.js", "b.go", "subf1/c.js", "subf2/subsubf/d.js"},
+			func() {
 
-		appFS.MkdirAll("/packages/subf1", 0755)
-		appFS.MkdirAll("/packages/subf2", 0755)
-		appFS.MkdirAll("/packages/subf2/subsubf", 0755)
-		afero.WriteFile(appFS, "/packages/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b.go", []byte("file b"), 0644)
-		afero.WriteFile(appFS, "/packages/subf1/c", []byte("file c"), 0644)
-		afero.WriteFile(appFS, "/packages/subf2/subsubf/d.js", []byte("file d"), 0644)
+				root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
+				s.Assert().NoError(err) // error in case file system operation failed
 
-		assert.NoError(t, err) // error in case file system operation failed
+				s.Assert().Equal("a", root.sfActions[0].name)
+				s.Assert().Equal("b", root.sfActions[1].name)
+				s.Assert().Equal("c", root.folders[0].sfActions[0].name)
+				s.Assert().Equal("subsubf", root.folders[1].mfActions[0].name)
 
-		assert.Equal(t, "a", root.sfActions[0].name)
-		assert.Equal(t, "b", root.sfActions[1].name)
-		assert.Equal(t, "c", root.folders[0].sfActions[0].name)
-		assert.Equal(t, "subsubf", root.folders[1].mfActions[0].name)
+				s.Assert().Len(root.sfActions, 2)
+				s.Assert().Len(root.folders, 2)
+				s.Assert().Empty(root.mfActions)
+				s.Assert().Len(root.folders[0].sfActions, 1)
+				s.Assert().Len(root.folders[1].mfActions, 1)
+			})
+	})
+	s.T().Run("folders should have the complete path to them", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf1", "subf2"},
+			[]string{},
+			func() {
 
-		assert.Len(t, root.sfActions, 2)
-		assert.Len(t, root.folders, 2)
-		assert.Empty(t, root.mfActions)
-		assert.Len(t, root.folders[0].sfActions, 1)
-		assert.Len(t, root.folders[1].mfActions, 1)
+				root, err := scanPackagesFolder(testFolder)
+
+				s.Assert().NoError(err) // error in case file system operation failed
+				s.Assert().Equal(filepath.Join(testFolder, "/packages/subf1"), root.folders[0].path)
+				s.Assert().Equal(filepath.Join(testFolder, "/packages/subf2"), root.folders[1].path)
+			})
 	})
 
-	t.Run("folders should have the complete path to them", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		appFS.MkdirAll("/packages/subf1", 0755)
-		appFS.MkdirAll("/packages/subf2", 0755)
+	s.T().Run("actions should have the complete path to the code", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf", "subf/sub"},
+			[]string{"a.py", "subf/sub/b.js"},
+			func() {
 
-		root, err := scanPackagesFolder(appFS, "/")
+				root, err := scanPackagesFolder(testFolder)
 
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.Equal(t, "/packages/subf1", root.folders[0].path)
-		assert.Equal(t, "/packages/subf2", root.folders[1].path)
+				s.Assert().NoError(err) // error in case file system operation failed
+				s.Assert().Equal(filepath.Join(testFolder, "/packages/a.py"), root.sfActions[0].path)
+				s.Assert().Equal(filepath.Join(testFolder, "/packages/subf/sub"), root.folders[0].mfActions[0].path)
+			})
 	})
 
-	t.Run("actions should have the complete path to the code", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/packages/a.py", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b.js", []byte("file b"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/sub/b.js", []byte("file b"), 0644)
+	s.T().Run("actions should hold runtime", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf", "subf/sub"},
+			[]string{"a.py", "subf/sub/b.js"},
+			func() {
+				root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
-
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.Equal(t, "/packages/a.py", root.sfActions[0].path)
-		assert.Equal(t, "/packages/b.js", root.sfActions[1].path)
-		assert.Equal(t, "/packages/subf/sub", root.folders[0].mfActions[0].path)
-	})
-
-	t.Run("actions should hold runtime", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/packages/a.py", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b.js", []byte("file b"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/sub/package.json", []byte("file b"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/sub/b.js", []byte("file b"), 0644)
-
-		root, err := scanPackagesFolder(appFS, "/")
-
-		assert.NoError(t, err) // error in case file system operation failed
-		assert.Equal(t, ".py", root.sfActions[0].runtime)
-		assert.Equal(t, ".js", root.sfActions[1].runtime)
-		assert.Equal(t, ".js", root.folders[0].mfActions[0].runtime)
-	})
-
-}
-func Test_findMfaRuntime(t *testing.T) {
-	t.Run("should return error when no runtime found", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/package", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.Empty(t, runtime)
-		assert.Errorf(t, err, "no supported runtime found")
-	})
-	t.Run("should return .js runtime when package.json present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/package.json", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, jsRuntime, runtime)
-	})
-	t.Run("should return .js runtime when a .js file is present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/hello.js", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, jsRuntime, runtime)
-	})
-
-	t.Run("should return .py runtime when requirements.txt present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/requirements.txt", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, pyRuntime, runtime)
-	})
-	t.Run("should return .py runtime when a .py file is present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/hello.py", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, pyRuntime, runtime)
-	})
-
-	t.Run("should return .java runtime when pom.xml present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/pom.xml", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, javaRuntime, runtime)
-	})
-	t.Run("should return .java runtime when a .java file is present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/hello.java", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, javaRuntime, runtime)
-	})
-	t.Run("should return .go runtime when go.mod present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/go.mod", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, goRuntime, runtime)
-	})
-	t.Run("should return .go runtime when a .go file is present", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/hello.go", []byte("file a"), 0644)
-
-		runtime, err := findMfaRuntime(appFS, "/")
-
-		assert.NoError(t, err)
-		assert.Equal(t, goRuntime, runtime)
+				s.Assert().NoError(err) // error in case file system operation failed
+				s.Assert().Equal(".py", root.sfActions[0].runtime)
+				s.Assert().Equal(".js", root.folders[0].mfActions[0].runtime)
+			})
 	})
 }
 
-func Test_parseProjectTree(t *testing.T) {
-	t.Run("should return an empty tree (just root node) of task commands when given an empty project tree", func(t *testing.T) {
+//  *******************************************
+
+//  *** findMfaRuntime function tests ***
+func helpTestForRuntime(s *nuvScanTestSuite, searchFor, expectedRuntime string) {
+	s.T().Helper()
+
+	testWithFs([]string{}, []string{searchFor}, func() {
+		runtime, err := findMfaRuntime(pkgPath)
+
+		s.Assert().NoError(err)
+		s.Assert().Equal(expectedRuntime, runtime)
+	})
+}
+func (s *nuvScanTestSuite) Test_findMfaRuntime() {
+	s.T().Run("should return error when no runtime found", func(t *testing.T) {
+		testWithFs([]string{}, []string{}, func() {
+			runtime, err := findMfaRuntime(testFolder)
+
+			s.Assert().Empty(runtime)
+			s.Assert().Errorf(err, "no supported runtime found")
+		})
+	})
+
+	s.T().Run("should return .js runtime when package.json present", func(t *testing.T) {
+		helpTestForRuntime(s, "package.json", jsRuntime)
+	})
+	s.T().Run("should return .js runtime when a .js file is present", func(t *testing.T) {
+		helpTestForRuntime(s, "a.js", jsRuntime)
+	})
+
+	s.T().Run("should return .py runtime when requirements.txt present", func(t *testing.T) {
+		helpTestForRuntime(s, "requirements.txt", pyRuntime)
+	})
+	s.T().Run("should return .py runtime when a .py file is present", func(t *testing.T) {
+		helpTestForRuntime(s, "a.py", pyRuntime)
+	})
+
+	s.T().Run("should return .java runtime when pom.xml present", func(t *testing.T) {
+		helpTestForRuntime(s, "pom.xml", javaRuntime)
+	})
+	s.T().Run("should return .java runtime when a .java file is present", func(t *testing.T) {
+		helpTestForRuntime(s, "a.java", javaRuntime)
+	})
+	s.T().Run("should return .go runtime when go.mod present", func(t *testing.T) {
+		helpTestForRuntime(s, "go.mod", goRuntime)
+	})
+	s.T().Run("should return .go runtime when a .go file is present", func(t *testing.T) {
+		helpTestForRuntime(s, "a.go", goRuntime)
+	})
+}
+
+//  *****************************************
+
+//  *** parseProjectTree function tests ***
+func (s *nuvScanTestSuite) Test_parseProjectTree() {
+	s.T().Run("should return an empty tree (just root node) of task commands when given an empty project tree", func(t *testing.T) {
 		root := ProjectTree{name: "packages"}
 
 		res := parseProjectTree(&root)
 
-		assert.Empty(t, res.parent)
-		assert.Empty(t, res.tasks)
-		assert.Empty(t, res.command)
+		s.Assert().Empty(res.parent)
+		s.Assert().Empty(res.tasks)
+		s.Assert().Empty(res.command)
 	})
 
-	t.Run("should return tree with child 'wsk package update' when given root with folder", func(t *testing.T) {
+	s.T().Run("should return tree with child 'wsk package update' when given root with folder", func(t *testing.T) {
 		root := ProjectTree{name: "packages"}
 		subf := ProjectTree{name: "subf"}
 		root.folders = []*ProjectTree{&subf}
 
 		res := parseProjectTree(&root)
 
-		assert.Equal(t, "wsk package update subf", res.tasks[0].command)
+		s.Assert().Equal("wsk package update subf", res.tasks[0].command)
 	})
 
-	t.Run("should return tree with child 'wsk action update' when given root with file", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
-		afero.WriteFile(appFS, "/packages/helloGo.go", []byte("hey there"), 0644)
-		afero.WriteFile(appFS, "/packages/helloJava.java", []byte("hey there"), 0644)
-		afero.WriteFile(appFS, "/packages/helloJs.js", []byte("hey there"), 0644)
-		afero.WriteFile(appFS, "/packages/helloPy.py", []byte("hey there"), 0644)
+	s.T().Run("should return tree with child 'wsk action update' when given root with file", func(t *testing.T) {
+		testWithFs(
+			[]string{},
+			[]string{
+				"helloGo.go",
+				"helloJava.java",
+				"helloJs.js",
+				"helloPy.py",
+			}, func() {
+				expectedGo := fmt.Sprintf("wsk action update helloGo %s --kind go:default", filepath.Join(pkgPath, "helloGo.go"))
+				expectedjava := fmt.Sprintf("wsk action update helloJava %s --kind java:default", filepath.Join(pkgPath, "helloJava.java"))
+				expectedJs := fmt.Sprintf("wsk action update helloJs %s --kind nodejs:default", filepath.Join(pkgPath, "helloJs.js"))
+				expectedPy := fmt.Sprintf("wsk action update helloPy %s --kind python:default", filepath.Join(pkgPath, "helloPy.py"))
 
-		root, err := scanPackagesFolder(appFS, "/")
+				root, err := scanPackagesFolder(testFolder)
 
-		assert.NoError(t, err) // error in case file system operation failed
+				s.Assert().NoError(err) // error in case file system operation failed
 
-		res := parseProjectTree(&root)
+				res := parseProjectTree(&root)
 
-		assert.Equal(t, "wsk action update helloGo /packages/helloGo.go --kind go:default", res.tasks[0].command)
-		assert.Equal(t, "wsk action update helloJava /packages/helloJava.java --kind java:default", res.tasks[1].command)
-		assert.Equal(t, "wsk action update helloJs /packages/helloJs.js --kind nodejs:default", res.tasks[2].command)
-		assert.Equal(t, "wsk action update helloPy /packages/helloPy.py --kind python:default", res.tasks[3].command)
+				s.Assert().Equal(expectedGo, res.tasks[0].command)
+				s.Assert().Equal(expectedjava, res.tasks[1].command)
+				s.Assert().Equal(expectedJs, res.tasks[2].command)
+				s.Assert().Equal(expectedPy, res.tasks[3].command)
+			})
 	})
 
-	t.Run("should return tree with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
+	s.T().Run("should return tree with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf1"},
+			[]string{
+				"a.js",
+			}, func() {
+				expectedPkg := "wsk package update subf1"
+				expectedJs := fmt.Sprintf("wsk action update a %s --kind nodejs:default", filepath.Join(pkgPath, "a.js"))
 
-		appFS.MkdirAll("/packages/subf1", 0755)
-		appFS.MkdirAll("/packages/subf2", 0755)
-		afero.WriteFile(appFS, "/packages/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/b.py", []byte("file b"), 0644)
+				root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
+				s.Assert().NoError(err) // error in case file system operation failed
 
-		assert.NoError(t, err) // error in case file system operation failed
+				res := parseProjectTree(&root)
 
-		res := parseProjectTree(&root)
-
-		assert.Equal(t, "wsk action update a /packages/a.js --kind nodejs:default", res.tasks[0].command)
-		assert.Equal(t, "wsk action update b /packages/b.py --kind python:default", res.tasks[1].command)
-		assert.Equal(t, "wsk package update subf1", res.tasks[2].command)
-		assert.Equal(t, "wsk package update subf2", res.tasks[3].command)
+				s.Assert().Equal(expectedJs, res.tasks[0].command)
+				s.Assert().Equal(expectedPkg, res.tasks[1].command)
+			})
 	})
 
-	t.Run("should return tree with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
+	s.T().Run("should return tree with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf"},
+			[]string{
+				"subf/a.js",
+			}, func() {
 
-		appFS.MkdirAll("/packages/subf", 0755)
-		afero.WriteFile(appFS, "/packages/subf/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/b.py", []byte("file b"), 0644)
+				expectedJs := fmt.Sprintf("wsk action update subf/a %s --kind nodejs:default", filepath.Join(pkgPath, "subf/a.js"))
+				root, err := scanPackagesFolder(testFolder)
 
-		root, err := scanPackagesFolder(appFS, "/")
+				s.Assert().NoError(err) // error in case file system operation failed
 
-		assert.NoError(t, err) // error in case file system operation failed
+				res := parseProjectTree(&root)
 
-		res := parseProjectTree(&root)
-
-		assert.Equal(t, "wsk action update subf/a /packages/subf/a.js --kind nodejs:default", res.tasks[0].tasks[0].command)
-		assert.Equal(t, "wsk action update subf/b /packages/subf/b.py --kind python:default", res.tasks[0].tasks[1].command)
+				s.Assert().Equal(expectedJs, res.tasks[0].tasks[0].command)
+			})
 	})
 
-	t.Run("should return tree with multi file action cmds given tree with mfActions", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
+	s.T().Run("should return tree with multi file action cmds given tree with mfActions", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf/mf"},
+			[]string{
+				"subf/mf/a.js",
+			}, func() {
 
-		appFS.MkdirAll("/packages/subf", 0755)
-		afero.WriteFile(appFS, "/packages/subf/mf1/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/mf2/b.py", []byte("file b"), 0644)
+				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
+				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind nodejs:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
+				expected := fmt.Sprintf("%s\n%s", zipcmd, mfacmd)
 
-		expected1 := "zip -r /packages/subf/mf1/mf1.zip /packages/subf/mf1/*\nwsk action update subf/mf1 /packages/subf/mf1/mf1.zip --kind nodejs:default"
-		expected2 := "zip -r /packages/subf/mf2/mf2.zip /packages/subf/mf2/*\nwsk action update subf/mf2 /packages/subf/mf2/mf2.zip --kind python:default"
+				root, err := scanPackagesFolder(testFolder)
+				s.Assert().NoError(err)
 
-		root, err := scanPackagesFolder(appFS, "/")
-		assert.NoError(t, err)
-
-		res := parseProjectTree(&root)
-		assert.Equal(t, "wsk package update subf", res.tasks[0].command)
-		assert.Equal(t, expected1, res.tasks[0].tasks[0].command)
-		assert.Equal(t, expected2, res.tasks[0].tasks[1].command)
+				res := parseProjectTree(&root)
+				s.Assert().Equal("wsk package update subf", res.tasks[0].command)
+				s.Assert().Equal(expected, res.tasks[0].tasks[0].command)
+			})
 	})
 
-	t.Run("should return tree with both sf and mf actions", func(t *testing.T) {
-		appFS := afero.NewMemMapFs()
+	s.T().Run("should return tree with both sf and mf actions", func(t *testing.T) {
+		testWithFs(
+			[]string{"subf/mf"},
+			[]string{"subf/a.js", "subf/mf/b.py"},
+			func() {
+				expectedSF := fmt.Sprintf("wsk action update subf/a %s --kind nodejs:default", filepath.Join(pkgPath, "subf/a.js"))
 
-		appFS.MkdirAll("/packages/subf", 0755)
-		afero.WriteFile(appFS, "/packages/subf/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/b.py", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/mf1/a.js", []byte("file a"), 0644)
-		afero.WriteFile(appFS, "/packages/subf/mf2/b.py", []byte("file b"), 0644)
+				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
+				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind python:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
+				expectedMF := fmt.Sprintf("%s\n%s", zipcmd, mfacmd)
 
-		expectedSF1 := "wsk action update subf/a /packages/subf/a.js --kind nodejs:default"
-		expectedSF2 := "wsk action update subf/b /packages/subf/b.py --kind python:default"
-		expectedMF1 := "zip -r /packages/subf/mf1/mf1.zip /packages/subf/mf1/*\nwsk action update subf/mf1 /packages/subf/mf1/mf1.zip --kind nodejs:default"
-		expectedMF2 := "zip -r /packages/subf/mf2/mf2.zip /packages/subf/mf2/*\nwsk action update subf/mf2 /packages/subf/mf2/mf2.zip --kind python:default"
+				root, err := scanPackagesFolder(testFolder)
+				s.Assert().NoError(err)
+				res := parseProjectTree(&root)
 
-		root, err := scanPackagesFolder(appFS, "/")
-		assert.NoError(t, err)
-
-		res := parseProjectTree(&root)
-
-		cmds := make([]string, 0)
-		for _, task := range res.tasks[0].tasks {
-			cmds = append(cmds, task.command)
-		}
-		expected := []string{
-			expectedSF1, expectedSF2,
-			expectedMF1, expectedMF2,
-		}
-		assert.ElementsMatch(t, cmds, expected)
+				cmds := make([]string, 0)
+				for _, task := range res.tasks[0].tasks {
+					cmds = append(cmds, task.command)
+				}
+				expected := []string{
+					expectedSF, expectedMF,
+				}
+				s.Assert().ElementsMatch(cmds, expected)
+			})
 	})
 }

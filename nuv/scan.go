@@ -18,15 +18,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 )
 
 type ScanCmd struct {
@@ -34,8 +34,7 @@ type ScanCmd struct {
 }
 
 func (s *ScanCmd) Run() error {
-	fs := afero.NewOsFs()
-	b, err := checkPackagesFolder(fs, "./") // TODO path
+	b, err := packagesFolderExists("./") // TODO path
 	if !b {
 		// packages folder not found, stop here
 		log.Error("Folder 'packages' not found! Cannot scan project :(")
@@ -46,6 +45,21 @@ func (s *ScanCmd) Run() error {
 		log.Debug(err)
 		return err
 	}
+
+	// TODO: ignore non code files (files without supported runtimes)
+	// projectTree, err := scanPackagesFolder(fs, "./")
+	// if err != nil {
+	// 	return err
+	// }
+
+	// taskTree := parseProjectTree(&projectTree)
+
+	// for _, st := range taskTree.tasks {
+	// 	log.Info(st.command)
+	// 	for _, stt := range st.tasks {
+	// 		log.Info(stt.command)
+	// 	}
+	// }
 	return nil
 }
 
@@ -84,31 +98,34 @@ type TaskTree struct {
 	command string
 }
 
-func checkPackagesFolder(fs afero.Fs, path string) (bool, error) {
+func packagesFolderExists(path string) (bool, error) {
 	dir := "packages"
 	filename := filepath.Join(path, dir)
-	b, err := afero.DirExists(fs, filename)
-	return b, err
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false, err
+	}
+	return true, err
 }
 
-func scanPackagesFolder(aferoFs afero.Fs, path string) (ProjectTree, error) {
-	root, err := processDir(aferoFs, path, "packages", true)
+func scanPackagesFolder(path string) (ProjectTree, error) {
+	root, err := processDir(path, "packages", true)
 	if err != nil {
 		return ProjectTree{}, err
 	}
 	return root, nil
 }
 
-func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool) (ProjectTree, error) {
+func processDir(parentPath string, dir string, rootLevel bool) (ProjectTree, error) {
 	pt := ProjectTree{name: dir}
 	var folders []*ProjectTree
 	var mfActions []*ProjectTreeAction
 	var sfActions []*ProjectTreeAction
 
 	dirPath := filepath.Join(parentPath, dir)
-	children, err := afero.ReadDir(aferoFs, dirPath)
+	children, err := os.ReadDir(dirPath)
 
-	if err != nil {
+	if err != nil { // TODO ReadDir returns the entries it was able to read before the error. Parse what was read anyway?
 		return ProjectTree{}, err
 	}
 
@@ -116,7 +133,7 @@ func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool)
 		if info.IsDir() {
 			if rootLevel {
 				// root level: folders = packages and continue walk
-				childPT, err := processDir(aferoFs, dirPath, info.Name(), false)
+				childPT, err := processDir(dirPath, info.Name(), false)
 				if err != nil {
 					return pt, err
 				}
@@ -125,7 +142,7 @@ func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool)
 			} else {
 				// inner level: folders = multi file actions and stop
 				mfPath := filepath.Join(dirPath, info.Name())
-				runtime, err := findMfaRuntime(aferoFs, mfPath)
+				runtime, err := findMfaRuntime(mfPath)
 				if err != nil {
 					return pt, err
 				}
@@ -146,20 +163,20 @@ func processDir(aferoFs afero.Fs, parentPath string, dir string, rootLevel bool)
 	return pt, nil
 }
 
-func findMfaRuntime(aferoFs afero.Fs, mfPath string) (string, error) {
-	found, err := searchRuntime(aferoFs, mfPath, jsRuntime, "package.json")
+func findMfaRuntime(mfPath string) (string, error) {
+	found, err := searchRuntime(mfPath, jsRuntime, "package.json")
 	if found {
 		return jsRuntime, err
 	}
-	found, err = searchRuntime(aferoFs, mfPath, pyRuntime, "requirements.txt")
+	found, err = searchRuntime(mfPath, pyRuntime, "requirements.txt")
 	if found {
 		return pyRuntime, err
 	}
-	found, err = searchRuntime(aferoFs, mfPath, javaRuntime, "pom.xml")
+	found, err = searchRuntime(mfPath, javaRuntime, "pom.xml")
 	if found {
 		return javaRuntime, err
 	}
-	found, err = searchRuntime(aferoFs, mfPath, goRuntime, "go.mod")
+	found, err = searchRuntime(mfPath, goRuntime, "go.mod")
 	if found {
 		return goRuntime, err
 	}
@@ -170,13 +187,22 @@ func findMfaRuntime(aferoFs afero.Fs, mfPath string) (string, error) {
 	return "", fmt.Errorf("no supported runtime found")
 }
 
-func searchRuntime(fs afero.Fs, mfPath, ext, file string) (bool, error) {
-	b, err := afero.Exists(fs, path.Join(mfPath, file))
-	if b {
-		return b, err
+func searchRuntime(mfPath, ext, file string) (bool, error) {
+	if _, err := os.Stat(path.Join(mfPath, file)); err == nil {
+		return true, nil
+
+	} else if errors.Is(err, os.ErrNotExist) {
+
+		pattern := fmt.Sprintf("%s/*%s", mfPath, ext)
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			return false, err
+		}
+		return len(matches) > 0, nil
+
+	} else {
+		return false, err
 	}
-	b, err = afero.IsEmpty(afero.NewRegexpFs(fs, regexp.MustCompile(fmt.Sprintf(`\%s$`, ext))), mfPath)
-	return !b, err
 }
 
 func parseProjectTree(projectRoot *ProjectTree) TaskTree {
