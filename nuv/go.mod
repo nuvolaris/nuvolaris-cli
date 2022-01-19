@@ -32,8 +32,11 @@ require (
 	github.com/apache/openwhisk-client-go v0.0.0-20211007130743-38709899040b
 	github.com/go-task/task/cmd/task v0.0.0-00010101000000-000000000000
 	github.com/nicksnyder/go-i18n v1.10.1
+	github.com/stretchr/testify v1.7.0
 	sigs.k8s.io/kind v0.11.1
 )
+
+require github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect

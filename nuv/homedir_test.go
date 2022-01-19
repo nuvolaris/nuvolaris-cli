@@ -18,43 +18,32 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"testing"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
-//go:embed embed/nuvolaris.yml
-var NuvolarisYml []byte
+func TestGetHomedir(t *testing.T) {
 
-type DeployCmd struct {
-	Args              []string `optional:"" name:"args" help:"kind subcommand args"`
-	NoPreflightChecks bool     `help:"Disable preflight checks."`
-}
-
-// AfterApply is an hook that gets called after parsing the command but before Run is executed
-// used to run preflight checks
-func (d DeployCmd) AfterApply() error {
-	if d.NoPreflightChecks {
-		return nil
-	}
-	log.Info("Preflight checks...")
-	homedir, _ := GetHomeDir()
-
-	err := RunPreflightChecks(homedir)
-
-	if err != nil {
-		return err
+	realHomeDir := GetHomeDir
+	defer func() {
+		GetHomeDir = realHomeDir
+	}()
+	GetHomeDir = func() (string, error) {
+		return "/home/userdir", nil
 	}
 
-	log.Info("Preflight checks passed!")
-	return nil
-}
+	home, err := GetHomeDir()
+	assert.Equal(t, home, "/home/userdir", "")
+	assert.Equal(t, err, nil, "")
 
-func (*DeployCmd) Run() error {
-	fmt.Println("Deploying Nuvolaris...")
-	ioutil.WriteFile("nuvolaris.yml", NuvolarisYml, 0600)
-	Task()
-	return nil
+	GetHomeDir = func() (string, error) {
+		return "", fmt.Errorf("some error returned from homedir")
+	}
+
+	home, err = GetHomeDir()
+	assert.Equal(t, home, "", "")
+	assert.Equal(t, err.Error(), "some error returned from homedir", "")
+
 }

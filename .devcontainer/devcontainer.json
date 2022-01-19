@@ -21,5 +21,10 @@
 	"remoteUser": "nuvolaris",
 	"overrideCommand": false,
 	"runArgs": ["--network=host"],
-	"extensions": ["golang.go"]
+	"extensions": [
+		"golang.go",
+		"ms-vscode.go",
+		"eamodio.gitlens",
+		
+	]
 }

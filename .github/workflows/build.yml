@@ -29,7 +29,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: nuvolaris-testing
+name: nuvolaris-cli
 on: [push]
 jobs:
   build:
@@ -58,4 +58,4 @@ jobs:
       - name: Test
         run: |
           cd nuv
-          go test -v ./...
+          go test -v -cover ./...

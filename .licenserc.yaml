@@ -39,6 +39,9 @@ header:
     - '**/task/**'
     - '**/kind/**'
     - '**/vendor/**'
+    - 'nuvolaris.yml'
+    - '**/kind.yaml'
+    - 'workspace.code-workspace'
  
 dependency:
   files:
