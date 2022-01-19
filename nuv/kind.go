@@ -24,7 +24,7 @@ import (
 )
 
 type KindCmd struct {
-	Args []string `arg:"" optional:"" name:"args" help:"kind subcommand args"`
+	Args []string `arg:"" name:"args" help:"kind subcommand args"`
 }
 
 func Kind(args ...string) error {

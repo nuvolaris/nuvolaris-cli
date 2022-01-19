@@ -1,4 +1,4 @@
-//  Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -14,12 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-{
-	"name": "Nuvolaris DevKit",
-	"image": "ghcr.io/nuvolaris/nuvolaris-devkit:neo-22.0103.07",
-	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"],
-	"remoteUser": "nuvolaris",
-	"overrideCommand": false,
-	"runArgs": ["--name=nuvolaris-cli", "--network=host"],
-	"extensions": ["golang.go"]
+//
+package main
+
+type DevClusterCmd struct {
+	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
+}
+
+func (devClusterCmd *DevClusterCmd) Run() error {
+	return manageKindCluster(devClusterCmd.Action)
 }
