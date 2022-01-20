@@ -31,10 +31,18 @@ func TestNuvScan(t *testing.T) {
 	t.Run("should have scan subcmd help", func(t *testing.T) {
 		var cli CLI
 		app := NewTestApp(t, &cli)
-		require.PanicsWithValue(t, true, func() { // TODO: explain why needed
+		require.PanicsWithValue(t, true, func() {
 			_, err := app.Parse([]string{"scan", "--help"})
 			require.NoError(t, err)
 		})
+	})
+
+	t.Run("should generate a Taskfile", func(t *testing.T) {
+		var cli CLI
+		app := NewTestApp(t, &cli)
+		c, _ := app.Parse([]string{"scan", "../integration-tests/nuv-scan-mock/"})
+		err := c.Run()
+		require.NoError(t, err)
 	})
 }
 
@@ -357,14 +365,14 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 
 				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
 				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind nodejs:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
-				expected := fmt.Sprintf("%s && %s", zipcmd, mfacmd)
 
 				root, err := scanPackagesFolder(testFolder)
 				s.Assert().NoError(err)
 
 				res := parseProjectTree(&root)
 				s.Assert().Equal("wsk package update subf", res[0])
-				s.Assert().Equal(expected, res[1])
+				s.Assert().Equal(zipcmd, res[1])
+				s.Assert().Equal(mfacmd, res[2])
 			})
 	})
 
@@ -375,15 +383,14 @@ func (s *nuvScanTestSuite) Test_parseProjectTree() {
 			func() {
 				expectedSF := fmt.Sprintf("wsk action update subf/a %s --kind nodejs:default", filepath.Join(pkgPath, "subf/a.js"))
 
-				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
-				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind python:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
-				expectedMF := fmt.Sprintf("%s && %s", zipcmd, mfacmd)
+				expectedZip := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
+				expectedMfa := fmt.Sprintf("wsk action update subf/mf %s --kind python:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
 
 				root, err := scanPackagesFolder(testFolder)
 				s.Assert().NoError(err)
 				res := parseProjectTree(&root)
 
-				expected := []string{"wsk package update subf", expectedSF, expectedMF}
+				expected := []string{"wsk package update subf", expectedSF, expectedZip, expectedMfa}
 				s.Assert().ElementsMatch(res, expected)
 			})
 	})

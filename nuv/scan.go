@@ -30,15 +30,21 @@ import (
 )
 
 type ScanCmd struct {
-	// Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
+	Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
+	Save string `optional:"" short:"s" help:"Path to save output nuvolaris.yml." type:"path"`
 }
 
 func (s *ScanCmd) Run() error {
-	b, err := packagesFolderExists("./") // TODO path
+	b, err := packagesFolderExists(s.Path)
 	if !b {
 		// packages folder not found, stop here
-		log.Error("Folder 'packages' not found! Cannot scan project :(")
-		return nil
+		var errMsg string
+		if s.Path == "" {
+			errMsg = "folder 'packages' not found! Cannot scan project :("
+		} else {
+			errMsg = fmt.Sprintf("folder 'packages' in %s not found! Cannot scan project :(", s.Path)
+		}
+		return fmt.Errorf("%s", errMsg)
 	}
 	if err != nil {
 		log.Error("Error reading packages folder!") // TODO: improve feedback to user...
@@ -46,26 +52,27 @@ func (s *ScanCmd) Run() error {
 		return err
 	}
 
-	projectTree, err := scanPackagesFolder("./")
+	projectTree, err := scanPackagesFolder(s.Path)
 	if err != nil {
 		return err
 	}
 
 	tasks := parseProjectTree(&projectTree)
 
-	mergeIntoYaml(tasks)
+	mergeIntoYaml(tasks, s.Save)
 
 	return nil
 }
 
-func mergeIntoYaml(tasks []string) {
+func mergeIntoYaml(tasks []string, savePath string) {
 	taskfile := "version: 3\n\ntasks:\n  default:\n    cmds:"
 
 	for _, t := range tasks {
 		taskfile = fmt.Sprintf("%s\n      - %s", taskfile, t)
 	}
 
-	err := os.WriteFile("Taskfile.yml", []byte(taskfile), 0755)
+	taskfile = fmt.Sprintf("%s\n", taskfile)
+	err := os.WriteFile(filepath.Join(savePath, "nuvolaris.yml.ok"), []byte(taskfile), 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -229,11 +236,11 @@ func parseRootSingleFileActions(projectRoot *ProjectTree) []string {
 var wg sync.WaitGroup
 
 func parseSubFolders(projectRoot *ProjectTree) []string {
-	tasks := make([]string, len(projectRoot.folders))
+	tasks := make([]string, 0)
 	var subTasks []string
 
-	for i, subf := range projectRoot.folders {
-		taskQueue := make(chan string, len(subf.sfActions)+len(subf.mfActions))
+	for _, subf := range projectRoot.folders {
+		taskQueue := make(chan string, len(subf.sfActions)+(len(subf.mfActions)*2))
 
 		// First level commands: packages from folders
 		t := packageUpdate(subf.name)
@@ -250,9 +257,9 @@ func parseSubFolders(projectRoot *ProjectTree) []string {
 		close(taskQueue)
 		subTasks = appendTasks(taskQueue)
 
-		tasks[i] = t
+		tasks = append(tasks, t)
+		tasks = append(tasks, subTasks...)
 	}
-	tasks = append(tasks, subTasks...)
 	return tasks
 }
 
@@ -284,7 +291,8 @@ func parseMultiFileActions(taskQueue chan string, parent *ProjectTree) {
 		zipCmd := fmt.Sprintf("zip -r %s/%s.zip %s/*", mfAction.path, mfAction.name, mfAction.path)
 		zipPath := fmt.Sprintf("%s/%s.zip", mfAction.path, mfAction.name)
 		cmd := actionUpdate(wskPkg, mfAction.name, zipPath, extRuntimes[mfAction.runtime])
-		taskQueue <- fmt.Sprintf("%s && %s", zipCmd, cmd)
+		taskQueue <- zipCmd
+		taskQueue <- cmd
 	}
 }
 
