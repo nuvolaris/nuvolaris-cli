@@ -40,7 +40,7 @@ func TestNuvScan(t *testing.T) {
 	t.Run("should generate a Taskfile", func(t *testing.T) {
 		var cli CLI
 		app := NewTestApp(t, &cli)
-		c, _ := app.Parse([]string{"scan", "../integration-tests/nuv-scan-mock/"})
+		c, _ := app.Parse([]string{"scan", "../tests/nuv-scan-mock/", "-s", "../"})
 		err := c.Run()
 		require.NoError(t, err)
 	})

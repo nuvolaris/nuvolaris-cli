@@ -72,7 +72,7 @@ func mergeIntoYaml(tasks []string, savePath string) {
 	}
 
 	taskfile = fmt.Sprintf("%s\n", taskfile)
-	err := os.WriteFile(filepath.Join(savePath, "nuvolaris.yml.ok"), []byte(taskfile), 0755)
+	err := os.WriteFile(filepath.Join(savePath, "nuvolaris.yml"), []byte(taskfile), 0700)
 	if err != nil {
 		log.Fatal(err)
 	}
