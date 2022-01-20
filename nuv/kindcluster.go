@@ -63,7 +63,7 @@ var manageKindCluster = func(action string) error {
 var createCluster = func() (err error) {
 	defer func() {
 		if err != nil {
-			fmt.Errorf("error in create cluster: %w", err)
+			err = fmt.Errorf("error in create cluster: %w", err)
 		}
 	}()
 
