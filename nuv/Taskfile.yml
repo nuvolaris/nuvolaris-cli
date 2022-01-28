@@ -19,7 +19,7 @@ version: '3'
 vars:
  MILESTONE: neo
  NUV:
-   sh: echo $GOBIN/nuv
+   sh: echo ${GOBIN:-.}/nuv
  TAG:
     sh: git describe --tags --abbrev=0 2>/dev/null || echo {{.MILESTONE}}-latest
 
