@@ -25,7 +25,6 @@ import (
 
 	"github.com/alecthomas/units"
 	"github.com/coreos/go-semver/semver"
-	"github.com/mitchellh/go-homedir"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -113,7 +112,7 @@ func isInHomePath(p *PreflightChecksPipeline) {
 	if p.dir == "" {
 		return
 	}
-	homePath, err := homedir.Dir()
+	homePath, err := GetHomeDir()
 	if err != nil {
 		p.err = err
 		return
@@ -124,7 +123,7 @@ func isInHomePath(p *PreflightChecksPipeline) {
 		return
 	}
 	if !strings.HasPrefix(dir, homePath) {
-		p.err = fmt.Errorf("work directory %s should be below your home directory %s;\nthis is required to be accessible by Docker", dir, homePath)
+		p.err = fmt.Errorf("work directory %s should be below your home directory;\nthis is required to be accessible by Docker", dir)
 		return
 	}
 	fmt.Println("dir tree ok...")

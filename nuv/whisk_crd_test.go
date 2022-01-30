@@ -17,14 +17,19 @@
 //
 package main
 
-type DevClusterCmd struct {
-	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
-}
+import (
+	"testing"
 
-func (devClusterCmd *DevClusterCmd) Run() error {
-	config, err := configKind()
-	if err != nil {
-		return err
-	}
-	return config.manageKindCluster(devClusterCmd.Action)
+	"github.com/stretchr/testify/assert"
+)
+
+func TestConfigureCRD(t *testing.T) {
+	whisk_crd := configureCRD()
+	assert.Equal(t, whisk_crd.Name, "whisks.nuvolaris.org")
+	assert.Equal(t, whisk_crd.Namespace, "nuvolaris")
+	assert.Equal(t, whisk_crd.Spec.Names.Kind, "Whisk")
+	assert.Equal(t, whisk_crd.Spec.Names.Singular, "whisk")
+	assert.Equal(t, whisk_crd.Spec.Names.Plural, "whisks")
+	assert.Equal(t, whisk_crd.Spec.Names.ShortNames, []string{"wsk"})
+	assert.Equal(t, whisk_crd.Spec.Group, "nuvolaris.org")
 }

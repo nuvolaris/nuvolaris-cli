@@ -40,6 +40,10 @@ tasks:
     status:
       - test -d vendor
 
+  test:
+    cmds:
+      - go test
+
   debug:
     deps:
       - vendor
