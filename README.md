@@ -37,7 +37,7 @@ It embeds the functionalities of the tool [task](https://taskfile.dev) for execu
 
 It also adds some project conventions inspired by the [nim](https://github.com/nimbella/nimbella-cli) tool. But since nim is written in typescript we do not include that code, we will reimplement them. Most notably we want to reimplement the [project detection](#project-detection) euristic described below and nothing else.
 
-The toll works scanning the current subtree, looking for actions and packages to deploy. It works generating a `Taskfile` (that can be inspected by the users) and then executing it.
+The tool works scanning the current subtree, looking for actions and packages to deploy. It works generating a `Taskfile` (that can be inspected by the users) and then executing it.
 
 It will be possible to add customizations of the task adding locally some `nuvolaris.yml` in the various subdirectories. This functionality will be described later.
 
