@@ -51,7 +51,7 @@ There will be initially 4 commands:
 The expected workflow is that :
 1. `nuv install` installs an openwhisk cluster using a configured `kubectl` in the path
 2. `nuv scan` generates a `Taskfile`
-3. `nuv task` executes the Taskfile that embeds a numer of `nuv wsk` commands
+3. `nuv task` executes the `Taskfile` that embeds a numer of `nuv wsk` commands
 4. the various `nuv wsk` create then a full project
 
 An example of a project to deploy can be [this](https://github.com/pagopa/io-sdk/tree/master/admin)
