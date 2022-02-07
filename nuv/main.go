@@ -28,10 +28,11 @@ var CLI_VERSION string = "latest"
 type CLI struct {
 	Deploy     DeployCmd     `cmd:"" help:"deploy a nuvolaris cluster"`
 	Destroy    DestroyCmd    `cmd:"" help:"destroy a nuvolaris cluster"`
-	Wsk        WskCmd        `cmd:"" help:"wsk subcommand."`
+	Wsk        WskCmd        `cmd:"" help:"wsk subcommand"`
 	Task       TaskCmd       `cmd:"" help:"task subcommand."`
 	Kind       KindCmd       `cmd:"" help:"kind subcommand"`
 	Devcluster DevClusterCmd `cmd:"" help:"create or destroy kind k8s cluster"`
+	Setup      SetupCmd      `cmd:"" help:"setup nuvolaris"`
 }
 
 func main() {

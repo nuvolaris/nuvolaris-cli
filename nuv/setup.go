@@ -17,14 +17,10 @@
 //
 package main
 
-type DevClusterCmd struct {
-	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
+type SetupCmd struct {
+	Args []string `optional:"" name:"args" help:"setup nuvolaris"`
 }
 
-func (devClusterCmd *DevClusterCmd) Run() error {
-	config, err := configKind()
-	if err != nil {
-		return err
-	}
-	return config.manageKindCluster(devClusterCmd.Action)
+func (setupCmd *SetupCmd) Run() error {
+	return setupNuvolaris()
 }

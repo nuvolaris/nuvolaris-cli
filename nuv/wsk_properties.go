@@ -17,14 +17,28 @@
 //
 package main
 
-type DevClusterCmd struct {
-	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
-}
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
 
-func (devClusterCmd *DevClusterCmd) Run() error {
-	config, err := configKind()
+const wsk_auth = "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
+const wsk_apihost = "https://localhost:3233"
+
+func writeWskPropertiesFile() error {
+	homedir, err := GetHomeDir()
 	if err != nil {
 		return err
 	}
-	return config.manageKindCluster(devClusterCmd.Action)
+	path := filepath.Join(homedir, ".nuvolaris", ".wskprops")
+	if _, err := os.Stat(path); err == nil {
+		os.Remove(path)
+	}
+	content := []byte("AUTH=" + wsk_auth + "\nAPIHOST=" + wsk_apihost)
+	if err := os.WriteFile(path, content, 0600); err != nil {
+		return err
+	}
+	fmt.Println(".wskprops file written")
+	return nil
 }
