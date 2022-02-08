@@ -29,7 +29,7 @@ import (
 )
 
 const operator_name = "nuvolaris-operator"
-const operator_image = "ghcr.io/nuvolaris/nuvolaris-operator:neo-22.0114.20"
+const operator_image = "ghcr.io/nuvolaris/nuvolaris-operator:neo-22.0207.21"
 const operator_binding = "nuvolaris-operator-crb"
 const timeout_for_pod_start_in_sec = 300
 
