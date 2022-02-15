@@ -21,3 +21,4 @@ kubeconfig
 nuvolaris.yml
 .task/
 vendor/
+.idea

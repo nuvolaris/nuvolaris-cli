@@ -19,7 +19,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/apache/openwhisk-cli/commands"
 	"github.com/apache/openwhisk-cli/wski18n"
@@ -47,7 +50,12 @@ func init() {
 }
 
 func Wsk(args ...string) error {
-	os.Args = append([]string{"wsk"}, args...)
+	baseArgs := []string{"wsk"}
+
+	addWskProperties(&baseArgs)
+
+	os.Args = append(baseArgs, args...)
+
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
@@ -55,6 +63,35 @@ func Wsk(args ...string) error {
 		}
 	}()
 	return commands.Execute()
+}
+
+func addWskProperties(baseArgs *[]string) error {
+	homedir, err := GetHomeDir()
+
+	if err != nil {
+		return err
+	}
+
+	file, err := ioutil.ReadFile(filepath.Join(homedir, ".nuvolaris", ".wskprops"))
+
+	if err != nil {
+		return err
+	}
+
+	wskEnv, err := godotenv.Unmarshal(string(file))
+
+	if err != nil {
+		return err
+	}
+
+	apiHost, apiHostExist := wskEnv["APIHOST"]
+	auth, authExist := wskEnv["AUTH"]
+
+	if authExist && apiHostExist {
+		*baseArgs = append(*baseArgs, "--apihost", apiHost, "--auth", auth)
+	}
+
+	return nil
 }
 
 func (wsk *WskCmd) Run() error {
