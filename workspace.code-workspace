@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-
 {
 	"folders": [
 		{
@@ -29,6 +28,9 @@
 		},
 		{
 			"path": "kind"
+		},
+		{
+			"path": "kops"
 		},
 		{
 			"path": ".github"
