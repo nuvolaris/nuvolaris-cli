@@ -49,7 +49,7 @@ There will be initially 4 commands:
 - `nuv install` will also be able to execute a kubectl command that deploys the `nuvolaris-operator` that in turns inizialize openwhisk in any available kubernetes accessible with `kubectl` and initialize the `.wskprops` file used by `nuv wsk`
 
 The expected workflow is that :
-1. `nuv install` installs an openwhisk cluster using a configured `kubectl` in the path
+1. `nuv setup` installs an openwhisk cluster using a configured `kubectl` in the path
 2. `nuv scan` generates a `Taskfile`
 3. `nuv task` executes the `Taskfile` that embeds many `nuv wsk` commands
 4. the various `nuv wsk` create then a full project
