@@ -121,7 +121,7 @@ func (c *KubeClient) deployCRD() error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("custom resource definition for whisk created")
+			fmt.Println("✓ Custom resource definition for openwhisk created")
 			return nil
 		}
 		return err
@@ -222,11 +222,11 @@ func createWhiskOperatorObject(cfg *rest.Config) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("whisk operator running...done")
+			fmt.Println("✓ Openwhisk operator started")
 			return nil
 		}
 		return err
 	}
-	fmt.Println("whisk operator already running...you are all set")
+	fmt.Println("openwhisk operator already running...skipping")
 	return nil
 }

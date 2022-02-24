@@ -106,7 +106,7 @@ func assertNuvolarisContext(kubeconfigPath string) error {
 		return fmt.Errorf("error ModifyConfig: %w", err)
 	}
 
-	fmt.Println("current context set to", nuvolaris_context)
+	fmt.Println("✓ Current context set to", nuvolaris_context)
 	return nil
 }
 
@@ -125,7 +125,7 @@ func (c *KubeClient) createNuvNamespace() error {
 				fmt.Println("failed creation of namespace nuvolaris")
 				return err
 			}
-			fmt.Println("namespace nuvolaris created")
+			fmt.Println("✓ Namespace nuvolaris created")
 			return nil
 		}
 		return err

@@ -45,6 +45,7 @@ func setupNuvolaris() error {
 	sp.step(setupWskProperties)
 	sp.step(runNuvolarisOperatorPod)
 	sp.step(deployOperatorObject)
+	sp.step(waitForOpenWhiskReady)
 	return sp.err
 }
 
@@ -78,4 +79,8 @@ func setupWskProperties(sp *SetupPipeline) {
 
 func deployOperatorObject(sp *SetupPipeline) {
 	sp.err = createWhiskOperatorObject(sp.kube_client.cfg)
+}
+
+func waitForOpenWhiskReady(sp *SetupPipeline) {
+	sp.err = readinessProbe()
 }

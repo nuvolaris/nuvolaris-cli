@@ -31,7 +31,6 @@ import (
 const operator_name = "nuvolaris-operator"
 const operator_image = "ghcr.io/nuvolaris/nuvolaris-operator:neo-22.0207.21"
 const operator_binding = "nuvolaris-operator-crb"
-const timeout_for_pod_start_in_sec = 300
 
 var service_account = &core_v1.ServiceAccount{
 	ObjectMeta: meta_v1.ObjectMeta{
@@ -85,7 +84,7 @@ func (c *KubeClient) createServiceAccount() error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("service account created")
+			fmt.Println("✓ Service account created")
 			return nil
 		}
 		return err
@@ -102,7 +101,7 @@ func (c *KubeClient) createClusterRoleBinding() error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("cluster role binding created")
+			fmt.Println("✓ Cluster role binding created")
 			return nil
 		}
 		return err
@@ -119,14 +118,14 @@ func (c *KubeClient) createOperatorPod() error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("waiting for nuvolaris operator pod...hang tight")
-			err = waitForPodRunning(c, timeout_for_pod_start_in_sec)
+			fmt.Println("Waiting for nuvolaris operator pod...hang tight")
+			err = waitForPodRunning(c, TimeoutInSec)
 			if err != nil {
 				return err
 			}
 
 			fmt.Println("")
-			fmt.Println("nuvolaris operator pod running")
+			fmt.Println("✓ Nuvolaris operator pod running")
 			return nil
 		}
 		return err
