@@ -17,11 +17,15 @@
 //
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type SetupPipeline struct {
-	kube_client *KubeClient
-	err         error
+	kube_client       *KubeClient
+	create_devcluster bool
+	err               error
 }
 
 type setupStep func(sp *SetupPipeline)
@@ -32,11 +36,19 @@ func (sp *SetupPipeline) step(f setupStep) {
 		return
 	}
 	f(sp)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 }
 
-func setupNuvolaris() error {
+func setupNuvolaris(args []string) error {
 	sp := SetupPipeline{}
+	if len(args) > 0 {
+		if args[0] == "--devcluster" {
+			sp.create_devcluster = true
+		} else {
+			fmt.Println("did you mean nuv setup --devcluster?")
+			return nil
+		}
+	}
 	sp.step(assertNuvolarisClusterConfig)
 	sp.step(createNuvolarisNamespace)
 	sp.step(deployWhiskCrd)
@@ -50,7 +62,7 @@ func setupNuvolaris() error {
 }
 
 func assertNuvolarisClusterConfig(sp *SetupPipeline) {
-	sp.kube_client, sp.err = initClients()
+	sp.kube_client, sp.err = initClients(sp.create_devcluster)
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {
