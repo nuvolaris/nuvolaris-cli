@@ -26,13 +26,14 @@ import (
 var CLI_VERSION string = "latest"
 
 type CLI struct {
-	Deploy     DeployCmd     `cmd:"" help:"deploy a nuvolaris cluster"`
-	Destroy    DestroyCmd    `cmd:"" help:"destroy a nuvolaris cluster"`
-	Wsk        WskCmd        `cmd:"" passthrough:"" help:"wsk subcommand"`
-	Task       TaskCmd       `cmd:"" help:"task subcommand"`
-	Kind       KindCmd       `cmd:"" help:"kind subcommand"`
-	Devcluster DevClusterCmd `cmd:"" help:"create or destroy kind k8s cluster"`
-	Setup      SetupCmd      `cmd:"" passthrough:"" help:"setup nuvolaris"`
+	Deploy     DeployCmd        `cmd:"" help:"deploy a nuvolaris cluster"`
+	Destroy    DestroyCmd       `cmd:"" help:"destroy a nuvolaris cluster"`
+	Wsk        WskCmd           `cmd:"" passthrough:"" help:"wsk subcommand"`
+	Task       TaskCmd          `cmd:"" help:"task subcommand"`
+	Kind       KindCmd          `cmd:"" help:"kind subcommand"`
+	Devcluster DevClusterCmd    `cmd:"" help:"create or destroy kind k8s cluster"`
+	Setup      SetupCmd         `cmd:"" passthrough:"" help:"setup nuvolaris"`
+	Version    kong.VersionFlag `short:"v" help:"show nuvolaris version"`
 }
 
 func main() {
@@ -45,6 +46,7 @@ func main() {
 			Compact:             true,
 			NoExpandSubcommands: false,
 		}),
+		kong.Vars{"version": CLI_VERSION},
 	)
 	err := ctx.Run()
 	ctx.FatalIfErrorf(err)
