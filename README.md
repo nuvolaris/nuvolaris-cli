@@ -75,6 +75,20 @@ The correct runtime is described by `runtime.json` that can be downloaded from t
 
 If the extension is in format:  `.<version>.<extension>`, it will deploy an action of  `--kind <language>:<version>`
 
+## Static frontend
+
+Nuv is also able to deploy static frontends. A static front-end is a collection of static asset under a given folder that will be published in a web server under a path.
+
+In general, for each namespace there will be a `https://<namespace>.<domain>` website where to publish the resources. For the local deployment there will be a website `http://127.0.0.1:8080` where the resources are published, with the namespace and the domain ignored.
+
+The path where the assets are published depends on the path in the action hierarchy.
+
+The sub-folder `web` is deployed as "/".
+
+Any subfolder `web` under `packages\default\<action>\web` is published as `/<action>`.
+
+Any subfolder `web` under `packages\<package>\<action>\web` is published as `/<package>/<action>`
+
 ## Multi File Actions
 
 **initial draft**
