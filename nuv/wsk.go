@@ -19,12 +19,11 @@ package main
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/apache/openwhisk-cli/commands"
 	"github.com/apache/openwhisk-cli/wski18n"
 	"github.com/apache/openwhisk-client-go/whisk"
 	goi18n "github.com/nicksnyder/go-i18n/i18n"
+	"os"
 )
 
 type WskCmd struct {
@@ -48,6 +47,7 @@ func init() {
 
 func Wsk(args ...string) error {
 	os.Args = append([]string{"wsk"}, args...)
+	setWskConfigFile()
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
@@ -55,6 +55,16 @@ func Wsk(args ...string) error {
 		}
 	}()
 	return commands.Execute()
+}
+
+func setWskConfigFile() error {
+	path, err := getWskPropsFilePath()
+	if err != nil {
+		fmt.Println("Did you create a cluster? Try nuv setup --devcluster")
+		return err
+	}
+	os.Setenv("WSK_CONFIG_FILE", path)
+	return nil
 }
 
 func (wsk *WskCmd) Run() error {
