@@ -41,7 +41,20 @@ type KubeClient struct {
 	cfg             *rest.Config
 }
 
-func initClients() (*KubeClient, error) {
+func initClients(create_devcluster bool) (*KubeClient, error) {
+
+	if create_devcluster {
+		fmt.Println("Starting devcluster...")
+		cfg, err := configKind()
+		if err != nil {
+			return nil, err
+		}
+		err = cfg.manageKindCluster("create")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	var kubeconfig *string
 	if home, _ := GetHomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "")
@@ -50,12 +63,12 @@ func initClients() (*KubeClient, error) {
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("looks like nuvolaris cluster is not set up. Run nuv devcluster create")
+		return nil, fmt.Errorf("looks like nuvolaris cluster is not running. Run nuv devcluster create or nuv setup --devcluster")
 	}
 
 	err = assertNuvolarisContext(*kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("looks like nuvolaris cluster is not running. Run nuv devcluster create")
+		return nil, fmt.Errorf("looks like nuvolaris cluster is not running. Run nuv devcluster create or nuv setup --devcluster")
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
@@ -106,7 +119,7 @@ func assertNuvolarisContext(kubeconfigPath string) error {
 		return fmt.Errorf("error ModifyConfig: %w", err)
 	}
 
-	fmt.Println("current context set to", nuvolaris_context)
+	fmt.Println("✓ Current context set to", nuvolaris_context)
 	return nil
 }
 
@@ -125,7 +138,7 @@ func (c *KubeClient) createNuvNamespace() error {
 				fmt.Println("failed creation of namespace nuvolaris")
 				return err
 			}
-			fmt.Println("namespace nuvolaris created")
+			fmt.Println("✓ Namespace nuvolaris created")
 			return nil
 		}
 		return err

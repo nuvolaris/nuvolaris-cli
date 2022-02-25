@@ -130,7 +130,7 @@ func Example_createNamespace() {
 	testclient.clientset = fakeclient.NewSimpleClientset()
 	testclient.createNuvNamespace()
 	//Output:
-	//namespace nuvolaris created
+	//✓ Namespace nuvolaris created
 }
 
 func Example_namespaceIsNotCreatedIfAlreadyExists() {

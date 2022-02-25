@@ -18,9 +18,9 @@
 package main
 
 type SetupCmd struct {
-	Args []string `optional:"" name:"args" help:"setup nuvolaris"`
+	Args []string `arg:"" optional:"" name:"args"`
 }
 
 func (setupCmd *SetupCmd) Run() error {
-	return setupNuvolaris()
+	return setupNuvolaris(setupCmd.Args)
 }

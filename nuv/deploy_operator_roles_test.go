@@ -50,7 +50,7 @@ func Example_createServiceAccount() {
 	testclient.clientset = fake.NewSimpleClientset(nspace)
 	testclient.createServiceAccount()
 	// Output:
-	// service account created
+	// ✓ Service account created
 }
 
 func Example_skipCreationServiceAccount() {

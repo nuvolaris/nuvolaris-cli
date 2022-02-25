@@ -28,3 +28,6 @@ const MinDockerVersion = "18.06.3-ce"
 
 // MinDockerMem is the minimum amount of memory required by docker
 const MinDockerMem = (4 * 1000 * 1000 * 1000) - 1
+
+// TimeoutInSec is global timeout of 5 mins when polling
+const TimeoutInSec = 300
