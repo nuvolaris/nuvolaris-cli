@@ -42,6 +42,8 @@ header:
     - 'nuvolaris.yml'
     - '**/kind.yaml'
     - 'workspace.code-workspace'
+    - CODEOWNERS
+
  
 dependency:
   files:
