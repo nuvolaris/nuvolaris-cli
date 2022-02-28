@@ -46,7 +46,7 @@ Initially, there will be 4 commands:
 - `nuv scan` scans the folder and generates a Taskfile 
 - `nuv wsk` executes the wsk subcommand
 - `nuv task` executes the task subcommand
-- `nuv install` will also be able to execute a kubectl command that deploys the `nuvolaris-operator` that in turns inizializes openwhisk in any available kubernetes accessible with `kubectl` and initialize the `.wskprops` file used by `nuv wsk`
+- `nuv setup` will also be able to execute a kubectl command that deploys the `nuvolaris-operator` that in turns inizializes openwhisk in any available kubernetes accessible with `kubectl` and initialize the `.wskprops` file used by `nuv wsk`
 
 The expected workflow is that:
 1. `nuv setup` installs an openwhisk cluster using `kubectl` configured in the path
@@ -77,17 +77,66 @@ If the extension is in format:  `.<version>.<extension>`, it will deploy an acti
 
 ## Static frontend
 
-Nuv is also able to deploy static frontends. A static front-end is a collection of static asset under a given folder that will be published in a web server under a path.
+Nuv is also able to deploy static frontends. A static front-end is a collection of static asset under a given folder that will be published in a web server under a path. 
+
+A folder containing static (web) assets is always named `web` and can be placed in different parts in the folder hierarchy. The path in the website where is published depends on the location in the hierarchy, as described below.
+
+Before publishing, `nuv` executes some build commands.
+
+### Hostname
 
 In general, for each namespace there will be a `https://<namespace>.<domain>` website where to publish the resources. For the local deployment there will be a website `http://127.0.0.1:8080` where the resources are published, with the namespace and the domain ignored.
 
+### Path detection
+
 The path where the assets are published depends on the path in the action hierarchy.
 
-The sub-folder `web` is deployed as "/".
+The sub-folder `web` is published as "/".
 
-Any subfolder `web` under `packages\default\<action>\web` is published as `/<action>`.
+Any subfolder `web` under `packages/<package>/web` is published unser `/<packages>/`.
 
-Any subfolder `web` under `packages\<package>\<action>\web` is published as `/<package>/<action>`
+Any subfolder `web` under `packages/default/<action>\web` is published as `/<action>`.
+
+Any subfolder `web` under `packages/<package>/<action>/web` is published as `/<package>/<action>`
+
+What is published (files collected) and how it is built is defined by the next paragraph.
+
+### Building and Collecting
+
+In every folder `web` it will check if there is a `nuvolaris.json`
+
+If there is not a `nuvolaris.json` and not a `package.json` it will assume this base `nuvolaris.json`:
+
+```
+{
+  "collect": ".",
+  "install": "echo nothing to install",
+  "build": "echo nothing to build"
+}
+```
+
+If instead there is `packages.json`, it will assume this base `nuvolaris.json`:
+
+```
+{
+  "collect": "public",
+  "install": "npm install",
+  "build": "npm run build"
+}
+```
+
+The it will read the `nuvolaris.json` replacing the keys in it with the default ones.
+
+The generated taskfile will execute at deployment step:
+
+- the command defined by `install` only if there is not a `node_modules`
+- the command defined by `build` always
+- then it will collect for publishing (creating a crd instance) the files in the folder defined by `collect`
+
+It is recommended that `nuv scan` does not execute directy the command but instead it delegates to another command like `nuv build` and in turn the creation of `crd` to another `nuv crd` subcommand, after changing to the corresponding suddirectory. All those commands should work by default in current directory. 
+
+
+
 
 ## Multi File Actions
 
@@ -107,6 +156,8 @@ Currently:
 - if there is a `go.mod` then it builds using `go build`
 
 then it will zip the folder and send as an action of the current type to the runtime.
+
+
 
 
 
