@@ -30,21 +30,18 @@ import (
 )
 
 type ScanCmd struct {
-	Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
-	Save string `optional:"" short:"s" help:"Path to save output nuvolaris.yml." type:"path"`
+	Path   string `arg:"" optional:"" help:"Path to scan." type:"path"`
+	Output string `optional:"" short:"o" help:"Path to save output nuvolaris.yml." type:"path"`
 }
 
 func (s *ScanCmd) Run() error {
-	b, err := packagesFolderExists(s.Path)
+	scanFolderPath := filepath.Join(s.Path, ScanFolder)
+
+	// 1. Check that ScanFolder is present and accessible
+	b, err := packagesFolderExists(scanFolderPath)
 	if !b {
 		// packages folder not found, stop here
-		var errMsg string
-		if s.Path == "" {
-			errMsg = "folder 'packages' not found! Cannot scan project :("
-		} else {
-			errMsg = fmt.Sprintf("folder 'packages' in %s not found! Cannot scan project :(", s.Path)
-		}
-		return fmt.Errorf("%s", errMsg)
+		return fmt.Errorf("folder '%s' in %s not found! Cannot scan project :(", ScanFolder, s.Path)
 	}
 	if err != nil {
 		log.Error("Error reading packages folder!") // TODO: improve feedback to user...
@@ -52,30 +49,19 @@ func (s *ScanCmd) Run() error {
 		return err
 	}
 
-	projectTree, err := scanPackagesFolder(s.Path)
+	// 2. Visit the ScanFolder and parse the contents into a tree object
+	projectTree, err := visitScanFolder(s.Path)
 	if err != nil {
 		return err
 	}
 
+	// 3. Turn the tree into a list of tasks for the Taskfile
 	tasks := parseProjectTree(&projectTree)
 
-	mergeIntoYaml(tasks, s.Save)
+	// 4. Write the tasks into a Taskfile nuvolaris.yml
+	mergeIntoYaml(tasks, s.Output)
 
 	return nil
-}
-
-func mergeIntoYaml(tasks []string, savePath string) {
-	taskfile := "version: 3\n\ntasks:\n  default:\n    cmds:"
-
-	for _, t := range tasks {
-		taskfile = fmt.Sprintf("%s\n      - %s", taskfile, t)
-	}
-
-	taskfile = fmt.Sprintf("%s\n", taskfile)
-	err := os.WriteFile(filepath.Join(savePath, "nuvolaris.yml"), []byte(taskfile), 0700)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 const goRuntime = ".go"
@@ -90,50 +76,48 @@ var extRuntimes = map[string]string{
 	pyRuntime:   "--kind python:default",
 }
 
-type ProjectTree struct {
+type ScanTree struct {
 	name    string
 	path    string
-	folders []*ProjectTree
+	folders []*ScanTree
 
-	mfActions []*ProjectTreeAction
-	sfActions []*ProjectTreeAction
+	mfActions []*Action
+	sfActions []*Action
 }
 
-type ProjectTreeAction struct {
+type Action struct {
 	name    string
 	runtime string
 	path    string
 }
 
-func packagesFolderExists(path string) (bool, error) {
-	dir := "packages"
-	filename := filepath.Join(path, dir)
-	_, err := os.Stat(filename)
+func packagesFolderExists(folderPath string) (bool, error) {
+	_, err := os.Stat(folderPath)
 	if os.IsNotExist(err) {
 		return false, err
 	}
 	return true, err
 }
 
-func scanPackagesFolder(path string) (ProjectTree, error) {
-	root, err := processDir(path, "packages", true)
+func visitScanFolder(path string) (ScanTree, error) {
+	root, err := processDir(path, ScanFolder, true)
 	if err != nil {
-		return ProjectTree{}, err
+		return ScanTree{}, err
 	}
 	return root, nil
 }
 
-func processDir(parentPath string, dir string, rootLevel bool) (ProjectTree, error) {
-	pt := ProjectTree{name: dir}
-	var folders []*ProjectTree
-	var mfActions []*ProjectTreeAction
-	var sfActions []*ProjectTreeAction
+func processDir(parentPath string, dir string, rootLevel bool) (ScanTree, error) {
+	pt := ScanTree{name: dir}
+	var folders []*ScanTree
+	var mfActions []*Action
+	var sfActions []*Action
 
 	dirPath := filepath.Join(parentPath, dir)
 	children, err := os.ReadDir(dirPath)
 
 	if err != nil { // TODO ReadDir returns the entries it was able to read before the error. Parse what was read anyway?
-		return ProjectTree{}, err
+		return ScanTree{}, err
 	}
 
 	for _, info := range children {
@@ -152,7 +136,7 @@ func processDir(parentPath string, dir string, rootLevel bool) (ProjectTree, err
 				if err != nil {
 					return pt, err
 				}
-				mfActions = append(mfActions, &ProjectTreeAction{name: info.Name(), runtime: runtime, path: mfPath})
+				mfActions = append(mfActions, &Action{name: info.Name(), runtime: runtime, path: mfPath})
 
 			}
 		} else {
@@ -161,7 +145,7 @@ func processDir(parentPath string, dir string, rootLevel bool) (ProjectTree, err
 				return pt, fmt.Errorf("no supported runtime found for file %s", info.Name())
 			}
 			actionName := strings.TrimSuffix(info.Name(), ext) // remove extension from filename
-			sfActions = append(sfActions, &ProjectTreeAction{name: actionName, runtime: ext, path: filepath.Join(dirPath, info.Name())})
+			sfActions = append(sfActions, &Action{name: actionName, runtime: ext, path: filepath.Join(dirPath, info.Name())})
 		}
 	}
 
@@ -214,7 +198,7 @@ func searchRuntime(mfPath, ext, file string) (bool, error) {
 	}
 }
 
-func parseProjectTree(projectRoot *ProjectTree) []string {
+func parseProjectTree(projectRoot *ScanTree) []string {
 
 	// First level commands: actions from files
 	rootTasks := parseRootSingleFileActions(projectRoot)
@@ -224,7 +208,7 @@ func parseProjectTree(projectRoot *ProjectTree) []string {
 	return append(rootTasks, subTasks...)
 }
 
-func parseRootSingleFileActions(projectRoot *ProjectTree) []string {
+func parseRootSingleFileActions(projectRoot *ScanTree) []string {
 	childTasks := make([]string, len(projectRoot.sfActions))
 	for i, sfAction := range projectRoot.sfActions {
 		cmd := actionUpdate("", sfAction.name, sfAction.path, extRuntimes[sfAction.runtime])
@@ -235,7 +219,7 @@ func parseRootSingleFileActions(projectRoot *ProjectTree) []string {
 
 var wg sync.WaitGroup
 
-func parseSubFolders(projectRoot *ProjectTree) []string {
+func parseSubFolders(projectRoot *ScanTree) []string {
 	tasks := make([]string, 0)
 	var subTasks []string
 
@@ -271,7 +255,7 @@ func appendTasks(taskQueue chan string) []string {
 	return tasks
 }
 
-func parseSingleFileActions(taskQueue chan string, parent *ProjectTree) {
+func parseSingleFileActions(taskQueue chan string, parent *ScanTree) {
 	defer wg.Done()
 
 	wskPkg := parent.name + "/"
@@ -282,7 +266,7 @@ func parseSingleFileActions(taskQueue chan string, parent *ProjectTree) {
 
 }
 
-func parseMultiFileActions(taskQueue chan string, parent *ProjectTree) {
+func parseMultiFileActions(taskQueue chan string, parent *ScanTree) {
 	defer wg.Done()
 
 	wskPkg := parent.name + "/"
@@ -301,4 +285,18 @@ func actionUpdate(pkg, actionName, filepath, runtime string) string {
 }
 func packageUpdate(pkgName string) string {
 	return fmt.Sprintf("wsk package update %s", pkgName)
+}
+
+func mergeIntoYaml(tasks []string, outputPath string) {
+	taskfile := "version: 3\n\ntasks:\n  default:\n    cmds:"
+
+	for _, t := range tasks {
+		taskfile = fmt.Sprintf("%s\n      - %s", taskfile, t)
+	}
+
+	taskfile = fmt.Sprintf("%s\n", taskfile)
+	err := os.WriteFile(filepath.Join(outputPath, "nuvolaris.yml"), []byte(taskfile), 0700)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
