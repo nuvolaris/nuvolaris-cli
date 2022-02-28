@@ -18,47 +18,25 @@
 package main
 
 import (
+	"io/fs"
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-func TestNuvScan(t *testing.T) {
-	t.Run("should have scan subcmd help", func(t *testing.T) {
-		var cli CLI
-		app := NewTestApp(t, &cli)
-		require.PanicsWithValue(t, true, func() {
-			_, err := app.Parse([]string{"scan", "--help"})
-			require.NoError(t, err)
-		})
-	})
-
-	t.Run("should generate a Taskfile", func(t *testing.T) {
-		var cli CLI
-		app := NewTestApp(t, &cli)
-		c, _ := app.Parse([]string{"scan", "test-embed/", "-o", "../"})
-		err := c.Run()
-		require.NoError(t, err)
-
-		// TODO check task file
-	})
-}
-
-const testFolder = "./test-embed/scan-tests/"
-const emptyPkg = testFolder + "empty-pkg"
-const foldersOnly = testFolder + "folders-only"
 
 func Test_packagesFolderExists(t *testing.T) {
 	t.Run("should return true if packages folder is found", func(t *testing.T) {
-		exists, err := packagesFolderExists(testFolder)
+		fakeFS := fstest.MapFS{ScanFolder: {Mode: fs.ModeDir}}
+		exists, err := packagesFolderExists(fakeFS)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return false with error no such file or directory", func(t *testing.T) {
-		exists, err := packagesFolderExists("non-existing-folder")
+		fakeFS := fstest.MapFS{} // empty
+		exists, err := packagesFolderExists(fakeFS)
 		assert.Errorf(t, err, "no such file or directory")
 		assert.False(t, exists)
 	})
@@ -67,174 +45,165 @@ func Test_packagesFolderExists(t *testing.T) {
 //  *******************************************
 
 func Test_visitScanFolder(t *testing.T) {
-	// No tests if 'packages' does not exist cause checkPackagesFolder stops the pipeline in that case
-	t.Run("should return a tree with just root node when packages folder is empty", func(t *testing.T) {
-		root, err := visitScanFolder(emptyPkg)
 
-		assert.Empty(t, root.folders)
+	// No tests if 'packages' does not exist cause checkPackagesFolder stops the pipeline in that case
+	t.Run("should return empty tree when ScanFolder is empty", func(t *testing.T) {
+		emptyScan := fstest.MapFS{ScanFolder: {Mode: fs.ModeDir}}
+		root, _ := visitScanFolder(emptyScan)
+
+		assert.Empty(t, root.packages)
 		assert.Empty(t, root.mfActions)
 		assert.Empty(t, root.sfActions)
 		assert.Equal(t, ScanFolder, root.name)
-		assert.NoError(t, err)
 	})
 
-	t.Run("should return a root with folders when packages has subfolders", func(t *testing.T) {
+	t.Run("should return a tree with packages when subfolders are present", func(t *testing.T) {
+		packagesExample := fstest.MapFS{
+			ScanFolder + "/subf1": {Mode: fs.ModeDir},
+			ScanFolder + "/subf2": {Mode: fs.ModeDir},
+		}
 		expected1 := "subf1"
 		expected2 := "subf2"
 
-		root, err := visitScanFolder(foldersOnly)
+		root, _ := visitScanFolder(packagesExample)
 
-		assert.NoError(t, err)
 		assert.Empty(t, root.mfActions)
 		assert.Empty(t, root.sfActions)
-		assert.NotEmpty(t, root.folders)
+		assert.NotEmpty(t, root.packages)
 
-		assert.Equal(t, expected1, root.folders[0].name)
-		assert.Equal(t, expected2, root.folders[1].name)
+		assert.Equal(t, expected1, root.packages[0].name)
+		assert.Equal(t, expected2, root.packages[1].name)
 	})
 
-	// 	s.T().Run("should return a root with single file actions when packages has files", func(t *testing.T) {
-	// 		testWithFs([]string{}, []string{"a.js", "b.py"}, func() {
-	// 			root, err := scanPackagesFolder(testFolder)
+	t.Run("should return a tree with single file actions when files are present", func(t *testing.T) {
+		sfaExample := fstest.MapFS{
+			ScanFolder + "/a.js": {Data: []byte{}},
+			ScanFolder + "/b.py": {Data: []byte{}},
+		}
+		root, _ := visitScanFolder(sfaExample)
 
-	// 			s.Assert().NoError(err) // error in case file system operation failed
-	// 			s.Assert().Empty(root.folders)
-	// 			s.Assert().Empty(root.mfActions)
-	// 			s.Assert().NotEmpty(root.sfActions)
+		assert.Empty(t, root.packages)
+		assert.Empty(t, root.mfActions)
+		assert.NotEmpty(t, root.sfActions)
 
-	// 			s.Assert().Equal("a", root.sfActions[0].name)
-	// 			s.Assert().Equal("b", root.sfActions[1].name)
-	// 		})
-	// 	})
+		assert.Equal(t, "a", root.sfActions[0].name)
+		assert.Equal(t, "b", root.sfActions[1].name)
+	})
 
-	// 	s.T().Run("should return a root with sf actions and folders when 'packages' has both", func(t *testing.T) {
-	// 		testWithFs([]string{"subf1", "subf2"}, []string{"a.js", "b.py"}, func() {
-	// 			root, err := scanPackagesFolder(testFolder)
+	t.Run("should return a tree with sf actions and packages when present", func(t *testing.T) {
+		packagesAndSfaExample := fstest.MapFS{
+			ScanFolder + "/subf1": {Mode: fs.ModeDir},
+			ScanFolder + "/a.js":  {Data: []byte{}},
+		}
+		root, _ := visitScanFolder(packagesAndSfaExample)
 
-	// 			s.Assert().NoError(err) // error in case file system operation failed
-	// 			s.Assert().NotEmpty(root.folders)
-	// 			s.Assert().NotEmpty(root.sfActions)
-	// 			s.Assert().Empty(root.mfActions)
-	// 		})
-	// 	})
+		assert.NotEmpty(t, root.packages)
+		assert.NotEmpty(t, root.sfActions)
+		assert.Empty(t, root.mfActions)
+	})
 
-	// 	s.T().Run("should return a tree with folders and mfActions when 'packages' has sub sub folders", func(t *testing.T) {
-	// 		testWithFs(
-	// 			[]string{"subf1/a1", "subf1/a2", "subf2/b1"},
-	// 			[]string{"subf1/a1/package.json", "subf1/a1/a1.js", "subf1/a2/package.json", "subf1/a2/a2.js", "subf2/b1/assertments.txt", "subf2/b1/b1.py"},
-	// 			func() {
-	// 				root, err := scanPackagesFolder(testFolder)
+	t.Run("should return a tree with packages and mfActions with sub sub folders", func(t *testing.T) {
+		mfaExample := fstest.MapFS{
+			ScanFolder + "/subf1/mfa/package.json": {Data: []byte{}},
+			ScanFolder + "/subf1/mfa/a.js":         {Data: []byte{}},
+		}
+		root, _ := visitScanFolder(mfaExample)
 
-	// 				s.Assert().NoError(err) // error in case file system operation failed
-	// 				s.Assert().Empty(root.sfActions)
-	// 				s.Assert().NotEmpty(root.folders)
-	// 				s.Assert().Empty(root.mfActions)
+		assert.Empty(t, root.sfActions)
+		assert.NotEmpty(t, root.packages)
+		assert.Empty(t, root.mfActions)
 
-	// 				s.Assert().Equal("a1", root.folders[0].mfActions[0].name)
-	// 				s.Assert().Equal("a2", root.folders[0].mfActions[1].name)
-	// 				s.Assert().Equal("b1", root.folders[1].mfActions[0].name)
-	// 			})
-	// 	})
+		assert.Equal(t, "mfa", root.packages[0].mfActions[0].name)
+	})
 
-	// 	s.T().Run("should return a complete tree representing the packages folder", func(t *testing.T) {
-	// 		testWithFs(
-	// 			[]string{"subf1", "subf1", "subf2/subsubf"},
-	// 			[]string{"a.js", "b.go", "subf1/c.js", "subf2/subsubf/d.js"},
-	// 			func() {
+	t.Run("packages should have the complete path to them", func(t *testing.T) {
+		sub1Path := ScanFolder + "/subf1"
+		sub2Path := ScanFolder + "/subf2"
+		pathExample := fstest.MapFS{
+			sub1Path: {Mode: fs.ModeDir},
+			sub2Path: {Mode: fs.ModeDir},
+		}
+		root, _ := visitScanFolder(pathExample)
 
-	// 				root, err := scanPackagesFolder(testFolder)
+		assert.Equal(t, sub1Path, root.packages[0].path)
+		assert.Equal(t, sub2Path, root.packages[1].path)
+	})
 
-	// 				s.Assert().NoError(err) // error in case file system operation failed
+	t.Run("actions should have the complete path to the code", func(t *testing.T) {
+		subSFAPath := ScanFolder + "/a.py"
+		subMFAPath := ScanFolder + "/subf1/mfa"
+		pathExample := fstest.MapFS{
+			subSFAPath:           {Data: []byte{}},
+			subMFAPath + "/b.js": {Data: []byte{}},
+		}
+		root, _ := visitScanFolder(pathExample)
 
-	// 				s.Assert().Equal("a", root.sfActions[0].name)
-	// 				s.Assert().Equal("b", root.sfActions[1].name)
-	// 				s.Assert().Equal("c", root.folders[0].sfActions[0].name)
-	// 				s.Assert().Equal("subsubf", root.folders[1].mfActions[0].name)
+		assert.Equal(t, subSFAPath, root.sfActions[0].path)
+		assert.Equal(t, subMFAPath, root.packages[0].mfActions[0].path)
+	})
 
-	// 				s.Assert().Len(root.sfActions, 2)
-	// 				s.Assert().Len(root.folders, 2)
-	// 				s.Assert().Empty(root.mfActions)
-	// 				s.Assert().Len(root.folders[0].sfActions, 1)
-	// 				s.Assert().Len(root.folders[1].mfActions, 1)
-	// 			})
-	// 	})
-	// 	s.T().Run("folders should have the complete path to them", func(t *testing.T) {
-	// 		testWithFs(
-	// 			[]string{"subf1", "subf2"},
-	// 			[]string{},
-	// 			func() {
+	t.Run("actions should hold runtime", func(t *testing.T) {
+		subSFAPath := ScanFolder + "/a.py"
+		subMFAPath := ScanFolder + "/subf1/mfa"
+		runtimeExample := fstest.MapFS{
+			subSFAPath:           {Data: []byte{}},
+			subMFAPath + "/b.js": {Data: []byte{}},
+		}
+		root, _ := visitScanFolder(runtimeExample)
 
-	// 				root, err := scanPackagesFolder(testFolder)
-
-	// 				s.Assert().NoError(err) // error in case file system operation failed
-	// 				s.Assert().Equal(filepath.Join(testFolder, "/packages/subf1"), root.folders[0].path)
-	// 				s.Assert().Equal(filepath.Join(testFolder, "/packages/subf2"), root.folders[1].path)
-	// 			})
-	// 	})
-
-	// 	s.T().Run("actions should have the complete path to the code", func(t *testing.T) {
-	// 		testWithFs(
-	// 			[]string{"subf", "subf/sub"},
-	// 			[]string{"a.py", "subf/sub/b.js"},
-	// 			func() {
-
-	// 				root, err := scanPackagesFolder(testFolder)
-
-	// 				s.Assert().NoError(err) // error in case file system operation failed
-	// 				s.Assert().Equal(filepath.Join(testFolder, "/packages/a.py"), root.sfActions[0].path)
-	// 				s.Assert().Equal(filepath.Join(testFolder, "/packages/subf/sub"), root.folders[0].mfActions[0].path)
-	// 			})
-	// 	})
-
-	// 	s.T().Run("actions should hold runtime", func(t *testing.T) {
-	// 		testWithFs(
-	// 			[]string{"subf", "subf/sub"},
-	// 			[]string{"a.py", "subf/sub/b.js"},
-	// 			func() {
-	// 				root, err := scanPackagesFolder(testFolder)
-
-	// 				s.Assert().NoError(err) // error in case file system operation failed
-	// 				s.Assert().Equal(".py", root.sfActions[0].runtime)
-	// 				s.Assert().Equal(".js", root.folders[0].mfActions[0].runtime)
-	// 			})
-	// 	})
+		assert.Equal(t, ".py", root.sfActions[0].runtime)
+		assert.Equal(t, ".js", root.packages[0].mfActions[0].runtime)
+	})
 }
 
-// //  *******************************************
+func Test_findMfaRuntime(t *testing.T) {
+	t.Run("should return error when no runtime found", func(t *testing.T) {
+		emptyScan := fstest.MapFS{ScanFolder: {Mode: fs.ModeDir}}
+		runtime, err := findMfaRuntime(emptyScan, ScanFolder)
 
-// //  *** findMfaRuntime function tests ***
-// func helpTestForRuntime(s *nuvScanTestSuite, searchFor, expectedRuntime string) {
-// 	s.T().Helper()
-// 	testWithFs([]string{}, []string{searchFor}, func() {
-// 		runtime, err := findMfaRuntime(pkgPath)
+		assert.Empty(t, runtime)
+		assert.Errorf(t, err, "no supported runtime found")
+	})
 
-// 		s.Assert().NoError(err)
-// 		s.Assert().Equal(expectedRuntime, runtime)
-// 	})
-// }
-// func (s *nuvScanTestSuite) Test_findMfaRuntime() {
-// 	s.T().Run("should return error when no runtime found", func(t *testing.T) {
-// 		testWithFs([]string{}, []string{}, func() {
-// 			runtime, err := findMfaRuntime(testFolder)
+	t.Run("should return js runtime when present", func(t *testing.T) {
+		rtExample := fstest.MapFS{"a.js": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, jsRuntime)
 
-// 			s.Assert().Empty(runtime)
-// 			s.Assert().Errorf(err, "no supported runtime found")
-// 		})
-// 	})
+		rtExample = fstest.MapFS{"package.json": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, jsRuntime)
+	})
 
-// 	s.T().Run("should return correct runtime when present", func(t *testing.T) {
-// 		helpTestForRuntime(s, "package.json", jsRuntime)
-// 		helpTestForRuntime(s, "a.js", jsRuntime)
-// 		helpTestForRuntime(s, "requirements.txt", pyRuntime)
-// 		helpTestForRuntime(s, "a.py", pyRuntime)
-// 		helpTestForRuntime(s, "pom.xml", javaRuntime)
-// 		helpTestForRuntime(s, "a.java", javaRuntime)
-// 		helpTestForRuntime(s, "go.mod", goRuntime)
-// 		helpTestForRuntime(s, "a.go", goRuntime)
-// 	})
-// }
+	t.Run("should return python runtime when present", func(t *testing.T) {
+		rtExample := fstest.MapFS{"a.py": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, pyRuntime)
 
-// //  *****************************************
+		rtExample = fstest.MapFS{"requirements.txt": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, pyRuntime)
+	})
+
+	t.Run("should return java runtime when present", func(t *testing.T) {
+		rtExample := fstest.MapFS{"a.java": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, javaRuntime)
+
+		rtExample = fstest.MapFS{"pom.xml": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, javaRuntime)
+	})
+
+	t.Run("should return go runtime when present", func(t *testing.T) {
+		rtExample := fstest.MapFS{"a.go": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, goRuntime)
+
+		rtExample = fstest.MapFS{"go.mod": {Data: []byte{}}}
+		checkIfRuntimePresent(t, rtExample, goRuntime)
+	})
+
+}
+func checkIfRuntimePresent(t *testing.T, rtExample fs.FS, expectedRuntime string) {
+	t.Helper()
+	runtime, err := findMfaRuntime(rtExample, "")
+	assert.Equal(t, expectedRuntime, runtime)
+	assert.NoError(t, err)
+}
 
 // //  *** parseProjectTree function tests ***
 // func (s *nuvScanTestSuite) Test_parseProjectTree() {

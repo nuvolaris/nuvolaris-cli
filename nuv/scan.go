@@ -20,8 +20,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -36,9 +36,10 @@ type ScanCmd struct {
 
 func (s *ScanCmd) Run() error {
 	scanFolderPath := filepath.Join(s.Path, ScanFolder)
+	fsys := os.DirFS(scanFolderPath)
 
 	// 1. Check that ScanFolder is present and accessible
-	b, err := packagesFolderExists(scanFolderPath)
+	b, err := packagesFolderExists(fsys)
 	if !b {
 		// packages folder not found, stop here
 		return fmt.Errorf("folder '%s' in %s not found! Cannot scan project :(", ScanFolder, s.Path)
@@ -50,7 +51,7 @@ func (s *ScanCmd) Run() error {
 	}
 
 	// 2. Visit the ScanFolder and parse the contents into a tree object
-	projectTree, err := visitScanFolder(s.Path)
+	projectTree, err := visitScanFolder(fsys)
 	if err != nil {
 		return err
 	}
@@ -62,6 +63,24 @@ func (s *ScanCmd) Run() error {
 	mergeIntoYaml(tasks, s.Output)
 
 	return nil
+}
+
+// 1.
+func packagesFolderExists(fsys fs.FS) (bool, error) {
+	_, err := fs.Stat(fsys, ScanFolder)
+	if os.IsNotExist(err) {
+		return false, err
+	}
+	return true, err
+}
+
+// 2.
+func visitScanFolder(fsys fs.FS) (ScanTree, error) {
+	root, err := processDir(fsys, "", ScanFolder, true)
+	if err != nil {
+		return ScanTree{}, err
+	}
+	return root, nil
 }
 
 const goRuntime = ".go"
@@ -77,9 +96,9 @@ var extRuntimes = map[string]string{
 }
 
 type ScanTree struct {
-	name    string
-	path    string
-	folders []*ScanTree
+	name     string
+	path     string
+	packages []*ScanTree
 
 	mfActions []*Action
 	sfActions []*Action
@@ -91,40 +110,24 @@ type Action struct {
 	path    string
 }
 
-func packagesFolderExists(folderPath string) (bool, error) {
-	_, err := os.Stat(folderPath)
-	if os.IsNotExist(err) {
-		return false, err
-	}
-	return true, err
-}
-
-func visitScanFolder(path string) (ScanTree, error) {
-	root, err := processDir(path, ScanFolder, true)
-	if err != nil {
-		return ScanTree{}, err
-	}
-	return root, nil
-}
-
-func processDir(parentPath string, dir string, rootLevel bool) (ScanTree, error) {
+func processDir(fsys fs.FS, parentPath string, dir string, rootLevel bool) (ScanTree, error) {
 	pt := ScanTree{name: dir}
 	var folders []*ScanTree
 	var mfActions []*Action
 	var sfActions []*Action
 
 	dirPath := filepath.Join(parentPath, dir)
-	children, err := os.ReadDir(dirPath)
+	children, err := fs.ReadDir(fsys, dirPath)
 
-	if err != nil { // TODO ReadDir returns the entries it was able to read before the error. Parse what was read anyway?
+	if err != nil { // TODO: ReadDir returns the entries it was able to read before the error. Parse what was read anyway?
 		return ScanTree{}, err
 	}
 
 	for _, info := range children {
 		if info.IsDir() {
 			if rootLevel {
-				// root level: folders = packages and continue walk
-				childPT, err := processDir(dirPath, info.Name(), false)
+				// root level: folders == packages and continue walk
+				childPT, err := processDir(fsys, dirPath, info.Name(), false)
 				if err != nil {
 					return pt, err
 				}
@@ -132,7 +135,7 @@ func processDir(parentPath string, dir string, rootLevel bool) (ScanTree, error)
 			} else {
 				// inner level: folders = multi file actions and stop
 				mfPath := filepath.Join(dirPath, info.Name())
-				runtime, err := findMfaRuntime(mfPath)
+				runtime, err := findMfaRuntime(fsys, mfPath)
 				if err != nil {
 					return pt, err
 				}
@@ -140,7 +143,7 @@ func processDir(parentPath string, dir string, rootLevel bool) (ScanTree, error)
 
 			}
 		} else {
-			ext := path.Ext(info.Name())
+			ext := filepath.Ext(info.Name())
 			if extRuntimes[ext] == "" {
 				return pt, fmt.Errorf("no supported runtime found for file %s", info.Name())
 			}
@@ -150,26 +153,26 @@ func processDir(parentPath string, dir string, rootLevel bool) (ScanTree, error)
 	}
 
 	pt.path = dirPath
-	pt.folders = folders
+	pt.packages = folders
 	pt.mfActions = mfActions
 	pt.sfActions = sfActions
 	return pt, nil
 }
 
-func findMfaRuntime(mfPath string) (string, error) {
-	found, err := searchRuntime(mfPath, jsRuntime, "package.json")
+func findMfaRuntime(fsys fs.FS, mfPath string) (string, error) {
+	found, err := searchRuntime(fsys, mfPath, jsRuntime, "package.json")
 	if found {
 		return jsRuntime, err
 	}
-	found, err = searchRuntime(mfPath, pyRuntime, "requirements.txt")
+	found, err = searchRuntime(fsys, mfPath, pyRuntime, "requirements.txt")
 	if found {
 		return pyRuntime, err
 	}
-	found, err = searchRuntime(mfPath, javaRuntime, "pom.xml")
+	found, err = searchRuntime(fsys, mfPath, javaRuntime, "pom.xml")
 	if found {
 		return javaRuntime, err
 	}
-	found, err = searchRuntime(mfPath, goRuntime, "go.mod")
+	found, err = searchRuntime(fsys, mfPath, goRuntime, "go.mod")
 	if found {
 		return goRuntime, err
 	}
@@ -180,14 +183,14 @@ func findMfaRuntime(mfPath string) (string, error) {
 	return "", fmt.Errorf("no supported runtime found")
 }
 
-func searchRuntime(mfPath, ext, file string) (bool, error) {
-	if _, err := os.Stat(path.Join(mfPath, file)); err == nil {
+func searchRuntime(fsys fs.FS, mfPath, ext, file string) (bool, error) {
+	if _, err := fs.Stat(fsys, filepath.Join(mfPath, file)); err == nil {
 		return true, nil
 
 	} else if errors.Is(err, os.ErrNotExist) {
 
-		pattern := fmt.Sprintf("%s/*%s", mfPath, ext)
-		matches, err := filepath.Glob(pattern)
+		pattern := filepath.Join(mfPath, "*"+ext)
+		matches, err := fs.Glob(fsys, pattern)
 		if err != nil {
 			return false, err
 		}
@@ -198,6 +201,7 @@ func searchRuntime(mfPath, ext, file string) (bool, error) {
 	}
 }
 
+// 3.
 func parseProjectTree(projectRoot *ScanTree) []string {
 
 	// First level commands: actions from files
@@ -223,7 +227,7 @@ func parseSubFolders(projectRoot *ScanTree) []string {
 	tasks := make([]string, 0)
 	var subTasks []string
 
-	for _, subf := range projectRoot.folders {
+	for _, subf := range projectRoot.packages {
 		taskQueue := make(chan string, len(subf.sfActions)+(len(subf.mfActions)*2))
 
 		// First level commands: packages from folders
@@ -270,7 +274,6 @@ func parseMultiFileActions(taskQueue chan string, parent *ScanTree) {
 	defer wg.Done()
 
 	wskPkg := parent.name + "/"
-
 	for _, mfAction := range parent.mfActions {
 		zipCmd := fmt.Sprintf("zip -r %s/%s.zip %s/*", mfAction.path, mfAction.name, mfAction.path)
 		zipPath := fmt.Sprintf("%s/%s.zip", mfAction.path, mfAction.name)
@@ -287,6 +290,7 @@ func packageUpdate(pkgName string) string {
 	return fmt.Sprintf("wsk package update %s", pkgName)
 }
 
+// 4.
 func mergeIntoYaml(tasks []string, outputPath string) {
 	taskfile := "version: 3\n\ntasks:\n  default:\n    cmds:"
 
