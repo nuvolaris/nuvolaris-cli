@@ -30,12 +30,11 @@ import (
 )
 
 type ScanCmd struct {
-	Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
+	Path string `arg:"" optional:"" default:"./" help:"Path to scan." type:"path"`
 }
 
 func (s *ScanCmd) Run() error {
-	scanFolderPath := filepath.Join(s.Path, ScanFolder)
-	fsys := os.DirFS(scanFolderPath)
+	fsys := os.DirFS(s.Path)
 
 	taskfile, err := generateTaskfile(fsys)
 	if err != nil {

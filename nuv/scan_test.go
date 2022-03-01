@@ -20,15 +20,35 @@ package main
 import (
 	"fmt"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRun(t *testing.T) {
+func ExampleRun() {
 	scanCmd := ScanCmd{Path: "./test-embed/test-scan"}
 	scanCmd.Run()
+
+	hd, _ := GetHomeDir()
+	content, _ := os.ReadFile(filepath.Join(hd, ".nuvolaris/nuvolaris.yml"))
+
+	fmt.Println(string(content))
+	//  Output:
+	//version: 3
+	//
+	//tasks:
+	//   default:
+	//     cmds:
+	//       - nuv wsk action update echo packages/echo.js --kind nodejs:default
+	//       - nuv wsk package update billing
+	//       - nuv wsk action update billing/form packages/billing/form.js --kind nodejs:default
+	//       - nuv wsk action update billing/send packages/billing/send.py --kind python:default
+	//       - nuv wsk package update mails
+	//       - nuv pack -r packages/mails/sendmail/sendmail.zip packages/mails/sendmail/*
+	//       - nuv wsk action update mails/sendmail packages/mails/sendmail/sendmail.zip --kind nodejs:default
 }
 
 func Example_generateTaskfile() {
@@ -39,7 +59,7 @@ func Example_generateTaskfile() {
 	}
 	taskfile, _ := generateTaskfile(packagesExample)
 	fmt.Println(taskfile)
-	//Output:
+	//  Output:
 	//version: 3
 	//
 	//tasks:
