@@ -202,7 +202,7 @@ func (config *KindConfig) startCluster() error {
 
 func (config *KindConfig) preloadOpenWhiskImage() error {
 	if !isOpenWhiskImageLoaded() {
-		exec.Command("docker", "pull", img)
+		exec.Command("docker", "pull", img+tag)
 	}
 	if err := config.kind("load", "docker-image", img+tag, "--name="+config.nuvolarisClusterName); err != nil {
 		return err
