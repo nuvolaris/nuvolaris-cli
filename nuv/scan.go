@@ -30,39 +30,57 @@ import (
 )
 
 type ScanCmd struct {
-	Path   string `arg:"" optional:"" help:"Path to scan." type:"path"`
-	Output string `optional:"" short:"o" help:"Path to save output nuvolaris.yml." type:"path"`
+	Path string `arg:"" optional:"" help:"Path to scan." type:"path"`
 }
 
 func (s *ScanCmd) Run() error {
 	scanFolderPath := filepath.Join(s.Path, ScanFolder)
 	fsys := os.DirFS(scanFolderPath)
 
+	taskfile, err := generateTaskfile(fsys)
+	if err != nil {
+		return err
+	}
+
+	homeDir, err := GetHomeDir()
+	if err != nil {
+		return err
+	}
+	// Save to ~/.nuvolaris/nuvolaris.yml
+	err = os.WriteFile(filepath.Join(homeDir, ".nuvolaris/nuvolaris.yml"), []byte(taskfile), 0700)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func generateTaskfile(fsys fs.FS) (string, error) {
+
 	// 1. Check that ScanFolder is present and accessible
 	b, err := packagesFolderExists(fsys)
 	if !b {
 		// packages folder not found, stop here
-		return fmt.Errorf("folder '%s' in %s not found! Cannot scan project :(", ScanFolder, s.Path)
+		return "", fmt.Errorf("folder '%s' not found! Cannot scan project :(", ScanFolder)
 	}
 	if err != nil {
 		log.Error("Error reading packages folder!") // TODO: improve feedback to user...
 		log.Debug(err)
-		return err
+		return "", err
 	}
 
 	// 2. Visit the ScanFolder and parse the contents into a tree object
 	projectTree, err := visitScanFolder(fsys)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// 3. Turn the tree into a list of tasks for the Taskfile
 	tasks := parseProjectTree(&projectTree)
 
-	// 4. Write the tasks into a Taskfile nuvolaris.yml
-	mergeIntoYaml(tasks, s.Output)
+	// 4. Merge the tasks into yaml format for a Taskfile
+	taskfile := mergeIntoYaml(tasks)
 
-	return nil
+	return taskfile, nil
 }
 
 // 1.
@@ -275,23 +293,23 @@ func parseMultiFileActions(taskQueue chan string, parent *ScanTree) {
 
 	wskPkg := parent.name + "/"
 	for _, mfAction := range parent.mfActions {
-		zipCmd := fmt.Sprintf("zip -r %s/%s.zip %s/*", mfAction.path, mfAction.name, mfAction.path)
-		zipPath := fmt.Sprintf("%s/%s.zip", mfAction.path, mfAction.name)
-		cmd := actionUpdate(wskPkg, mfAction.name, zipPath, extRuntimes[mfAction.runtime])
-		taskQueue <- zipCmd
+		packCmd := fmt.Sprintf("nuv pack -r %s/%s.zip %s/*", mfAction.path, mfAction.name, mfAction.path)
+		packPath := fmt.Sprintf("%s/%s.zip", mfAction.path, mfAction.name)
+		cmd := actionUpdate(wskPkg, mfAction.name, packPath, extRuntimes[mfAction.runtime])
+		taskQueue <- packCmd
 		taskQueue <- cmd
 	}
 }
 
 func actionUpdate(pkg, actionName, filepath, runtime string) string {
-	return fmt.Sprintf("wsk action update %s%s %s %s", pkg, actionName, filepath, runtime)
+	return fmt.Sprintf("nuv wsk action update %s%s %s %s", pkg, actionName, filepath, runtime)
 }
 func packageUpdate(pkgName string) string {
-	return fmt.Sprintf("wsk package update %s", pkgName)
+	return fmt.Sprintf("nuv wsk package update %s", pkgName)
 }
 
 // 4.
-func mergeIntoYaml(tasks []string, outputPath string) {
+func mergeIntoYaml(tasks []string) string {
 	taskfile := "version: 3\n\ntasks:\n  default:\n    cmds:"
 
 	for _, t := range tasks {
@@ -299,8 +317,5 @@ func mergeIntoYaml(tasks []string, outputPath string) {
 	}
 
 	taskfile = fmt.Sprintf("%s\n", taskfile)
-	err := os.WriteFile(filepath.Join(outputPath, "nuvolaris.yml"), []byte(taskfile), 0700)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return taskfile
 }

@@ -18,12 +18,38 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
 	"testing"
 	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestRun(t *testing.T) {
+	scanCmd := ScanCmd{Path: "./test-embed/test-scan"}
+	scanCmd.Run()
+}
+
+func Example_generateTaskfile() {
+	packagesExample := fstest.MapFS{
+		ScanFolder + "/subf1":                  {Mode: fs.ModeDir},
+		ScanFolder + "/hello.js":               {Data: []byte{}},
+		ScanFolder + "/subf1/mfa/package.json": {Data: []byte{}},
+	}
+	taskfile, _ := generateTaskfile(packagesExample)
+	fmt.Println(taskfile)
+	//Output:
+	//version: 3
+	//
+	//tasks:
+	//   default:
+	//     cmds:
+	//       - nuv wsk action update hello packages/hello.js --kind nodejs:default
+	//       - nuv wsk package update subf1
+	//       - nuv pack -r packages/subf1/mfa/mfa.zip packages/subf1/mfa/*
+	//       - nuv wsk action update subf1/mfa packages/subf1/mfa/mfa.zip --kind nodejs:default
+}
 
 func Test_packagesFolderExists(t *testing.T) {
 	t.Run("should return true if packages folder is found", func(t *testing.T) {
@@ -41,8 +67,6 @@ func Test_packagesFolderExists(t *testing.T) {
 		assert.False(t, exists)
 	})
 }
-
-//  *******************************************
 
 func Test_visitScanFolder(t *testing.T) {
 
@@ -221,14 +245,14 @@ func Test_parseProjectTree(t *testing.T) {
 
 		cmds := parseProjectTree(&root)
 
-		assert.Equal(t, "wsk package update subf", cmds[0])
+		assert.Equal(t, "nuv wsk package update subf", cmds[0])
 	})
 
 	t.Run("should return slice with 'wsk action update' when given root with file", func(t *testing.T) {
 		root := ScanTree{name: ""}
 		root.sfActions = []*Action{{name: "hello", path: "/hello.js", runtime: jsRuntime}}
 
-		expectedJs := "wsk action update hello /hello.js --kind nodejs:default"
+		expectedJs := "nuv wsk action update hello /hello.js --kind nodejs:default"
 
 		cmds := parseProjectTree(&root)
 
@@ -240,8 +264,8 @@ func Test_parseProjectTree(t *testing.T) {
 		root.sfActions = []*Action{{name: "hello", path: "/hello.js", runtime: jsRuntime}}
 		root.packages = []*ScanTree{{name: "subf"}}
 
-		expectedPkg := "wsk package update subf"
-		expectedJs := "wsk action update hello /hello.js --kind nodejs:default"
+		expectedPkg := "nuv wsk package update subf"
+		expectedJs := "nuv wsk action update hello /hello.js --kind nodejs:default"
 
 		cmds := parseProjectTree(&root)
 
@@ -254,7 +278,7 @@ func Test_parseProjectTree(t *testing.T) {
 		root.packages = []*ScanTree{{name: "subf"}}
 		root.packages[0].sfActions = []*Action{{name: "hello", path: "subf/hello.js", runtime: jsRuntime}}
 
-		expectedJs := "wsk action update subf/hello subf/hello.js --kind nodejs:default"
+		expectedJs := "nuv wsk action update subf/hello subf/hello.js --kind nodejs:default"
 
 		cmds := parseProjectTree(&root)
 
@@ -266,13 +290,13 @@ func Test_parseProjectTree(t *testing.T) {
 		root.packages = []*ScanTree{{name: "subf"}}
 		root.packages[0].mfActions = []*Action{{name: "mf", path: "subf/mf", runtime: jsRuntime}}
 
-		zipcmd := "zip -r subf/mf/mf.zip subf/mf/*"
-		mfacmd := "wsk action update subf/mf subf/mf/mf.zip --kind nodejs:default"
+		packCmd := "nuv pack -r subf/mf/mf.zip subf/mf/*"
+		mfaCmd := "nuv wsk action update subf/mf subf/mf/mf.zip --kind nodejs:default"
 
 		cmds := parseProjectTree(&root)
-		assert.Equal(t, "wsk package update subf", cmds[0])
-		assert.Equal(t, zipcmd, cmds[1])
-		assert.Equal(t, mfacmd, cmds[2])
+		assert.Equal(t, "nuv wsk package update subf", cmds[0])
+		assert.Equal(t, packCmd, cmds[1])
+		assert.Equal(t, mfaCmd, cmds[2])
 	})
 
 	t.Run("should return slice with both sf and mf actions", func(t *testing.T) {
@@ -281,12 +305,12 @@ func Test_parseProjectTree(t *testing.T) {
 		root.packages[0].mfActions = []*Action{{name: "mf", path: "subf/mf", runtime: pyRuntime}}
 		root.packages[0].sfActions = []*Action{{name: "hello", path: "subf/hello.js", runtime: jsRuntime}}
 
-		sfacmd := "wsk action update subf/hello subf/hello.js --kind nodejs:default"
-		zipcmd := "zip -r subf/mf/mf.zip subf/mf/*"
-		mfacmd := "wsk action update subf/mf subf/mf/mf.zip --kind python:default"
+		sfaCmd := "nuv wsk action update subf/hello subf/hello.js --kind nodejs:default"
+		packCmd := "nuv pack -r subf/mf/mf.zip subf/mf/*"
+		mfaCmd := "nuv wsk action update subf/mf subf/mf/mf.zip --kind python:default"
 
 		cmds := parseProjectTree(&root)
-		expected := []string{"wsk package update subf", sfacmd, zipcmd, mfacmd}
+		expected := []string{"nuv wsk package update subf", sfaCmd, packCmd, mfaCmd}
 		assert.ElementsMatch(t, cmds, expected)
 	})
 }
