@@ -205,127 +205,88 @@ func checkIfRuntimePresent(t *testing.T, rtExample fs.FS, expectedRuntime string
 	assert.NoError(t, err)
 }
 
-// //  *** parseProjectTree function tests ***
-// func (s *nuvScanTestSuite) Test_parseProjectTree() {
-// 	s.T().Run("should return an empty slice of commands when given an empty project tree", func(t *testing.T) {
-// 		root := ProjectTree{name: "packages"}
+func Test_parseProjectTree(t *testing.T) {
+	t.Run("should return an empty slice of commands when given an empty tree", func(t *testing.T) {
+		root := ScanTree{name: ScanFolder}
 
-// 		res := parseProjectTree(&root)
+		cmds := parseProjectTree(&root)
 
-// 		s.Assert().Empty(res)
-// 	})
+		assert.Empty(t, cmds)
+	})
 
-// 	s.T().Run("should return slice with 'wsk package update' when given root with folder", func(t *testing.T) {
-// 		root := ProjectTree{name: "packages"}
-// 		subf := ProjectTree{name: "subf"}
-// 		root.folders = []*ProjectTree{&subf}
+	t.Run("should return slice with 'wsk package update' when given tree with packages", func(t *testing.T) {
+		root := ScanTree{name: ScanFolder}
+		subf := ScanTree{name: "subf"}
+		root.packages = []*ScanTree{&subf}
 
-// 		res := parseProjectTree(&root)
+		cmds := parseProjectTree(&root)
 
-// 		s.Assert().Equal("wsk package update subf", res[0])
-// 	})
+		assert.Equal(t, "wsk package update subf", cmds[0])
+	})
 
-// 	s.T().Run("should return slice with 'wsk action update' when given root with file", func(t *testing.T) {
-// 		testWithFs(
-// 			[]string{},
-// 			[]string{
-// 				"helloGo.go",
-// 				"helloJava.java",
-// 				"helloJs.js",
-// 				"helloPy.py",
-// 			}, func() {
-// 				expectedGo := fmt.Sprintf("wsk action update helloGo %s --kind go:default", filepath.Join(pkgPath, "helloGo.go"))
-// 				expectedjava := fmt.Sprintf("wsk action update helloJava %s --kind java:default", filepath.Join(pkgPath, "helloJava.java"))
-// 				expectedJs := fmt.Sprintf("wsk action update helloJs %s --kind nodejs:default", filepath.Join(pkgPath, "helloJs.js"))
-// 				expectedPy := fmt.Sprintf("wsk action update helloPy %s --kind python:default", filepath.Join(pkgPath, "helloPy.py"))
+	t.Run("should return slice with 'wsk action update' when given root with file", func(t *testing.T) {
+		root := ScanTree{name: ""}
+		root.sfActions = []*Action{{name: "hello", path: "/hello.js", runtime: jsRuntime}}
 
-// 				root, err := scanPackagesFolder(testFolder)
+		expectedJs := "wsk action update hello /hello.js --kind nodejs:default"
 
-// 				s.Assert().NoError(err) // error in case file system operation failed
+		cmds := parseProjectTree(&root)
 
-// 				res := parseProjectTree(&root)
+		assert.Equal(t, expectedJs, cmds[0])
+	})
 
-// 				s.Assert().Equal(expectedGo, res[0])
-// 				s.Assert().Equal(expectedjava, res[1])
-// 				s.Assert().Equal(expectedJs, res[2])
-// 				s.Assert().Equal(expectedPy, res[3])
-// 			})
-// 	})
+	t.Run("should return slice with cmds for packages and actions when given tree with packages and files", func(t *testing.T) {
+		root := ScanTree{name: ScanFolder}
+		root.sfActions = []*Action{{name: "hello", path: "/hello.js", runtime: jsRuntime}}
+		root.packages = []*ScanTree{{name: "subf"}}
 
-// 	s.T().Run("should return slice with cmds for packages and actions when given tree with folders and files", func(t *testing.T) {
-// 		testWithFs(
-// 			[]string{"subf1"},
-// 			[]string{
-// 				"a.js",
-// 			}, func() {
-// 				expectedPkg := "wsk package update subf1"
-// 				expectedJs := fmt.Sprintf("wsk action update a %s --kind nodejs:default", filepath.Join(pkgPath, "a.js"))
+		expectedPkg := "wsk package update subf"
+		expectedJs := "wsk action update hello /hello.js --kind nodejs:default"
 
-// 				root, err := scanPackagesFolder(testFolder)
+		cmds := parseProjectTree(&root)
 
-// 				s.Assert().NoError(err) // error in case file system operation failed
+		assert.Equal(t, expectedJs, cmds[0])
+		assert.Equal(t, expectedPkg, cmds[1])
+	})
 
-// 				res := parseProjectTree(&root)
+	t.Run("should return slice with single file actions cmds in packages given tree with packages", func(t *testing.T) {
+		root := ScanTree{name: ScanFolder}
+		root.packages = []*ScanTree{{name: "subf"}}
+		root.packages[0].sfActions = []*Action{{name: "hello", path: "subf/hello.js", runtime: jsRuntime}}
 
-// 				s.Assert().Equal(expectedJs, res[0])
-// 				s.Assert().Equal(expectedPkg, res[1])
-// 			})
-// 	})
+		expectedJs := "wsk action update subf/hello subf/hello.js --kind nodejs:default"
 
-// 	s.T().Run("should return slice with single file actions cmds in packages given tree with sub folders", func(t *testing.T) {
-// 		testWithFs(
-// 			[]string{"subf"},
-// 			[]string{
-// 				"subf/a.js",
-// 			}, func() {
+		cmds := parseProjectTree(&root)
 
-// 				expectedJs := fmt.Sprintf("wsk action update subf/a %s --kind nodejs:default", filepath.Join(pkgPath, "subf/a.js"))
-// 				root, err := scanPackagesFolder(testFolder)
+		assert.Equal(t, expectedJs, cmds[1])
+	})
 
-// 				s.Assert().NoError(err) // error in case file system operation failed
+	t.Run("should return slice with multi file action cmds given tree with mfActions", func(t *testing.T) {
+		root := ScanTree{name: ScanFolder}
+		root.packages = []*ScanTree{{name: "subf"}}
+		root.packages[0].mfActions = []*Action{{name: "mf", path: "subf/mf", runtime: jsRuntime}}
 
-// 				res := parseProjectTree(&root)
+		zipcmd := "zip -r subf/mf/mf.zip subf/mf/*"
+		mfacmd := "wsk action update subf/mf subf/mf/mf.zip --kind nodejs:default"
 
-// 				s.Assert().Equal(expectedJs, res[1])
-// 			})
-// 	})
+		cmds := parseProjectTree(&root)
+		assert.Equal(t, "wsk package update subf", cmds[0])
+		assert.Equal(t, zipcmd, cmds[1])
+		assert.Equal(t, mfacmd, cmds[2])
+	})
 
-// 	s.T().Run("should return slice with multi file action cmds given tree with mfActions", func(t *testing.T) {
-// 		testWithFs(
-// 			[]string{"subf/mf"},
-// 			[]string{
-// 				"subf/mf/a.js",
-// 			}, func() {
+	t.Run("should return slice with both sf and mf actions", func(t *testing.T) {
+		root := ScanTree{name: ScanFolder}
+		root.packages = []*ScanTree{{name: "subf"}}
+		root.packages[0].mfActions = []*Action{{name: "mf", path: "subf/mf", runtime: pyRuntime}}
+		root.packages[0].sfActions = []*Action{{name: "hello", path: "subf/hello.js", runtime: jsRuntime}}
 
-// 				zipcmd := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
-// 				mfacmd := fmt.Sprintf("wsk action update subf/mf %s --kind nodejs:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
+		sfacmd := "wsk action update subf/hello subf/hello.js --kind nodejs:default"
+		zipcmd := "zip -r subf/mf/mf.zip subf/mf/*"
+		mfacmd := "wsk action update subf/mf subf/mf/mf.zip --kind python:default"
 
-// 				root, err := scanPackagesFolder(testFolder)
-// 				s.Assert().NoError(err)
-
-// 				res := parseProjectTree(&root)
-// 				s.Assert().Equal("wsk package update subf", res[0])
-// 				s.Assert().Equal(zipcmd, res[1])
-// 				s.Assert().Equal(mfacmd, res[2])
-// 			})
-// 	})
-
-// 	s.T().Run("should return slice with both sf and mf actions", func(t *testing.T) {
-// 		testWithFs(
-// 			[]string{"subf/mf"},
-// 			[]string{"subf/a.js", "subf/mf/b.py"},
-// 			func() {
-// 				expectedSF := fmt.Sprintf("wsk action update subf/a %s --kind nodejs:default", filepath.Join(pkgPath, "subf/a.js"))
-
-// 				expectedZip := fmt.Sprintf("zip -r %s.zip %s/*", filepath.Join(pkgPath, "subf/mf/mf"), filepath.Join(pkgPath, "subf/mf"))
-// 				expectedMfa := fmt.Sprintf("wsk action update subf/mf %s --kind python:default", filepath.Join(pkgPath, "subf/mf/mf.zip"))
-
-// 				root, err := scanPackagesFolder(testFolder)
-// 				s.Assert().NoError(err)
-// 				res := parseProjectTree(&root)
-
-// 				expected := []string{"wsk package update subf", expectedSF, expectedZip, expectedMfa}
-// 				s.Assert().ElementsMatch(res, expected)
-// 			})
-// 	})
-// }
+		cmds := parseProjectTree(&root)
+		expected := []string{"wsk package update subf", sfacmd, zipcmd, mfacmd}
+		assert.ElementsMatch(t, cmds, expected)
+	})
+}
