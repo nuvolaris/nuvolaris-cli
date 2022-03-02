@@ -39,11 +39,11 @@ func writeWskPropertiesFile() error {
 }
 
 func writeFileToNuvolarisHomedir(filename string, content []byte) (string, error) {
-	homedir, err := GetHomeDir()
+	nuvHomedir, err := getNuvolarisHomedir()
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(homedir, ".nuvolaris", filename)
+	path := filepath.Join(nuvHomedir, filename)
 	if _, err := os.Stat(path); err == nil {
 		os.Remove(path)
 	}
@@ -52,4 +52,22 @@ func writeFileToNuvolarisHomedir(filename string, content []byte) (string, error
 		return "", err
 	}
 	return path, nil
+}
+
+func getNuvolarisHomedir() (string, error) {
+	homedir, err := GetHomeDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(homedir, ".nuvolaris")
+	return path, nil
+}
+
+func getWhiskPropsPath() (string, error) {
+	path, err := getNuvolarisHomedir()
+	if err != nil {
+		return "", err
+	}
+	wpath := filepath.Join(path, ".wskprops")
+	return wpath, nil
 }

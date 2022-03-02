@@ -46,6 +46,21 @@ func init() {
 	commands.Properties.CLIVersion = CLI_VERSION
 }
 
+func (w *WskCmd) BeforeApply() error {
+	props, ok := os.LookupEnv("WSK_CONFIG_FILE")
+	wskProps, err := getWhiskPropsPath()
+	if err != nil {
+		return err
+	}
+	if !ok || props != wskProps {
+		err = writeWskPropertiesFile()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func Wsk(args ...string) error {
 	os.Args = append([]string{"wsk"}, args...)
 	defer func() {
