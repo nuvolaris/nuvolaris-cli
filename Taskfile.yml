@@ -21,5 +21,18 @@ tasks:
   default: 
     cmds: 
       - task
+      - cp ./nuv ../bin
     dir: ./nuv
+
+  clean:
+    cmds:
+      - rm bin/nuv nuv/nuv
+    ignore_error: true
+
+
+  test:
+    cmds:
+     - bin/nuv wsk action update hi hi.js
+     - bin/nuv wsk action invoke hi -r
+
   setup: {"silent": true} 
