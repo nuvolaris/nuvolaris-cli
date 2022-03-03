@@ -20,6 +20,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os/exec"
 
 	"io/ioutil"
 	"os"
@@ -40,6 +41,9 @@ type KindConfig struct {
 
 //go:embed embed/kind.yaml
 var kind_yaml []byte
+
+var img string = "openwhisk/action-nodejs-v14"
+var tag string = ":nightly"
 
 func configKind() (*KindConfig, error) {
 
@@ -117,6 +121,11 @@ func (config *KindConfig) createCluster() (err error) {
 		return err
 	}
 
+	fmt.Println("preloading openwhisk docker image...")
+	if err = config.preloadOpenWhiskImage(); err != nil {
+		return err
+	}
+
 	fmt.Println("nuvolaris kind cluster started. Have a nice day! 👋")
 	return nil
 }
@@ -189,6 +198,29 @@ func (config *KindConfig) startCluster() error {
 	}
 	return nil
 
+}
+
+func (config *KindConfig) preloadOpenWhiskImage() error {
+	if !isOpenWhiskImageLoaded() {
+		exec.Command("docker", "pull", img+tag)
+	}
+	if err := config.kind("load", "docker-image", img+tag, "--name="+config.nuvolarisClusterName); err != nil {
+		return err
+	}
+	return nil
+}
+
+func isOpenWhiskImageLoaded() bool {
+	cmd := exec.Command("docker", "images", "-q", img+tag)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+	if string(out) == "" {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (config *KindConfig) stopCluster() error {
