@@ -102,7 +102,6 @@ func Example_successfullClusterStartFromScratch() {
 	// nuvolaris config dir created
 	// kind.yaml written
 	// starting nuvolaris kind cluster...hang tight
-	// preloading openwhisk docker image...
 	// nuvolaris kind cluster started. Have a nice day! 👋
 }
 

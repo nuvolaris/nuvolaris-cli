@@ -24,9 +24,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	core_v1 "k8s.io/api/core/v1"
+	coreV1 "k8s.io/api/core/v1"
 	extclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -41,9 +41,9 @@ type KubeClient struct {
 	cfg             *rest.Config
 }
 
-func initClients(create_devcluster bool) (*KubeClient, error) {
+func initClients(createDevcluster bool) (*KubeClient, error) {
 
-	if create_devcluster {
+	if createDevcluster {
 		fmt.Println("Starting devcluster...")
 		cfg, err := configKind()
 		if err != nil {
@@ -100,49 +100,65 @@ func assertNuvolarisContext(kubeconfigPath string) error {
 		return fmt.Errorf("error getting RawConfig: %w", err)
 	}
 
-	var nuvolaris_context string
+	var nuvolarisContext string
 
 	for context := range config.Contexts {
 		if strings.Contains(context, "nuvolaris") {
-			nuvolaris_context = context
+			nuvolarisContext = context
 			break
 		}
 	}
 
-	if nuvolaris_context == "" {
+	if nuvolarisContext == "" {
 		return fmt.Errorf("context nuvolaris not found")
 	}
 
-	config.CurrentContext = nuvolaris_context
+	config.CurrentContext = nuvolarisContext
 	err = clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), config, true)
 	if err != nil {
 		return fmt.Errorf("error ModifyConfig: %w", err)
 	}
 
-	fmt.Println("✓ Current context set to", nuvolaris_context)
+	fmt.Println("✓ Current context set to", nuvolarisContext)
 	return nil
 }
 
-func (c *KubeClient) createNuvNamespace() error {
-
-	_, err := c.clientset.CoreV1().Namespaces().Get(c.ctx, c.namespace, meta_v1.GetOptions{})
+func (c *KubeClient) getNuvolarisNamespace() (*coreV1.Namespace, error) {
+	ns, err := c.clientset.CoreV1().Namespaces().Get(c.ctx, c.namespace, metaV1.GetOptions{})
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			namespace := &core_v1.Namespace{
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name: c.namespace,
-				},
-			}
-			_, err := c.clientset.CoreV1().Namespaces().Create(c.ctx, namespace, meta_v1.CreateOptions{})
-			if err != nil {
-				fmt.Println("failed creation of namespace nuvolaris")
-				return err
-			}
-			fmt.Println("✓ Namespace nuvolaris created")
-			return nil
+			return nil, nil
 		}
+		return nil, err
+	}
+	return ns, nil
+}
+
+func (c *KubeClient) createNuvolarisNamespace() error {
+	ns, err := c.getNuvolarisNamespace()
+	if err != nil {
 		return err
 	}
+	if ns == nil {
+		namespace := &coreV1.Namespace{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name: c.namespace,
+			},
+		}
+		_, err := c.clientset.CoreV1().Namespaces().Create(c.ctx, namespace, metaV1.CreateOptions{})
+		if err != nil {
+			fmt.Println("failed creation of namespace nuvolaris")
+			return err
+		}
+		fmt.Println("✓ Namespace nuvolaris created")
+		return nil
+	}
 	fmt.Println("namespace nuvolaris already exists...skipping")
+	return nil
+}
+
+func (c *KubeClient) cleanup() error {
+	//TODO
+	fmt.Println("--reset is to be implemented")
 	return nil
 }

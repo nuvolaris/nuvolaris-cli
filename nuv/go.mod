@@ -32,6 +32,7 @@ require (
 	github.com/apache/openwhisk-client-go v0.0.0-20211007130743-38709899040b
 	github.com/go-task/task/cmd/task v0.0.0-00010101000000-000000000000
 	github.com/nicksnyder/go-i18n v1.10.1
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.23.3
 	k8s.io/client-go v0.23.3
@@ -90,7 +91,6 @@ require (
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/radovskyb/watcher v1.0.7 // indirect
-	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect

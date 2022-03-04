@@ -26,6 +26,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+var dockerImg string = "ghcr.io/nuvolaris/nuvolaris-operator:neo-22.0207.21"
+
 func TestCreateServiceAccount(t *testing.T) {
 	testclient.clientset = fake.NewSimpleClientset(nspace)
 	err := testclient.createServiceAccount()
@@ -39,7 +41,7 @@ func TestCreateServiceAccount(t *testing.T) {
 }
 
 func TestSkipCreateServiceAccountIfAlreadyExists(t *testing.T) {
-	testclient.clientset = fake.NewSimpleClientset(nspace, service_account)
+	testclient.clientset = fake.NewSimpleClientset(nspace, serviceAccount)
 	err := testclient.createServiceAccount()
 	if err != nil {
 		t.Errorf(err.Error())
@@ -54,23 +56,23 @@ func Example_createServiceAccount() {
 }
 
 func Example_skipCreationServiceAccount() {
-	testclient.clientset = fake.NewSimpleClientset(nspace, service_account)
+	testclient.clientset = fake.NewSimpleClientset(nspace, serviceAccount)
 	testclient.createServiceAccount()
 	// Output:
 	// service account already created...skipping
 }
 
 func TestSkipOperatorPodIfRunning(t *testing.T) {
-	testclient.clientset = fake.NewSimpleClientset(nspace, operator_pod)
-	err := testclient.createOperatorPod()
+	testclient.clientset = fake.NewSimpleClientset(nspace, configOperatorPod(dockerImg))
+	err := testclient.createOperatorPod(dockerImg)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 }
 
 func Example_skipOperatorPod() {
-	testclient.clientset = fake.NewSimpleClientset(nspace, operator_pod)
-	testclient.createOperatorPod()
+	testclient.clientset = fake.NewSimpleClientset(nspace, configOperatorPod(dockerImg))
+	testclient.createOperatorPod(dockerImg)
 	// Output:
 	// nuvolaris operator pod already running...skipping
 }

@@ -25,8 +25,6 @@ import (
 
 	"github.com/alecthomas/units"
 	"github.com/coreos/go-semver/semver"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type PreflightChecksPipeline struct {
@@ -81,7 +79,6 @@ func checkDockerMemory(p *PreflightChecksPipeline) {
 		p.err = err
 		return
 	}
-	log.Debug("mem:", n)
 	if n <= int64(MinDockerMem) {
 		p.err = fmt.Errorf("nuv needs 4GB memory allocatable on docker")
 		return
