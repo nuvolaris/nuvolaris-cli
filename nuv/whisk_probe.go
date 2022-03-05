@@ -30,7 +30,7 @@ type WskProbe struct {
 	wsk func(...string) error
 }
 
-func readinessProbe() error {
+func readinessProbe(c *KubeClient) error {
 	fmt.Println("Waiting for openwhisk to deploy...waiting is the hardest part 💚")
 	wsk_probe := WskProbe{wsk: Wsk}
 	err := wsk_probe.waitFor(TimeoutInSec, wsk_probe.isOpenWhiskDeployed())
@@ -39,9 +39,16 @@ func readinessProbe() error {
 	}
 	fmt.Println("✓ Openwhisk succesfully deployed")
 
+	fmt.Println("Waiting for openwhisk pod to run...")
+	err = waitForPodRunning(c, "wsk0-1-prewarm-nodejs14", TimeoutInSec)
+	if err != nil {
+		return err
+	}
+	fmt.Println("✓ Openwhisk running")
+
 	fmt.Println("Creating an action...")
 	hello_content := []byte("function main(args) { return { \"body\":\"hello from Nuvolaris\"} }")
-	path, err := writeFileToNuvolarisHomedir("hello.js", hello_content)
+	path, err := WriteFileToNuvolarisConfigDir("hello.js", hello_content)
 	if err != nil {
 		return err
 	}

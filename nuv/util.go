@@ -20,11 +20,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // buffer for dry run results
@@ -85,17 +85,46 @@ func sysErr(dryRun bool, cli string, args ...string) (string, error) {
 		return res, nil
 	}
 
-	log.Tracef("< %s %v\n", exe, params)
 	cmd := exec.Command(exe, params...)
 	out, err := cmd.CombinedOutput()
 	res := string(out)
 	if err != nil {
-		log.Tracef("> ERROR: %s", err.Error())
 		return "", err
 	}
-	log.Tracef("> %s", res)
 	if !silent {
 		fmt.Print(res)
 	}
 	return res, nil
+}
+
+func GetOrCreateNuvolarisConfigDir() (string, error) {
+	homedir, err := GetHomeDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(homedir, ".nuvolaris")
+	_, err = os.Stat(path)
+	if os.IsNotExist(err) {
+		if err := os.Mkdir(path, 0777); err != nil {
+			return "", err
+		}
+		fmt.Println("nuvolaris config dir created")
+	}
+	return path, nil
+}
+
+func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, error) {
+	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(nuvHomedir, filename)
+	if _, err := os.Stat(path); err == nil {
+		os.Remove(path)
+	}
+
+	if err := os.WriteFile(path, content, 0600); err != nil {
+		return "", err
+	}
+	return path, nil
 }

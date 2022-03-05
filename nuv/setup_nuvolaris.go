@@ -18,14 +18,14 @@
 package main
 
 import (
-	"fmt"
 	"time"
 )
 
 type SetupPipeline struct {
-	kube_client       *KubeClient
-	create_devcluster bool
-	err               error
+	kubeClient          *KubeClient
+	createDevcluster    bool
+	operatorDockerImage string
+	err                 error
 }
 
 type setupStep func(sp *SetupPipeline)
@@ -39,50 +39,58 @@ func (sp *SetupPipeline) step(f setupStep) {
 	time.Sleep(2 * time.Second)
 }
 
-func setupNuvolaris(args []string) error {
-	sp := SetupPipeline{}
-	if len(args) > 0 {
-		if args[0] == "--devcluster" {
-			sp.create_devcluster = true
-		} else {
-			fmt.Println("did you mean nuv setup --devcluster?")
-			return nil
-		}
+func setupNuvolaris(cmd *SetupCmd) error {
+	imgTag := cmd.ImageTag
+
+	sp := SetupPipeline{
+		operatorDockerImage: "ghcr.io/nuvolaris/nuvolaris-operator:" + imgTag,
 	}
-	sp.step(assertNuvolarisClusterConfig)
-	sp.step(createNuvolarisNamespace)
-	sp.step(deployWhiskCrd)
-	sp.step(deployServiceAccount)
-	sp.step(deployClusterRoleBinding)
-	sp.step(setupWskProperties)
-	sp.step(runNuvolarisOperatorPod)
-	sp.step(deployOperatorObject)
-	sp.step(waitForOpenWhiskReady)
+
+	if cmd.Devcluster {
+		sp.createDevcluster = true
+	}
+
+	if sp.kubeClient == nil {
+		sp.step(assertNuvolarisClusterConfig)
+	}
+
+	if cmd.Reset {
+		sp.step(resetNuvolaris)
+	} else {
+		sp.step(createNuvolarisNamespace)
+		sp.step(deployWhiskCrd)
+		sp.step(deployServiceAccount)
+		sp.step(deployClusterRoleBinding)
+		sp.step(setupWskProperties)
+		sp.step(runNuvolarisOperatorPod)
+		sp.step(deployOperatorObject)
+		sp.step(waitForOpenWhiskReady)
+	}
 	return sp.err
 }
 
 func assertNuvolarisClusterConfig(sp *SetupPipeline) {
-	sp.kube_client, sp.err = initClients(sp.create_devcluster)
+	sp.kubeClient, sp.err = initClients(sp.createDevcluster)
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {
-	sp.err = sp.kube_client.createNuvNamespace()
+	sp.err = sp.kubeClient.createNuvolarisNamespace()
 }
 
 func deployWhiskCrd(sp *SetupPipeline) {
-	sp.err = sp.kube_client.deployCRD()
+	sp.err = sp.kubeClient.deployCRD()
 }
 
 func deployServiceAccount(sp *SetupPipeline) {
-	sp.err = sp.kube_client.createServiceAccount()
+	sp.err = sp.kubeClient.createServiceAccount()
 }
 
 func deployClusterRoleBinding(sp *SetupPipeline) {
-	sp.err = sp.kube_client.createClusterRoleBinding()
+	sp.err = sp.kubeClient.createClusterRoleBinding()
 }
 
 func runNuvolarisOperatorPod(sp *SetupPipeline) {
-	sp.err = sp.kube_client.createOperatorPod()
+	sp.err = sp.kubeClient.createOperatorPod(sp.operatorDockerImage)
 }
 
 func setupWskProperties(sp *SetupPipeline) {
@@ -90,9 +98,13 @@ func setupWskProperties(sp *SetupPipeline) {
 }
 
 func deployOperatorObject(sp *SetupPipeline) {
-	sp.err = createWhiskOperatorObject(sp.kube_client.cfg)
+	sp.err = createWhiskOperatorObject(sp.kubeClient.cfg)
 }
 
 func waitForOpenWhiskReady(sp *SetupPipeline) {
-	sp.err = readinessProbe()
+	sp.err = readinessProbe(sp.kubeClient)
+}
+
+func resetNuvolaris(sp *SetupPipeline) {
+	sp.err = sp.kubeClient.cleanup()
 }

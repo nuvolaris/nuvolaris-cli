@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -48,7 +48,7 @@ var preserveUnknownFields bool = true
 func configureCRD() *apiextensions.CustomResourceDefinition {
 
 	whisk_crd := apiextensions.CustomResourceDefinition{
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      FullCRDName,
 			Namespace: namespace,
 		},
@@ -113,11 +113,11 @@ func configureCRD() *apiextensions.CustomResourceDefinition {
 }
 
 func (c *KubeClient) deployCRD() error {
-	_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Get(c.ctx, FullCRDName, meta_v1.GetOptions{})
+	_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Get(c.ctx, FullCRDName, metaV1.GetOptions{})
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			crd := configureCRD()
-			_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Create(c.ctx, crd, meta_v1.CreateOptions{})
+			_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Create(c.ctx, crd, metaV1.CreateOptions{})
 			if err != nil {
 				return err
 			}
@@ -131,8 +131,8 @@ func (c *KubeClient) deployCRD() error {
 }
 
 type Whisk struct {
-	meta_v1.TypeMeta   `json:",inline"`
-	meta_v1.ObjectMeta `json:"metadata"`
+	metaV1.TypeMeta   `json:",inline"`
+	metaV1.ObjectMeta `json:"metadata"`
 }
 
 func (in *Whisk) DeepCopyInto(out *Whisk) {
@@ -163,7 +163,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Whisk{},
 	)
-	meta_v1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	metaV1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
 
@@ -202,11 +202,11 @@ func getWhisk(c *rest.RESTClient) error {
 func createWhiskOperatorObject(cfg *rest.Config) error {
 
 	whisk := &Whisk{
-		TypeMeta: meta_v1.TypeMeta{
+		TypeMeta: metaV1.TypeMeta{
 			Kind:       CRDKind,
 			APIVersion: apiVersion,
 		},
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      wskObjectName,
 			Namespace: namespace,
 		},

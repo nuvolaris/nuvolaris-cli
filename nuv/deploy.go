@@ -21,8 +21,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io/ioutil"
-
-	log "github.com/sirupsen/logrus"
 )
 
 //go:embed embed/nuvolaris.yml
@@ -39,7 +37,6 @@ func (d DeployCmd) AfterApply() error {
 	if d.NoPreflightChecks {
 		return nil
 	}
-	log.Info("Preflight checks...")
 	homedir, _ := GetHomeDir()
 
 	err := RunPreflightChecks(homedir)
@@ -47,8 +44,6 @@ func (d DeployCmd) AfterApply() error {
 	if err != nil {
 		return err
 	}
-
-	log.Info("Preflight checks passed!")
 	return nil
 }
 

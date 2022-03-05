@@ -39,61 +39,6 @@ var nspace = &core_v1.Namespace{
 	},
 }
 
-// //go:embed test-embed/test-nuvolaris-config
-// var test_nuvolaris_config []byte
-
-// //go:embed test-embed/test-other-config
-// var test_other_config []byte
-
-// //go:embed test-embed/test-multiple-config
-// var test_multiple_config []byte
-
-// var pathToKubeConfig, original_kube_config = keepKubeconfig()
-
-// func keepKubeconfig() (string, []byte) {
-// 	home, _ := GetHomeDir()
-// 	path := filepath.Join(home, ".kube", "config")
-// 	original_config, _ := os.ReadFile(path)
-// 	return path, original_config
-// }
-
-// func replaceKubeconfig(content []byte) {
-// 	os.Remove(pathToKubeConfig)
-// 	os.WriteFile(pathToKubeConfig, content, 0600)
-// }
-
-// func restoreKubeconfig() {
-// 	os.Remove(pathToKubeConfig)
-// 	os.WriteFile(pathToKubeConfig, original_kube_config, 0600)
-// }
-
-// func TestSetNuvolarisContext(t *testing.T) {
-// 	replaceKubeconfig(test_other_config)
-// 	err := assertNuvolarisContext(pathToKubeConfig)
-// 	if err == nil && !strings.Contains(err.Error(), "context nuvolaris not found") {
-// 		t.Errorf(err.Error())
-// 	}
-// 	replaceKubeconfig(test_nuvolaris_config)
-// 	err = assertNuvolarisContext(pathToKubeConfig)
-// 	if err != nil {
-// 		t.Errorf(err.Error())
-// 	}
-// 	replaceKubeconfig(test_multiple_config)
-// 	err = assertNuvolarisContext(pathToKubeConfig)
-// 	if err != nil {
-// 		t.Errorf(err.Error())
-// 	}
-// 	restoreKubeconfig()
-// }
-
-// func Example_setNuvolarisContext() {
-// 	replaceKubeconfig(test_multiple_config)
-// 	assertNuvolarisContext(pathToKubeConfig)
-// 	restoreKubeconfig()
-// 	// Output:
-// 	// current context set to kind-nuvolaris
-// }
-
 func TestCreateNamespace(t *testing.T) {
 	testclient.clientset = fakeclient.NewSimpleClientset()
 	// given namespace does not exist yet
@@ -102,7 +47,7 @@ func TestCreateNamespace(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 	// when namespace is created
-	err = testclient.createNuvNamespace()
+	err = testclient.createNuvolarisNamespace()
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -118,7 +63,7 @@ func TestNamespaceNotCreatedIfAlreadyExists(t *testing.T) {
 	testclient.clientset = fakeclient.NewSimpleClientset(nspace)
 
 	// when we try to create namespace
-	err := testclient.createNuvNamespace()
+	err := testclient.createNuvolarisNamespace()
 
 	// then nothing should happen
 	if err != nil {
@@ -128,14 +73,14 @@ func TestNamespaceNotCreatedIfAlreadyExists(t *testing.T) {
 
 func Example_createNamespace() {
 	testclient.clientset = fakeclient.NewSimpleClientset()
-	testclient.createNuvNamespace()
+	testclient.createNuvolarisNamespace()
 	//Output:
 	//✓ Namespace nuvolaris created
 }
 
 func Example_namespaceIsNotCreatedIfAlreadyExists() {
 	testclient.clientset = fakeclient.NewSimpleClientset(nspace)
-	testclient.createNuvNamespace()
+	testclient.createNuvolarisNamespace()
 	//Output:
 	//namespace nuvolaris already exists...skipping
 }

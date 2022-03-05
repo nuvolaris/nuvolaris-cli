@@ -20,7 +20,6 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"os/exec"
 
 	"io/ioutil"
 	"os"
@@ -42,9 +41,6 @@ type KindConfig struct {
 //go:embed embed/kind.yaml
 var kind_yaml []byte
 
-var img string = "openwhisk/action-nodejs-v14"
-var tag string = ":nightly"
-
 func configKind() (*KindConfig, error) {
 
 	homeDir, err := GetHomeDir()
@@ -56,7 +52,6 @@ func configKind() (*KindConfig, error) {
 		homedir:              homeDir,
 		kindYaml:             kind_yaml,
 		nuvolarisClusterName: "nuvolaris",
-		nuvolarisConfigDir:   ".nuvolaris",
 		kindConfigFile:       "kind.yaml",
 		fullConfigPath:       "",
 		preflightChecks:      RunPreflightChecks,
@@ -104,7 +99,7 @@ func (config *KindConfig) createCluster() (err error) {
 	}
 	fmt.Println("preflight checks ok")
 
-	err = config.createNuvolarisConfigDirIfNotExists()
+	_, err = GetOrCreateNuvolarisConfigDir()
 	if err != nil {
 		return err
 	}
@@ -118,11 +113,6 @@ func (config *KindConfig) createCluster() (err error) {
 
 	fmt.Println("starting nuvolaris kind cluster...hang tight")
 	if err = config.startCluster(); err != nil {
-		return err
-	}
-
-	fmt.Println("preloading openwhisk docker image...")
-	if err = config.preloadOpenWhiskImage(); err != nil {
 		return err
 	}
 
@@ -168,20 +158,12 @@ func (config *KindConfig) clusterAlreadyRunning() (bool, error) {
 	}
 }
 
-func (config *KindConfig) createNuvolarisConfigDirIfNotExists() error {
-	fullPath := filepath.Join(config.homedir, config.nuvolarisConfigDir)
-	_, err := os.Stat(fullPath)
-	if os.IsNotExist(err) {
-		if err := os.Mkdir(fullPath, 0777); err != nil {
-			return err
-		}
-		fmt.Println("nuvolaris config dir created")
-	}
-	return nil
-}
-
 func (config *KindConfig) rewriteKindConfigFile() (string, error) {
-	path := filepath.Join(config.homedir, config.nuvolarisConfigDir, config.kindConfigFile)
+	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(nuvHomedir, config.kindConfigFile)
 	if _, err := os.Stat(path); err == nil {
 		os.Remove(path)
 	}
@@ -197,30 +179,6 @@ func (config *KindConfig) startCluster() error {
 		return err
 	}
 	return nil
-
-}
-
-func (config *KindConfig) preloadOpenWhiskImage() error {
-	if !isOpenWhiskImageLoaded() {
-		exec.Command("docker", "pull", img+tag)
-	}
-	if err := config.kind("load", "docker-image", img+tag, "--name="+config.nuvolarisClusterName); err != nil {
-		return err
-	}
-	return nil
-}
-
-func isOpenWhiskImageLoaded() bool {
-	cmd := exec.Command("docker", "images", "-q", img+tag)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return false
-	}
-	if string(out) == "" {
-		return false
-	} else {
-		return true
-	}
 }
 
 func (config *KindConfig) stopCluster() error {
