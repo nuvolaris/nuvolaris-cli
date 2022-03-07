@@ -17,11 +17,6 @@
   ~ under the License.
   ~
 -->
-# Nuvolaris CLI
-
-This repo discusses the Command Line Interface to Nuvolaris.
-
-You can discuss it in the #[nuvolaris-cli](https://discord.gg/JWqFJJfvED) discord channel and in the forum under the category [CLI](https://github.com/nuvolaris/nuvolaris/discussions/categories/cli).
 
 # Design
 

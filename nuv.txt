@@ -2,7 +2,7 @@ Welcome to nuv!
 
 Nuv is an all-in-one development kit to setup and run Nuvolaris, a distribution of Apache OpenWhisk.
 
-You can learn about Apache Openwhisk on https://openwhisk.apache.org/documentation.html
+You can learn about Apache Openwhisk on https://openwhisk.apache.org/documentation.html.
 
 Nuv embeds all you need to develop for Apache OpenWhisk in a single binary.
 
