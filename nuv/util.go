@@ -101,6 +101,7 @@ func GetOrCreateNuvolarisConfigDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	path := filepath.Join(homedir, ".nuvolaris")
 	_, err = os.Stat(path)
 	if os.IsNotExist(err) {
 		if err := os.Mkdir(path, 0777); err != nil {
