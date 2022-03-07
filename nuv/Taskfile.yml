@@ -25,14 +25,19 @@ vars:
 
 tasks:
 
-  default:
+  build:
     cmds:
-      - go build -ldflags "-X main.CLI_VERSION={{.TAG}}" -o {{.NUV}}
+      - go build -ldflags "-X main.CLI_VERSION={{.TAG}}" -o ./nuv
     sources:
       - "*.go"
       - "embed/*"
     generates:
       - "{{.NUV}}"
+
+  install:
+    deps: [build]
+    cmds:
+      - cp ./nuv {{.NUV}}
 
   vendor:
     cmds:

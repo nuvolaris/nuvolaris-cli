@@ -19,25 +19,20 @@ version: '3'
 
 tasks:
 
-  build: 
-    cmds: 
-      - task
-    dir: ./nuv
+  build: task build -d nuv
 
-  clean:
-    cmds:
-      - task clean
-    dir: ./nuv
-    ignore_error: true
+  install: task install -d nuv
+
+  clean: task clean -d nuv
 
   unit-test: task test -d nuv
 
   integration-test:
     deps: [build]
     cmds:
-      - nuv setup --devcluster
-      - nuv wsk action update hi hi.js
-      - nuv wsk action invoke hi -r | grep hi
+      - nuv/nuv setup --devcluster
+      - nuv/nuv wsk action update hi hi.js
+      - nuv/nuv wsk action invoke hi -r | grep hi
 
   test: 
     deps:
