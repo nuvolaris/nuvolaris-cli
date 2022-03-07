@@ -41,10 +41,8 @@ jobs:
       matrix:
         # build and publish in parallel: linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64
         goos: [linux, windows, darwin]
-        goarch: ["386", amd64, arm64]
+        goarch: [amd64, arm64]
         exclude:
-          - goarch: "386"
-            goos: darwin
           - goarch: arm64
             goos: windows 
     steps:
@@ -68,4 +66,4 @@ jobs:
         goarch: ${{ matrix.goarch }}
         project_path: "./nuv"
         binary_name: "nuv"
-        extra_files: LICENSE README.md
+        extra_files: LICENSE nuv.txt

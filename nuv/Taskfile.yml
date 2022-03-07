@@ -42,7 +42,7 @@ tasks:
 
   test:
     cmds:
-      - go test
+      - go test -v -cover
 
   debug:
     deps:

@@ -39,6 +39,7 @@ header:
     - '**/task/**'
     - '**/kind/**'
     - '**/vendor/**'
+    - '**/*.txt'
     - 'nuvolaris.yml'
     - '**/kind.yaml'
     - 'workspace.code-workspace'

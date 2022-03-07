@@ -18,21 +18,30 @@
 version: '3'
 
 tasks:
-  default: 
+
+  build: 
     cmds: 
       - task
-      - cp ./nuv ../bin
     dir: ./nuv
 
   clean:
     cmds:
-      - rm bin/nuv nuv/nuv
+      - task clean
+    dir: ./nuv
     ignore_error: true
 
+  unit-test: task test -d nuv
 
-  test:
+  integration-test:
+    deps: [build]
     cmds:
-     - bin/nuv wsk action update hi hi.js
-     - bin/nuv wsk action invoke hi -r
+      - nuv setup --devcluster
+      - nuv wsk action update hi hi.js
+      - nuv wsk action invoke hi -r | grep hi
 
-  setup: {"silent": true} 
+  test: 
+    deps:
+      - unit-test
+      - integration-test
+
+  setup: {silent: true} 

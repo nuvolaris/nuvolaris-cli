@@ -1,0 +1,19 @@
+Welcome to nuv!
+
+Nuv is an all-in-one development kit to setup and run Nuvolaris, a distribution of Apache OpenWhisk.
+
+You can learn about Apache Openwhisk on https://openwhisk.apache.org/documentation.html
+
+Nuv embeds all you need to develop for Apache OpenWhisk in a single binary.
+
+Currently it supports developing locally using Docker, but it will be extended to support more Kubernetes (idally, all).
+
+To setup your local cluster, use:
+
+nuv setup --devcluster
+
+Now you can work with it. Apache OpenWhisk uses `wsk` to interact with it.
+
+Nuv embeds wsk, just use `nuv wsk` wherever in documentation you are instructed to use `wsk`.
+
+Also you have the playground accessible in http://localhost:3232/
