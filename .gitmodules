@@ -24,3 +24,6 @@
 [submodule "kind"]
 	path = kind
 	url = https://github.com/nuvolaris/kind
+[submodule "embeddable-kops"]
+	path = embeddable-kops
+	url = https://github.com/giusdp/embeddable-kops.git

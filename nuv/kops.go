@@ -15,32 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-{
-	"folders": [
-		{
-			"path": "nuv"
-		},
-		{
-			"path": "openwhisk-cli"
-		},
-		{
-			"path": "task"
-		},
-		{
-			"path": "kind"
-		},
-		{
-			"path": ".github"
-		},
-		{
-			"path": "embeddable-kops"
-		}
-	],
-	"settings": {
-		"workbench.colorCustomizations": {
-			"activityBar.background": "#4F1E1E",
-			"titleBar.activeBackground": "#6E2A2A",
-			"titleBar.activeForeground": "#FEFBFB"
-		}
-	}
+package main
+
+import (
+	"os"
+
+	kops "github.com/giusdp/embeddable-kops"
+)
+
+type KopsCmd struct {
+	Args []string `arg:"" optional:"" name:"args" help:"kops subcommand args"`
+}
+
+func Kops(args []string) error {
+	os.Args = append([]string{"kops"}, args...)
+	kops.KopsMain([]string{})
+	return nil
+}
+
+func (k *KopsCmd) Run() error {
+	return Kops(k.Args)
 }
