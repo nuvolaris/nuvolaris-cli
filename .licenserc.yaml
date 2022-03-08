@@ -38,6 +38,7 @@ header:
     - '**/openwhisk-cli/**'
     - '**/task/**'
     - '**/kind/**'
+    - '**/embeddable-kops/**'
     - '**/vendor/**'
     - '**/*.txt'
     - 'nuvolaris.yml'
