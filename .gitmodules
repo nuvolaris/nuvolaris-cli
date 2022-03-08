@@ -24,6 +24,3 @@
 [submodule "kind"]
 	path = kind
 	url = https://github.com/nuvolaris/kind
-[submodule "kops"]
-	path = kops
-	url = https://github.com/kubernetes/kops.git
