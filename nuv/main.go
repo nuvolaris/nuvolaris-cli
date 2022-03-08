@@ -19,6 +19,7 @@ package main
 
 import (
 	"github.com/alecthomas/kong"
+	kops "github.com/giusdp/embeddable-kops"
 )
 
 // CLI_VERSION holds the current version, to be set by the build with
@@ -37,6 +38,7 @@ type CLI struct {
 }
 
 func main() {
+	kops.KopsMain()
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
 		kong.Name(Name),
