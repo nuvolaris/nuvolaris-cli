@@ -17,9 +17,12 @@
 #
 version: '3'
 
+vars:
+  BASETAG: v0.2.0-trinity
+
 tasks:
 
-  tag: git tag -f v0.2.0-trinity.$(date +%y%m%d%H)
+  tag: git tag -d $(git tag) ; git tag -f {{.BASETAG}}.$(date +%y%m%d%H)
 
   build: task build -d nuv
 
