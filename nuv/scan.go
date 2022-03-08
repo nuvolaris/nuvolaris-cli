@@ -41,12 +41,8 @@ func (s *ScanCmd) Run() error {
 		return err
 	}
 
-	homeDir, err := GetHomeDir()
-	if err != nil {
-		return err
-	}
 	// Save to ~/.nuvolaris/nuvolaris.yml
-	err = os.WriteFile(filepath.Join(homeDir, ".nuvolaris/nuvolaris.yml"), []byte(taskfile), 0700)
+	_, err = WriteFileToNuvolarisConfigDir("nuvolaris.yml", []byte(taskfile))
 	if err != nil {
 		return err
 	}
