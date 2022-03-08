@@ -30,10 +30,10 @@
 			"path": "kind"
 		},
 		{
-			"path": "kops"
+			"path": ".github"
 		},
 		{
-			"path": ".github"
+			"path": "embeddable-kops"
 		}
 	],
 	"settings": {
