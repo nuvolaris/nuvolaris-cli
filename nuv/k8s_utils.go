@@ -48,10 +48,29 @@ func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
 	}
 }
 
+func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+
+		_, err := getNamespace(c, namespace)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+	}
+}
+
 func getPod(c *KubeClient, podName string) (*coreV1.Pod, error) {
 	return c.clientset.CoreV1().Pods(c.namespace).Get(c.ctx, podName, metaV1.GetOptions{})
+}
+func getNamespace(c *KubeClient, namespace string) (*coreV1.Namespace, error) {
+	return c.clientset.CoreV1().Namespaces().Get(c.ctx, namespace, metaV1.GetOptions{})
 }
 
 func waitForPodRunning(c *KubeClient, podName string, timeoutSec int) error {
 	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isPodRunning(c, podName))
+}
+
+func waitForNamespaceToBeTerminated(c *KubeClient, namespace string, timeoutSec int) error {
+	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isNamespaceTerminated(c, namespace))
 }

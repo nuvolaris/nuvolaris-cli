@@ -158,7 +158,29 @@ func (c *KubeClient) createNuvolarisNamespace() error {
 }
 
 func (c *KubeClient) cleanup() error {
-	//TODO
-	fmt.Println("--reset is to be implemented")
+
+	_, err := c.clientset.CoreV1().Namespaces().Get(c.ctx, c.namespace, metaV1.GetOptions{})
+	if err != nil {
+		fmt.Println("nuvolaris namespace not found. Nothing to do.")
+		return nil
+	}
+
+	//manually remove wsk crd!
+	//to avoid namespace staying forever in Terminating state
+	//to find out what resources are preventing deletion of namespace, run
+	//kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get -n nuvolaris
+	err = c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Delete(c.ctx, FullCRDName, metaV1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
+	waitForNamespaceToBeTerminated(c, c.namespace, TimeoutInSec)
+	fmt.Println("nuvolaris setup cleanup done.")
 	return nil
 }
