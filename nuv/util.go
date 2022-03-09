@@ -27,7 +27,6 @@ import (
 	"strings"
 )
 
-// buffer for dry run results
 var dryRunBuf = []string{}
 
 // DryRunPush saves dummy results for dry run execution

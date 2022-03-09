@@ -35,6 +35,7 @@ require (
 	github.com/giusdp/embeddable-kops v0.0.0-00010101000000-000000000000
 	github.com/go-task/task/cmd/task v0.0.0-00010101000000-000000000000
 	github.com/nicksnyder/go-i18n v1.10.1
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.23.4
 	k8s.io/client-go v0.23.4
@@ -163,7 +164,6 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
