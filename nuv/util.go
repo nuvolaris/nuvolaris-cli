@@ -129,41 +129,40 @@ func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, err
 	return path, nil
 }
 
-// kind does not work using the socat proxy that VSCode introduced so it needs a workaround when running nuv
-func SetDockerHost() error {
+func ExecutingInContainer() bool {
 	fsys := os.DirFS("/")
-	// if .dockerenv exists
-	info, err := fs.Stat(fsys, ".dockerenv")
-	if os.IsNotExist(err) {
-		return err
-	}
-	// and is a regular file
-	if !info.Mode().IsRegular() {
-		return fmt.Errorf(".dockerenv exists but it's not a regular file")
+	// if .dockerenv exists and is a regular file
+	if info, err := fs.Stat(fsys, ".dockerenv"); os.IsNotExist(err) || !info.Mode().IsRegular() {
+		return false
 	}
 
-	// and if docker-host.sock exists
-	info, err = fs.Stat(fsys, "var/run/docker-host.sock")
-	if os.IsNotExist(err) {
-		return err
-	}
-	// and is a socket
-	if info.Mode().Type() != fs.ModeSocket {
-		return fmt.Errorf("docker-host.sock exists but it's not a socket")
+	// and if docker-host.sock exists and is a socket
+	if info, err := fs.Stat(fsys, "var/run/docker-host.sock"); os.IsNotExist(err) || info.Mode().Type() != fs.ModeSocket {
+		return false
 	}
 
-	// and $DOCKER_HOST is empty
-	if len(os.Getenv("DOCKER_HOST")) > 0 {
-		return nil
-	}
+	return true
+}
 
-	// then sudo env DOCKER_HOST=unix:///var/run/docker-host.sock ..."
+// kind does not work using the socat proxy that VSCode introduced so it needs a workaround when running nuv
+func DockerHostKind() error {
+	// if $DOCKER_HOST is empty
+	if dockerHostEmpty() {
+		return forkDockerHostKind()
+	}
+	return nil
+}
+
+func forkDockerHostKind() error {
 	args := append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
 	cmd := exec.Command("sudo", args...)
-	// cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("err %s", err.Error())
 	}
 	return nil
+}
+
+func dockerHostEmpty() bool {
+	return len(os.Getenv("DOCKER_HOST")) == 0
 }

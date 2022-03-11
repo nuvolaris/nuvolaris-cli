@@ -18,7 +18,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"sigs.k8s.io/kind/cmd/kind/app"
@@ -30,10 +29,11 @@ type KindCmd struct {
 
 func Kind(args ...string) error {
 	os.Args = append([]string{"kind"}, args...)
-	if err := SetDockerHost(); err != nil {
-		return fmt.Errorf("env DOCKER_HOST error: %s", err.Error())
+	if ExecutingInContainer() {
+		DockerHostKind()
+	} else {
+		app.Main()
 	}
-	app.Main()
 	return nil
 
 }
