@@ -130,7 +130,7 @@ func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, err
 }
 
 // kind does not work using the socat proxy that VSCode introduced so it needs a workaround when running nuv
-func patchDockerHost() error {
+func SetDockerHost() error {
 	fsys := os.DirFS("/")
 	// if .dockerenv exists
 	info, err := fs.Stat(fsys, ".dockerenv")
@@ -154,15 +154,16 @@ func patchDockerHost() error {
 
 	// and $DOCKER_HOST is empty
 	if len(os.Getenv("DOCKER_HOST")) > 0 {
-		return fmt.Errorf("$DOCKER_HOST not empty")
+		return nil
 	}
 
-	// then sudo env DOCKER_HOST=unix:///var/run/docker-host.sock nuv devcluster"
-	// os.Setenv("DOCKER_HOST", "unix:///var/run/docker-host.sock")
-	cmd := exec.Command("sudo", "env", "DOCKER_HOST=unix:///var/run/docker-host.sock")
-	if _, err := cmd.Output(); err != nil {
+	// then sudo env DOCKER_HOST=unix:///var/run/docker-host.sock ..."
+	args := append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
+	cmd := exec.Command("sudo", args...)
+	// cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("err %s", err.Error())
 	}
-	fmt.Println("Nuv is inside a container: DOCKER_HOST was set to make kind work!")
 	return nil
 }

@@ -30,8 +30,8 @@ type KindCmd struct {
 
 func Kind(args ...string) error {
 	os.Args = append([]string{"kind"}, args...)
-	if err := patchDockerHost(); err != nil {
-		fmt.Printf("WARNING: docker host patching failed: %s! If you're inside a container kind won't work.\n", err.Error())
+	if err := SetDockerHost(); err != nil {
+		return fmt.Errorf("env DOCKER_HOST error: %s", err.Error())
 	}
 	app.Main()
 	return nil
