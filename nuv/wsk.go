@@ -64,6 +64,15 @@ func (w *WskCmd) BeforeApply() error {
 	return nil
 }
 
+func getWhiskPropsPath() (string, error) {
+	path, err := GetOrCreateNuvolarisConfigDir()
+	if err != nil {
+		return "", err
+	}
+	wpath := filepath.Join(path, ".wskprops")
+	return wpath, nil
+}
+
 func Wsk(args ...string) error {
 	os.Args = append([]string{"wsk"}, args...)
 	defer func() {

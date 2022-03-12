@@ -21,11 +21,15 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 var dryRunBuf = []string{}
@@ -132,4 +136,38 @@ func appendKubeConfig() {
 	homedir, _ := GetHomeDir()
 	kc := filepath.Join(homedir, ".kube/config")
 	os.Args = append(os.Args, "--kubeconfig="+kc)
+}
+
+func GenerateUUID() string {
+	id := uuid.New()
+	return id.String()
+}
+
+var alphanum = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var awsAlphanum = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+var awsBase64 = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/")
+
+func GenerateRandomSeq(pattern []rune, length int) string {
+	rand.Seed(time.Now().UnixNano())
+	seq := make([]rune, length)
+	for i := range seq {
+		seq[i] = pattern[rand.Intn(len(pattern))]
+	}
+	return string(seq)
+}
+
+func keygen(pattern []rune, seqLength int) string {
+	return GenerateUUID() + ":" + GenerateRandomSeq(pattern, seqLength)
+}
+
+func generateAwsAccessKeyId() string {
+	return "AKIA" + GenerateRandomSeq(awsAlphanum, 16)
+}
+
+func generateAwsSecretAccessKey() string {
+	return GenerateRandomSeq(awsBase64, 40)
+}
+
+func awsKeygen() string {
+	return generateAwsAccessKeyId() + ":" + GenerateRandomSeq(awsBase64, 40)
 }

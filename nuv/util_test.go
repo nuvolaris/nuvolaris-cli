@@ -17,7 +17,14 @@
 //
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func ExampleSysErr() {
 	SysErr("/bin/echo 1 2 3")
@@ -61,4 +68,43 @@ func ExampleDryRunSysErr() {
 	// 3 out  err third
 	// dummy
 	// 4 out  err <nil>
+}
+
+func TestV4UUIDFormat(t *testing.T) {
+	uuid := GenerateUUID()
+	assert.Equal(t, len(uuid), 36, "")
+	r := regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$")
+	match, err := regexp.MatchString(r.String(), uuid)
+	assert.True(t, match)
+	assert.Nil(t, err)
+}
+
+func TestGenerateRandSequence(t *testing.T) {
+	random := GenerateRandomSeq(alphanum, 32)
+	assert.Equal(t, len(random), 32)
+	assert.NotContains(t, random, " ")
+	random = GenerateRandomSeq(alphanum, 64)
+	assert.Equal(t, len(random), 64)
+	assert.NotContains(t, random, "@")
+}
+
+func TestKeygen(t *testing.T) {
+	key := keygen(alphanum, 32)
+	assert.Equal(t, len(key), 69)
+	assert.Contains(t, key, ":")
+}
+
+func TestAwsAccessKeyId(t *testing.T) {
+	keyId := generateAwsAccessKeyId()
+	assert.Equal(t, len(keyId), 20)
+	assert.NotContains(t, keyId, ":")
+	assert.NotContains(t, keyId, "9")
+	assert.True(t, strings.HasPrefix(keyId, "AKIA"))
+}
+
+func TestAwsSecretAccessKey(t *testing.T) {
+	keyId := generateAwsSecretAccessKey()
+	assert.Equal(t, len(keyId), 40)
+	assert.NotContains(t, keyId, ":")
+	assert.NotContains(t, keyId, "@")
 }
