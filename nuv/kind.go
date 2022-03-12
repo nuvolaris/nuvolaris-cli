@@ -29,13 +29,8 @@ type KindCmd struct {
 
 func Kind(args ...string) error {
 	os.Args = append([]string{"kind"}, args...)
-	if ExecutingInContainer() {
-		DockerHostKind()
-	} else {
-		app.Main()
-	}
+	app.Main()
 	return nil
-
 }
 
 func (kind *KindCmd) Run() error {

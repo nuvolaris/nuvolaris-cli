@@ -144,18 +144,10 @@ func ExecutingInContainer() bool {
 	return true
 }
 
-// kind does not work using the socat proxy that VSCode introduced so it needs a workaround when running nuv
-func DockerHostKind() error {
-	// if $DOCKER_HOST is empty
-	if dockerHostEmpty() {
-		return forkDockerHostKind()
-	}
-	return nil
-}
-
-func forkDockerHostKind() error {
+func DockerHostDevcluster() error {
 	args := append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
 	cmd := exec.Command("sudo", args...)
+	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("err %s", err.Error())
@@ -163,6 +155,6 @@ func forkDockerHostKind() error {
 	return nil
 }
 
-func dockerHostEmpty() bool {
+func DockerHostEmpty() bool {
 	return len(os.Getenv("DOCKER_HOST")) == 0
 }
