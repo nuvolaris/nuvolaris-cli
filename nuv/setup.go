@@ -18,9 +18,9 @@
 package main
 
 type SetupCmd struct {
-	Devcluster bool   `help:"start dev kind k8s cluster"`
+	Devcluster bool   `help:"start dev kind k8s cluster" xor:"dev-or-reset"`
 	ImageTag   string `default:"neo-22.0207.21" help:"nuvolaris operator docker image tag to deploy"`
-	Reset      bool   `help:"reset nuvolaris setup"`
+	Reset      bool   `help:"reset nuvolaris setup" xor:"dev-or-reset"`
 }
 
 func (setupCmd *SetupCmd) Run() error {
