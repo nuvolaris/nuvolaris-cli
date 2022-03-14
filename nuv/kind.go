@@ -31,7 +31,6 @@ func Kind(args ...string) error {
 	os.Args = append([]string{"kind"}, args...)
 	app.Main()
 	return nil
-
 }
 
 func (kind *KindCmd) Run() error {

@@ -20,6 +20,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -126,4 +127,34 @@ func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, err
 		return "", err
 	}
 	return path, nil
+}
+
+func ExecutingInContainer() bool {
+	fsys := os.DirFS("/")
+	// if .dockerenv exists and is a regular file
+	if info, err := fs.Stat(fsys, ".dockerenv"); os.IsNotExist(err) || !info.Mode().IsRegular() {
+		return false
+	}
+
+	// and if docker-host.sock exists and is a socket
+	if info, err := fs.Stat(fsys, "var/run/docker-host.sock"); os.IsNotExist(err) || info.Mode().Type() != fs.ModeSocket {
+		return false
+	}
+
+	return true
+}
+
+func DockerHostDevcluster() error {
+	args := append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
+	cmd := exec.Command("sudo", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("err %s", err.Error())
+	}
+	return nil
+}
+
+func DockerHostEmpty() bool {
+	return len(os.Getenv("DOCKER_HOST")) == 0
 }

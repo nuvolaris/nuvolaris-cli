@@ -22,6 +22,11 @@ type DevClusterCmd struct {
 }
 
 func (devClusterCmd *DevClusterCmd) Run() error {
+	// kind does not work using the socat proxy that VSCode, it needs a workaround when running nuv
+	if ExecutingInContainer() && DockerHostEmpty() {
+		DockerHostDevcluster()
+		return nil
+	}
 	config, err := configKind()
 	if err != nil {
 		return err
