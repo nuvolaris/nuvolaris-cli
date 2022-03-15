@@ -144,17 +144,24 @@ func ExecutingInContainer() bool {
 	return true
 }
 
-func DockerHostDevcluster() error {
-	args := append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
-	cmd := exec.Command("sudo", args...)
+func DockerHostKind() error {
+	if os.Args[1] == "create" || os.Args[1] == "delete" {
+		appendKubeConfig()
+	}
+	os.Args = append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
+	cmd := exec.Command("sudo", os.Args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("err %s", err.Error())
-	}
-	return nil
+	err := cmd.Run()
+	return err
 }
 
 func DockerHostEmpty() bool {
 	return len(os.Getenv("DOCKER_HOST")) == 0
+}
+
+func appendKubeConfig() {
+	homedir, _ := GetHomeDir()
+	kc := filepath.Join(homedir, ".kube/config")
+	os.Args = append(os.Args, "--kubeconfig="+kc)
 }
