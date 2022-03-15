@@ -21,9 +21,9 @@ import (
 	"github.com/alecthomas/kong"
 )
 
-// CLI_VERSION holds the current version, to be set by the build with
-//  go build -ldflags "-X main.CLI_VERSION=<version>"
-const CLI_VERSION string = "latest"
+// CLIVersion holds the current version, to be set by the build with
+//  go build -ldflags "-X main.CLIVersion=<version>"
+const CLIVersion string = "latest"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
@@ -54,7 +54,7 @@ func main() {
 			NoExpandSubcommands: false,
 		}),
 		kong.Vars{
-			"version":   CLI_VERSION,
+			"version":   CLIVersion,
 			"image_tag": ImageTag,
 		},
 	)
