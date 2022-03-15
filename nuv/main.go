@@ -23,7 +23,11 @@ import (
 
 // CLI_VERSION holds the current version, to be set by the build with
 //  go build -ldflags "-X main.CLI_VERSION=<version>"
-var CLI_VERSION string = "latest"
+const CLI_VERSION string = "latest"
+
+// ImageTag holds the version of the Docker image used for the nuvolaris
+// operator used in setup
+const ImageTag string = "neo-22.0207.21"
 
 type CLI struct {
 	Deploy     DeployCmd     `cmd:"" help:"deploy a nuvolaris cluster"`
@@ -49,7 +53,10 @@ func main() {
 			Compact:             true,
 			NoExpandSubcommands: false,
 		}),
-		kong.Vars{"version": CLI_VERSION},
+		kong.Vars{
+			"version":   CLI_VERSION,
+			"image_tag": ImageTag,
+		},
 	)
 	err := ctx.Run()
 	ctx.FatalIfErrorf(err)
