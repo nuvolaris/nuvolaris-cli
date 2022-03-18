@@ -17,17 +17,22 @@
 #
 version: '3'
 vars:
- BASETAG: 0.2.0-trinity
- MILESTONE: neo
- NUV:
-   sh: echo ${GOBIN:-.}/nuv 
- TAG:
+
+  BASETAG: 0.2.0-trinity
+  MILESTONE: neo
+  NUV:
+    sh: echo ${GOBIN:-.}/nuv
+  TAG:
     sh: git describe --tags --abbrev=0 2>/dev/null || echo {{.MILESTONE}}-latest
 
 dotenv: [../../nuvolaris-operator/nuvolaris-test/.env]
 
 tasks:
   
+  default: task --list-all
+
+  cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
+
   default: task --list-all
 
   cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
@@ -84,3 +89,4 @@ tasks:
   3: task use -- 3
   4: task use -- 4
   5: task use -- 5
+
