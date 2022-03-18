@@ -43,7 +43,7 @@ func init() {
 	T = wski18n.T
 
 	// Rest of CLI uses the Properties struct, so set the build time there
-	commands.Properties.CLIVersion = CLI_VERSION
+	commands.Properties.CLIVersion = CLIVersion
 }
 
 func (w *WskCmd) BeforeApply() error {

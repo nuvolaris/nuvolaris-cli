@@ -31,7 +31,6 @@ type SetupPipeline struct {
 type setupStep func(sp *SetupPipeline)
 
 func (sp *SetupPipeline) step(f setupStep) {
-
 	if sp.err != nil {
 		return
 	}
@@ -46,14 +45,9 @@ func setupNuvolaris(cmd *SetupCmd) error {
 		operatorDockerImage: "ghcr.io/nuvolaris/nuvolaris-operator:" + imgTag,
 	}
 
-	if cmd.Devcluster {
-		sp.createDevcluster = true
-	}
+	sp.createDevcluster = cmd.Devcluster
 
-	if sp.kubeClient == nil {
-		sp.step(assertNuvolarisClusterConfig)
-	}
-
+	sp.step(assertNuvolarisClusterConfig)
 	if cmd.Reset {
 		sp.step(resetNuvolaris)
 	} else {

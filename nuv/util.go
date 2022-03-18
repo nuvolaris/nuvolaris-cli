@@ -20,6 +20,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,7 +28,6 @@ import (
 	"strings"
 )
 
-// buffer for dry run results
 var dryRunBuf = []string{}
 
 // DryRunPush saves dummy results for dry run execution
@@ -127,4 +127,41 @@ func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, err
 		return "", err
 	}
 	return path, nil
+}
+
+func ExecutingInContainer() bool {
+	fsys := os.DirFS("/")
+	// if .dockerenv exists and is a regular file
+	if info, err := fs.Stat(fsys, ".dockerenv"); os.IsNotExist(err) || !info.Mode().IsRegular() {
+		return false
+	}
+
+	// and if docker-host.sock exists and is a socket
+	if info, err := fs.Stat(fsys, "var/run/docker-host.sock"); os.IsNotExist(err) || info.Mode().Type() != fs.ModeSocket {
+		return false
+	}
+
+	return true
+}
+
+func DockerHostKind() error {
+	if os.Args[1] == "create" || os.Args[1] == "delete" {
+		appendKubeConfig()
+	}
+	os.Args = append([]string{"env", "DOCKER_HOST=unix:///var/run/docker-host.sock"}, os.Args...)
+	cmd := exec.Command("sudo", os.Args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	return err
+}
+
+func DockerHostEmpty() bool {
+	return len(os.Getenv("DOCKER_HOST")) == 0
+}
+
+func appendKubeConfig() {
+	homedir, _ := GetHomeDir()
+	kc := filepath.Join(homedir, ".kube/config")
+	os.Args = append(os.Args, "--kubeconfig="+kc)
 }

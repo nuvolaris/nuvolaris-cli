@@ -29,7 +29,7 @@ tasks:
 
   build:
     cmds:
-      - go build -ldflags "-X main.CLI_VERSION={{.TAG}}" -o ./nuv
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o ./nuv
     sources:
       - "*.go"
       - "embed/*"
@@ -55,7 +55,7 @@ tasks:
     deps:
       - vendor
     cmds:
-      - go build -gcflags '-N -l' -mod=vendor -ldflags "-X main.CLI_VERSION={{.TAG}}" -o {{.NUV}}-debug
+      - go build -gcflags '-N -l' -mod=vendor -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.NUV}}-debug
     generates:
       - "{{.NUV}}-debug"
 
