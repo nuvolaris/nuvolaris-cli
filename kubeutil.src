@@ -16,25 +16,39 @@
 # under the License.
 #
 
+
 if ! test -f .env
-then echo Please put a .env with access keys in this folder
+then echo Please put a env with the access keys in this folder
 else export $(xargs <.env)
 fi
-if ! test -f kubeconfig
-then echo Please put a kubeconfig with the contexts in this folder
-else export KUBECONFIG=$PWD/kubeconfig
-     kubectl config set-context --current --namespace nuvolaris
-     echo use kctx to list and change context
-fi
+
+echo use init.sh to reset to kind only
+echo use kctx to list and change contexts
+echo use kadd to add a new context to your kubeconfig
+
 function kctx {
     if test -z "$1"
     then kubectl config view -o json | jq '.contexts | .[].name' -r  |  awk '{print NR, $0}'
          echo current: "$(kubectl config current-context)"
+         echo use "kctx <number>" to switch context
          else CTX=$(kubectl config view -o json | jq '.contexts | .[].name' -r | awk 'NR=='$1' {print}')
             kubectl config use-context "$CTX"
             kubectl get nodes
         fi
 }
+
+function kadd {
+     if [[ -z "$1" ]] || ! [[ -f "$1" ]]
+     then echo "required: <kubeconfig>"
+     else 
+          mv $HOME/.kube/config $HOME/.kube/config$$
+          export KUBECONFIG="$HOME/.kube/config$$:$1"
+          kubectl config view --flatten >"$HOME/.kube/config"
+ 	     unset KUBECONFIG
+     fi
+     kctx
+}
+
 alias ka="kubectl apply -f"
 alias kg="kubectl get"
 alias kd="kubectl delete -f"
