@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-export $(xargs <./nuvolaris-test/.env)
+export $(xargs <../nuvolaris-operator/nuvolaris-test/.env)
