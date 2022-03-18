@@ -20,7 +20,7 @@ package main
 type SetupCmd struct {
 	Devcluster bool   `help:"start dev kind k8s cluster" xor:"dev-or-reset"`
 	ImageTag   string `default:"${image_tag}" help:"nuvolaris operator docker image tag to deploy"`
-	Reset      bool   `help:"reset nuvolaris setup" xor:"dev-or-reset-or-context"`
+	Reset      bool   `help:"reset nuvolaris setup" xor:"dev-or-reset"`
 	Context    string `default:"${kube_context}" help:"kubernetes context from kubeconfig"`
 }
 
