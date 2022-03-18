@@ -15,4 +15,29 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-export $(xargs <../nuvolaris-operator/nuvolaris-test/.env)
+
+if ! test -f .env
+then echo Please put a .env with access keys in this folder
+else export $(xargs <.env)
+fi
+if ! test -f kubeconfig
+then echo Please put a kubeconfig with the contexts in this folder
+else export KUBECONFIG=$PWD/kubeconfig
+     kubectl config set-context --current --namespace nuvolaris
+     echo use kctx to list and change context
+fi
+function kctx {
+    if test -z "$1"
+    then kubectl config view -o json | jq '.contexts | .[].name' -r  |  awk '{print NR, $0}'
+         echo current: "$(kubectl config current-context)"
+         else CTX=$(kubectl config view -o json | jq '.contexts | .[].name' -r | awk 'NR=='$1' {print}')
+            kubectl config use-context "$CTX"
+            kubectl get nodes
+        fi
+}
+alias ka="kubectl apply -f"
+alias kg="kubectl get"
+alias kd="kubectl delete -f"
+alias kds="kubectl describe"
+
+

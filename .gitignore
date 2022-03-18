@@ -18,6 +18,7 @@
 .*-version
 nuv/nuv
 kubeconfig
+.env
 nuvolaris.yml
 .task/
 vendor/
