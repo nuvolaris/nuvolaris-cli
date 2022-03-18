@@ -39,7 +39,7 @@ const (
 	CRDVersion    string = "v1"
 	FullCRDName   string = CRDPlural + "." + CRDGroup
 	namespace     string = "nuvolaris"
-	wskObjectName string = "standalone"
+	wskObjectName string = "controller"
 	apiVersion    string = "nuvolaris.org/v1"
 )
 

@@ -24,6 +24,7 @@ import (
 type SetupPipeline struct {
 	kubeClient          *KubeClient
 	createDevcluster    bool
+	k8sContext          string
 	operatorDockerImage string
 	err                 error
 }
@@ -46,8 +47,10 @@ func setupNuvolaris(cmd *SetupCmd) error {
 	}
 
 	sp.createDevcluster = cmd.Devcluster
+	sp.k8sContext = cmd.Context
 
 	sp.step(assertNuvolarisClusterConfig)
+
 	if cmd.Reset {
 		sp.step(resetNuvolaris)
 	} else {
@@ -55,7 +58,6 @@ func setupNuvolaris(cmd *SetupCmd) error {
 		sp.step(deployWhiskCrd)
 		sp.step(deployServiceAccount)
 		sp.step(deployClusterRoleBinding)
-		sp.step(setupWskProperties)
 		sp.step(runNuvolarisOperatorPod)
 		sp.step(deployOperatorObject)
 		sp.step(waitForOpenWhiskReady)
@@ -64,7 +66,7 @@ func setupNuvolaris(cmd *SetupCmd) error {
 }
 
 func assertNuvolarisClusterConfig(sp *SetupPipeline) {
-	sp.kubeClient, sp.err = initClients(sp.createDevcluster)
+	sp.kubeClient, sp.err = initClients(sp.createDevcluster, sp.k8sContext)
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {
@@ -85,10 +87,6 @@ func deployClusterRoleBinding(sp *SetupPipeline) {
 
 func runNuvolarisOperatorPod(sp *SetupPipeline) {
 	sp.err = sp.kubeClient.createOperatorPod(sp.operatorDockerImage)
-}
-
-func setupWskProperties(sp *SetupPipeline) {
-	sp.err = writeWskPropertiesFile()
 }
 
 func deployOperatorObject(sp *SetupPipeline) {

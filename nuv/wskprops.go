@@ -17,29 +17,10 @@
 //
 package main
 
-import (
-	"os"
-	"path/filepath"
-)
-
-const wskAuth = "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
-const wskApihost = "http://localhost:3233"
-
-func writeWskPropertiesFile() error {
-	content := []byte("AUTH=" + wskAuth + "\nAPIHOST=" + wskApihost)
-	path, err := WriteFileToNuvolarisConfigDir(".wskprops", content)
-	if err != nil {
-		return err
-	}
-	os.Setenv("WSK_CONFIG_FILE", path)
-	return nil
+type WskPropsCmd struct {
+	Context string `default:"${kube_context}" help:"Kubernetes context from .kubeconfig " type:"string"`
 }
 
-func getWhiskPropsPath() (string, error) {
-	path, err := GetOrCreateNuvolarisConfigDir()
-	if err != nil {
-		return "", err
-	}
-	wpath := filepath.Join(path, ".wskprops")
-	return wpath, nil
+func (s *WskPropsCmd) Run() error {
+	return setupWskProps(s)
 }

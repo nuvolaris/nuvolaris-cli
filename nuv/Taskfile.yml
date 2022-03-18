@@ -17,13 +17,20 @@
 #
 version: '3'
 vars:
+ BASETAG: 0.2.0-trinity
  MILESTONE: neo
  NUV:
-   sh: echo ${GOBIN:-.}/nuv
+   sh: echo ${GOBIN:-.}/nuv 
  TAG:
     sh: git describe --tags --abbrev=0 2>/dev/null || echo {{.MILESTONE}}-latest
 
+dotenv: [../../nuvolaris-operator/nuvolaris-test/.env]
+
 tasks:
+  
+  default: task --list-all
+
+  cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
 
   build:
     cmds:
@@ -59,3 +66,21 @@ tasks:
 
   clean: rm -f {{.NUV}} {{.NUV}}-debug
   setup: {silent:true} 
+
+  use: 
+    cmds: 
+      - |
+        if test -z "{{.CLI_ARGS}}"
+        then kubectl config view -o json | jq '.contexts | .[].name' -r  |  awk '{print NR, $0}'
+            echo current: "$(kubectl config current-context)"
+        else CTX=$(kubectl config view -o json | jq '.contexts | .[].name' -r | awk 'NR=={{.CLI_ARGS}} { print}')
+            kubectl config use-context "$CTX"
+            kubectl get nodes
+        fi
+  silent: true
+
+  1: task use -- 1
+  2: task use -- 2
+  3: task use -- 3
+  4: task use -- 4
+  5: task use -- 5

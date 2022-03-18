@@ -97,38 +97,6 @@ func sysErr(dryRun bool, cli string, args ...string) (string, error) {
 	return res, nil
 }
 
-func GetOrCreateNuvolarisConfigDir() (string, error) {
-	homedir, err := GetHomeDir()
-	if err != nil {
-		return "", err
-	}
-	path := filepath.Join(homedir, ".nuvolaris")
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		if err := os.Mkdir(path, 0777); err != nil {
-			return "", err
-		}
-		fmt.Println("nuvolaris config dir created")
-	}
-	return path, nil
-}
-
-func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, error) {
-	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
-	if err != nil {
-		return "", err
-	}
-	path := filepath.Join(nuvHomedir, filename)
-	if _, err := os.Stat(path); err == nil {
-		os.Remove(path)
-	}
-
-	if err := os.WriteFile(path, content, 0600); err != nil {
-		return "", err
-	}
-	return path, nil
-}
-
 func ExecutingInContainer() bool {
 	fsys := os.DirFS("/")
 	// if .dockerenv exists and is a regular file
