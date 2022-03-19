@@ -52,7 +52,7 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Compact:             true,
-			NoExpandSubcommands: false,
+			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
 			"version":   CLIVersion,

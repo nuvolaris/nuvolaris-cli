@@ -17,16 +17,81 @@
 //
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"os"
+
+	"github.com/aws/aws-sdk-go/service/s3"
+)
 
 type S3Cmd struct {
-	mb      string
-	list    string
-	put     string
-	secrets string
+	Mb      mb      `cmd:"" help:"creates an S3 bucket"`
+	List    ls      `cmd:"" help:"lists S3 objects and common prefixes under a prefix or all S3 buckets"`
+	Put     put     `cmd:"" help:"puts a local file in a S3 bucket"`
+	Secrets secrets `cmd:"" help:"sets secrets for S3 buckets"`
+}
+type mb struct {
+	BucketName string `arg:"" type:"string"`
 }
 
-func (s *S3Cmd) Run() error {
-	fmt.Println("Hello s3")
+func (c *mb) Run() error {
+	_, err := newS3session()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Creating bucket %q...\n", c.BucketName)
 	return nil
+}
+
+type ls struct{}
+
+func (c *ls) Run() error {
+	return nil
+}
+
+type put struct{}
+
+func (c *put) Run() error {
+	return nil
+}
+
+type secrets struct{}
+
+func (c *secrets) Run() error {
+	return nil
+}
+
+func newS3session() (*s3.S3, error) {
+	path, err := GetOrCreateNuvolarisConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	fsys := os.DirFS(path)
+	_, err = readS3Secrets(fsys)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+type s3SecretsJSON struct {
+	Id     string
+	Key    string
+	Region string
+}
+
+func readS3Secrets(fsys fs.FS) (s3SecretsJSON, error) {
+	content, err := fs.ReadFile(fsys, "secrets.json")
+	if err != nil {
+		return s3SecretsJSON{}, fmt.Errorf("unable to read s3 secrets. Did you set them with nuv s3 secrets?")
+	}
+	var secrets s3SecretsJSON
+	err = json.Unmarshal(content, &secrets)
+	if err != nil {
+		return s3SecretsJSON{}, err
+	}
+	return secrets, nil
 }

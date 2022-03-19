@@ -16,3 +16,39 @@
 // under the License.
 //
 package main
+
+import (
+	"io/fs"
+	"testing"
+	"testing/fstest"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func Test_readS3Secrets(t *testing.T) {
+
+	t.Run("should return error when unable to read secrets.json", func(t *testing.T) {
+		emptyConfig := fstest.MapFS{"/": {Mode: fs.ModeDir}}
+		_, err := readS3Secrets(emptyConfig)
+		assert.Error(t, err)
+	})
+
+	t.Run("should return s3Secrets when secrets.json is valid", func(t *testing.T) {
+		expected := s3SecretsJSON{
+			Id:     "some-id",
+			Key:    "some-key",
+			Region: "some-region",
+		}
+		secrets := `
+{
+	"id": "some-id",
+	"key": "some-key",
+	"region": "some-region"
+}`
+		fakeFS := fstest.MapFS{"secrets.json": {Data: []byte(secrets)}}
+
+		config, err := readS3Secrets(fakeFS)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, config)
+	})
+}
