@@ -19,6 +19,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,4 +48,50 @@ func TestGetHomedir(t *testing.T) {
 	assert.Equal(t, home, "", "")
 	assert.Equal(t, err.Error(), "some error returned from homedir", "")
 
+}
+
+func TestGetOrCreateNuvolarisConfigDir(t *testing.T) {
+	realHomeDirFunc := GetHomeDir
+	hd, _ := realHomeDirFunc()
+	testPath := filepath.Join(hd, ".nuvolaris", "test")
+
+	defer func() {
+		GetHomeDir = realHomeDirFunc
+		os.Remove(testPath)
+	}()
+
+	GetHomeDir = func() (string, error) {
+		return testPath, nil
+	}
+
+	homedir, _ := GetHomeDir()
+	path := filepath.Join(homedir, ".nuvolaris")
+	_, err := os.Stat(path)
+	assert.NotNil(t, err)
+	assert.True(t, os.IsNotExist(err))
+	GetOrCreateNuvolarisConfigDir()
+	_, err = os.Stat(path)
+	assert.Nil(t, err)
+}
+
+func TestReadWriteFileToNuvolarisConfigDir(t *testing.T) {
+	realHomeDirFunc := GetHomeDir
+	hd, _ := realHomeDirFunc()
+	testPath := filepath.Join(hd, "test")
+
+	defer func() {
+		GetHomeDir = realHomeDirFunc
+		os.Remove(testPath)
+	}()
+
+	GetHomeDir = func() (string, error) {
+		return testPath, nil
+	}
+
+	content := []byte("some content to be written")
+	path, _ := WriteFileToNuvolarisConfigDir("test.txt", content)
+	_, err := os.Stat(path)
+	assert.Nil(t, err)
+	readContent, _ := ReadFileFromNuvolarisConfigDir("test.txt")
+	assert.Equal(t, content, readContent)
 }

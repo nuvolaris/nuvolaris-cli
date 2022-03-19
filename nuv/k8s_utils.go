@@ -60,6 +60,41 @@ func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
 	}
 }
 
+func readAnnotationFromConfigmap(c *KubeClient, namespace string, configmap string, annotation string) (string, error) {
+	cm, err := c.clientset.CoreV1().ConfigMaps(namespace).Get(c.ctx, configmap, metaV1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if cm.Annotations == nil {
+		return "", fmt.Errorf("no annotations found")
+	}
+	if val, ok := cm.Annotations[annotation]; ok {
+		return val, nil
+	}
+	return "", fmt.Errorf("value for annotation %q not found", annotation)
+}
+
+func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+
+		pod, err := getPod(c, podName)
+		if err != nil {
+			return false, err
+		}
+
+		switch pod.Status.Phase {
+		case coreV1.PodPending, coreV1.PodRunning:
+			return false, nil
+		case coreV1.PodSucceeded:
+			return true, nil
+		case coreV1.PodFailed, coreV1.PodUnknown:
+			return false, fmt.Errorf("pod cannot start...aborting")
+		}
+		return false, nil
+	}
+}
+
 func getPod(c *KubeClient, podName string) (*coreV1.Pod, error) {
 	return c.clientset.CoreV1().Pods(c.namespace).Get(c.ctx, podName, metaV1.GetOptions{})
 }
@@ -69,6 +104,10 @@ func getNamespace(c *KubeClient, namespace string) (*coreV1.Namespace, error) {
 
 func waitForPodRunning(c *KubeClient, podName string, timeoutSec int) error {
 	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isPodRunning(c, podName))
+}
+
+func waitForPodCompleted(c *KubeClient, podName string, timeoutSec int) error {
+	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isPodCompleted(c, podName))
 }
 
 func waitForNamespaceToBeTerminated(c *KubeClient, namespace string, timeoutSec int) error {

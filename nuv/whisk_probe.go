@@ -31,16 +31,18 @@ type WskProbe struct {
 }
 
 func readinessProbe(c *KubeClient) error {
-	fmt.Println("Waiting for openwhisk to deploy...waiting is the hardest part 💚")
-	wsk_probe := WskProbe{wsk: Wsk}
-	err := wsk_probe.waitFor(TimeoutInSec, wsk_probe.isOpenWhiskDeployed())
+	fmt.Println("Reading cluster config...")
+	apihost, err := readAnnotationFromConfigmap(c, c.namespace, "config", "apihost")
 	if err != nil {
 		return err
 	}
-	fmt.Println("✓ Openwhisk succesfully deployed")
+	writeWskPropertiesFile(apihost)
+	fmt.Println("wsk properties file written...")
 
-	fmt.Println("Waiting for openwhisk pod to run...")
-	err = waitForPodRunning(c, "wsk0-1-prewarm-nodejs14", TimeoutInSec)
+	wsk_probe := WskProbe{wsk: Wsk}
+
+	fmt.Println("Waiting for openwhisk pod to complete...waiting is the hardest part 💚")
+	err = waitForPodCompleted(c, "wsk-prewarm-nodejs14", TimeoutInSec)
 	if err != nil {
 		return err
 	}
