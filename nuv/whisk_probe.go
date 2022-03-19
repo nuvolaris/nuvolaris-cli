@@ -32,12 +32,13 @@ type WskProbe struct {
 
 func readinessProbe(c *KubeClient) error {
 	fmt.Println("Reading cluster config...")
-	apihost, err := readAnnotationFromConfigmap(c, c.namespace, "config", "apihost")
+	err := waitForAnnotationSet(c, "config")
 	if err != nil {
 		return err
 	}
+	apihost := readAnnotation(c, "config", "apihost")
 	writeWskPropertiesFile(apihost)
-	fmt.Println("wsk properties file written...")
+	fmt.Printf("wsk properties file written with apihost %q\n", apihost)
 
 	wsk_probe := WskProbe{wsk: Wsk}
 

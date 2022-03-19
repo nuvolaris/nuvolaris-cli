@@ -55,9 +55,6 @@ func assertClusterConfig(wsp *WskPropsPipeline) {
 }
 
 func readConfigMap(wsp *WskPropsPipeline) {
-	wsp.apihost, wsp.err = readAnnotationFromConfigmap(
-		wsp.kubeClient,
-		wsp.kubeClient.namespace,
-		"config",
-		"apihost")
+	wsp.err = waitForAnnotationSet(wsp.kubeClient, "config")
+	wsp.apihost = readAnnotation(wsp.kubeClient, "config", "apihost")
 }
