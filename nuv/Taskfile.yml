@@ -28,10 +28,6 @@ vars:
 dotenv: [../../nuvolaris-operator/nuvolaris-test/.env]
 
 tasks:
-  
-  default: task --list-all
-
-  cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
 
   default: task --list-all
 
