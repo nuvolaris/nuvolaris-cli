@@ -98,6 +98,17 @@ func createBucket(svc s3iface.S3API, bucketName string) error {
 	return nil
 }
 
+func listBucketContent(svc s3iface.S3API, bucketName string) error {
+	o, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%+v", o)
+	return nil
+}
+
 func buildAwsConfig(s s3SecretsJSON) *aws.Config {
 	conf := aws.NewConfig()
 	conf.WithRegion(s.Region)

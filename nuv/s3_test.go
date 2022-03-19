@@ -89,6 +89,11 @@ func (m *mockS3Client) CreateBucket(in *s3.CreateBucketInput) (*s3.CreateBucketO
 	return args.Get(0).(*s3.CreateBucketOutput), args.Error(1)
 }
 
+func (m *mockS3Client) ListObjectsV2(in *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
+	args := m.Called(in)
+	return args.Get(0).(*s3.ListObjectsV2Output), args.Error(1)
+}
+
 func Test_createBucket(t *testing.T) {
 	t.Run("should use CreateBucket and return an error if unable to create bucket", func(t *testing.T) {
 		mockSvc := new(mockS3Client)
@@ -107,5 +112,15 @@ func Test_createBucket(t *testing.T) {
 		mockSvc.AssertCalled(t, "CreateBucket", &s3.CreateBucketInput{Bucket: aws.String(bucketName)})
 		assert.NoError(t, err)
 	})
+}
 
+func Test_listBucketContent(t *testing.T) {
+	t.Run("should use ListObjectsV2 and return an error if error occurred", func(t *testing.T) {
+		mockSvc := new(mockS3Client)
+		mockSvc.On("ListObjectsV2", mock.Anything).Return(&s3.ListObjectsV2Output{}, errors.New("failed"))
+		bucketName := "some-bucket"
+		err := listBucketContent(mockSvc, bucketName)
+		mockSvc.AssertCalled(t, "ListObjectsV2", &s3.ListObjectsV2Input{Bucket: aws.String(bucketName)})
+		assert.Error(t, err)
+	})
 }
