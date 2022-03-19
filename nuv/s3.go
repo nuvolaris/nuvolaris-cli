@@ -23,7 +23,11 @@ import (
 	"io/fs"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 )
 
 type S3Cmd struct {
@@ -33,16 +37,15 @@ type S3Cmd struct {
 	Secrets secrets `cmd:"" help:"sets secrets for S3 buckets"`
 }
 type mb struct {
-	BucketName string `arg:"" type:"string"`
+	BucketName string `arg:"" type:"string" help:"the name of the bucket to create"`
 }
 
 func (c *mb) Run() error {
-	_, err := newS3session()
+	session, err := newS3session()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Creating bucket %q...\n", c.BucketName)
-	return nil
+	return createBucket(session, c.BucketName)
 }
 
 type ls struct{}
@@ -63,18 +66,43 @@ func (c *secrets) Run() error {
 	return nil
 }
 
-func newS3session() (*s3.S3, error) {
+const s3endpoint = "a-dummy-endpoint"
+
+func newS3session() (s3iface.S3API, error) {
 	path, err := GetOrCreateNuvolarisConfigDir()
 	if err != nil {
 		return nil, err
 	}
 	fsys := os.DirFS(path)
-	_, err = readS3Secrets(fsys)
+	secrets, err := readS3Secrets(fsys)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	conf := buildAwsConfig(secrets)
+	awsSession, err := session.NewSession(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return s3.New(awsSession, &aws.Config{Endpoint: aws.String(s3endpoint)}), nil
+}
+
+func createBucket(svc s3iface.S3API, bucketName string) error {
+	fmt.Printf("Creating bucket %q...\n", bucketName)
+	_, err := svc.CreateBucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName)})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Bucket %q created", bucketName)
+	return nil
+}
+
+func buildAwsConfig(s s3SecretsJSON) *aws.Config {
+	conf := aws.NewConfig()
+	conf.WithRegion(s.Region)
+	conf.WithCredentials(credentials.NewStaticCredentials(s.Id, s.Key, ""))
+	return conf
 }
 
 type s3SecretsJSON struct {
