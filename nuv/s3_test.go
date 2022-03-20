@@ -18,8 +18,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -146,4 +149,22 @@ func Test_putFile(t *testing.T) {
 		mockSvc.AssertCalled(t, "PutObject", in)
 		assert.Error(t, err)
 	})
+}
+
+func Test_saveSecrets(t *testing.T) {
+	id := "some-id"
+	key := "some-key"
+	region := "some-region"
+	s := secrets{Id: id, Key: key, Region: region}
+	err := s.Run()
+	assert.NoError(t, err)
+
+	path, _ := GetOrCreateNuvolarisConfigDir()
+	path = filepath.Join(path, secretFile)
+	content, err := os.ReadFile(path)
+	assert.NoError(t, err)
+
+	var sj s3SecretsJSON
+	json.Unmarshal(content, &sj)
+	assert.Equal(t, s3SecretsJSON{Id: id, Key: key, Region: region}, sj)
 }

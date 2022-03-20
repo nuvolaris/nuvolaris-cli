@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -30,6 +31,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 )
+
+const s3endpoint = "a-dummy-endpoint"
+const secretFile = "secrets.json"
 
 func runS3(f func(s3iface.S3API, string) error, bucket string) error {
 	session, err := newS3session()
@@ -43,7 +47,7 @@ type S3Cmd struct {
 	Mb      mb      `cmd:"" help:"creates an S3 bucket"`
 	List    ls      `cmd:"" help:"lists S3 objects and common prefixes under a prefix or all S3 buckets"`
 	Put     put     `cmd:"" help:"puts a local file in a S3 bucket"`
-	Secrets secrets `cmd:"" help:"sets secrets for S3 buckets"`
+	Secrets secrets `cmd:"" help:"sets secrets for the S3 session"`
 }
 type mb struct {
 	BucketName string `arg:"" type:"string" help:"the name of the bucket to create"`
@@ -75,13 +79,28 @@ func (c *put) Run() error {
 	return runS3(putFile, c.BucketName)
 }
 
-type secrets struct{}
-
-func (c *secrets) Run() error {
-	return nil
+type secrets struct {
+	Id     string `arg:"" type:"string" help:"The ID to log in S3"`
+	Key    string `arg:"" type:"string" help:"The secret key to log in S3"`
+	Region string `arg:"" type:"string" help:"The region to use for the S3 session"`
 }
 
-const s3endpoint = "a-dummy-endpoint"
+func (c *secrets) Run() error {
+	path, err := GetOrCreateNuvolarisConfigDir()
+	if err != nil {
+		return err
+	}
+	s := s3SecretsJSON{
+		Id:     c.Id,
+		Key:    c.Key,
+		Region: c.Region,
+	}
+	j, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(path, secretFile), j, 0600)
+}
 
 func newS3session() (s3iface.S3API, error) {
 	path, err := GetOrCreateNuvolarisConfigDir()
@@ -150,13 +169,13 @@ func buildAwsConfig(s s3SecretsJSON) *aws.Config {
 }
 
 type s3SecretsJSON struct {
-	Id     string
-	Key    string
-	Region string
+	Id     string `json:"id"`
+	Key    string `json:"key"`
+	Region string `json:"region"`
 }
 
 func readS3Secrets(fsys fs.FS) (s3SecretsJSON, error) {
-	content, err := fs.ReadFile(fsys, "secrets.json")
+	content, err := fs.ReadFile(fsys, secretFile)
 	if err != nil {
 		return s3SecretsJSON{}, fmt.Errorf("unable to read s3 secrets. Did you set them with nuv s3 secrets?")
 	}
