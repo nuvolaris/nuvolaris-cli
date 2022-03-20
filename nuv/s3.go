@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -29,6 +30,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 )
+
+func runS3(f func(s3iface.S3API, string) error, bucket string) error {
+	session, err := newS3session()
+	if err != nil {
+		return err
+	}
+	return f(session, bucket)
+}
 
 type S3Cmd struct {
 	Mb      mb      `cmd:"" help:"creates an S3 bucket"`
@@ -41,23 +50,29 @@ type mb struct {
 }
 
 func (c *mb) Run() error {
-	session, err := newS3session()
+	return runS3(createBucket, c.BucketName)
+}
+
+type ls struct {
+	BucketName string `arg:"" type:"string" help:"the name of the bucket to list"`
+}
+
+func (c *ls) Run() error {
+	return runS3(listBucketContent, c.BucketName)
+}
+
+type put struct {
+	BucketName string `arg:"" type:"string" help:"the name of the bucket to use"`
+	File       string `arg:"" type:"path" help:"the file to put in the bucket"`
+}
+
+func (c *put) Run() error {
+	content, err := os.ReadFile(c.File)
 	if err != nil {
 		return err
 	}
-	return createBucket(session, c.BucketName)
-}
-
-type ls struct{}
-
-func (c *ls) Run() error {
-	return nil
-}
-
-type put struct{}
-
-func (c *put) Run() error {
-	return nil
+	putFile := preparePut(c.File, string(content))
+	return runS3(putFile, c.BucketName)
 }
 
 type secrets struct{}
@@ -90,7 +105,8 @@ func newS3session() (s3iface.S3API, error) {
 
 func createBucket(svc s3iface.S3API, bucketName string) error {
 	fmt.Printf("Creating bucket %q...\n", bucketName)
-	_, err := svc.CreateBucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName)})
+	in := &s3.CreateBucketInput{Bucket: aws.String(bucketName)}
+	_, err := svc.CreateBucket(in)
 	if err != nil {
 		return err
 	}
@@ -99,14 +115,31 @@ func createBucket(svc s3iface.S3API, bucketName string) error {
 }
 
 func listBucketContent(svc s3iface.S3API, bucketName string) error {
-	o, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{
-		Bucket: aws.String(bucketName),
-	})
+	in := &s3.ListObjectsV2Input{Bucket: aws.String(bucketName)}
+	o, err := svc.ListObjectsV2(in)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("%+v", o)
 	return nil
+}
+
+func preparePut(fileName, content string) func(s3iface.S3API, string) error {
+	return func(svc s3iface.S3API, bucketName string) error {
+		fmt.Printf("Uploading %q to bucket %q...", fileName, bucketName)
+		in := &s3.PutObjectInput{
+			Body:   strings.NewReader(content),
+			Key:    aws.String(fileName),
+			Bucket: aws.String(bucketName),
+			ACL:    aws.String(s3.BucketCannedACLPublicRead),
+		}
+		_, err := svc.PutObject(in)
+		if err != nil {
+			return err
+		}
+		fmt.Println("File uploaded successfully")
+		return nil
+	}
 }
 
 func buildAwsConfig(s s3SecretsJSON) *aws.Config {

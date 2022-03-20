@@ -32,6 +32,7 @@ require (
 	github.com/apache/openwhisk-cli/commands v0.0.0-00010101000000-000000000000
 	github.com/apache/openwhisk-cli/wski18n v0.0.0-00010101000000-000000000000
 	github.com/apache/openwhisk-client-go v0.0.0-20211007130743-38709899040b
+	github.com/aws/aws-sdk-go v1.43.13
 	github.com/giusdp/embeddable-kops v0.0.0-00010101000000-000000000000
 	github.com/go-task/task/cmd/task v0.0.0-00010101000000-000000000000
 	github.com/nicksnyder/go-i18n v1.10.1
@@ -71,7 +72,6 @@ require (
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/aws/amazon-ec2-instance-selector/v2 v2.0.3 // indirect
-	github.com/aws/aws-sdk-go v1.43.13 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -169,6 +169,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.10.1 // indirect
 	github.com/spotinst/spotinst-sdk-go v1.85.0 // indirect
+	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	github.com/zclconf/go-cty v1.8.2 // indirect

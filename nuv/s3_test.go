@@ -20,6 +20,7 @@ package main
 import (
 	"errors"
 	"io/fs"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -93,6 +94,10 @@ func (m *mockS3Client) ListObjectsV2(in *s3.ListObjectsV2Input) (*s3.ListObjects
 	args := m.Called(in)
 	return args.Get(0).(*s3.ListObjectsV2Output), args.Error(1)
 }
+func (m *mockS3Client) PutObject(in *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+	args := m.Called(in)
+	return args.Get(0).(*s3.PutObjectOutput), args.Error(1)
+}
 
 func Test_createBucket(t *testing.T) {
 	t.Run("should use CreateBucket and return an error if unable to create bucket", func(t *testing.T) {
@@ -121,6 +126,24 @@ func Test_listBucketContent(t *testing.T) {
 		bucketName := "some-bucket"
 		err := listBucketContent(mockSvc, bucketName)
 		mockSvc.AssertCalled(t, "ListObjectsV2", &s3.ListObjectsV2Input{Bucket: aws.String(bucketName)})
+		assert.Error(t, err)
+	})
+}
+
+func Test_putFile(t *testing.T) {
+	t.Run("should use PutObjet and return an error if error occurred", func(t *testing.T) {
+		mockSvc := new(mockS3Client)
+		mockSvc.On("PutObject", mock.Anything).Return(&s3.PutObjectOutput{}, errors.New("failed"))
+		bucketName := "some-bucket"
+		file := "some-file"
+		err := preparePut(file, "hello")(mockSvc, bucketName)
+		in := &s3.PutObjectInput{
+			Body:   strings.NewReader("hello"),
+			Key:    aws.String(file),
+			Bucket: aws.String(bucketName),
+			ACL:    aws.String(s3.BucketCannedACLPublicRead),
+		}
+		mockSvc.AssertCalled(t, "PutObject", in)
 		assert.Error(t, err)
 	})
 }
