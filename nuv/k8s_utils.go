@@ -20,11 +20,14 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
@@ -94,8 +97,8 @@ func isLocalhostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 			return false, fmt.Errorf("no annotations found")
 		}
 
-		host := cm.Annotations["localhost"]
-		if host == "http://pending" {
+		host := cm.Annotations["apihost"]
+		if host == "http://pending" || host == "" {
 			return false, nil
 		} else {
 			return true, nil
@@ -107,6 +110,21 @@ func readAnnotation(c *KubeClient, configmap string, annotation string) string {
 	cm, _ := getConfigmap(c, configmap)
 	val, _ := cm.Annotations[annotation]
 	return val
+}
+
+func getK8sConfig() (clientcmdapi.Config, error) {
+	kubeconfigPath := getKubeconfigPath()
+	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	return kubeConfig.RawConfig()
+}
+
+func getKubeconfigPath() string {
+	if home, _ := GetHomeDir(); home != "" {
+		return filepath.Join(home, ".kube", "config")
+	}
+	return ""
 }
 
 func getPod(c *KubeClient, podName string) (*coreV1.Pod, error) {
