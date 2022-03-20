@@ -21,7 +21,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -55,10 +54,7 @@ func initClients(createDevcluster bool, k8sContext string) (*KubeClient, error) 
 		}
 	}
 
-	var kubeconfig *string
-	if home, _ := GetHomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "")
-	}
+	kubeconfig := flag.String("kubeconfig", getKubeconfigPath(), "")
 	flag.Parse()
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
@@ -66,7 +62,7 @@ func initClients(createDevcluster bool, k8sContext string) (*KubeClient, error) 
 		return nil, fmt.Errorf("looks like no cluster is running. Run nuv devcluster create or nuv setup --devcluster")
 	}
 
-	err = assertNuvolarisContext(*kubeconfig, k8sContext)
+	err = assertNuvolarisContext(k8sContext)
 	if err != nil {
 		return nil, err
 	}
@@ -90,14 +86,10 @@ func initClients(createDevcluster bool, k8sContext string) (*KubeClient, error) 
 	}, nil
 }
 
-func assertNuvolarisContext(kubeconfigPath string, k8sContext string) error {
-	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
-	configOverrides := &clientcmd.ConfigOverrides{}
-
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	config, err := kubeConfig.RawConfig()
+func assertNuvolarisContext(k8sContext string) error {
+	config, err := getK8sConfig()
 	if err != nil {
-		return fmt.Errorf("error getting RawConfig: %w", err)
+		return err
 	}
 
 	var nuvolarisContext string

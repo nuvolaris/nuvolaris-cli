@@ -38,9 +38,17 @@ func (wsp *WskPropsPipeline) wStep(f wskSetupStep) {
 }
 
 func setupWskProps(cmd *WskPropsCmd) error {
-	wsp := WskPropsPipeline{
-		k8sContext: cmd.Context,
+	wsp := WskPropsPipeline{}
+	if len(cmd.Context) == 0 {
+		config, err := getK8sConfig()
+		if err != nil {
+			return err
+		}
+		wsp.k8sContext = config.CurrentContext
+	} else {
+		wsp.k8sContext = cmd.Context
 	}
+
 	wsp.wStep(assertClusterConfig)
 	wsp.wStep(readConfigMap)
 	if wsp.err == nil {

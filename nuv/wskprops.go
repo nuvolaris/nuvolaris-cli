@@ -18,7 +18,7 @@
 package main
 
 type WskPropsCmd struct {
-	Context string `default:"${kube_context}" help:"Kubernetes context from .kubeconfig " type:"string"`
+	Context string `help:"Kubernetes context from .kubeconfig " type:"string"`
 }
 
 func (s *WskPropsCmd) Run() error {
