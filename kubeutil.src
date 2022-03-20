@@ -48,10 +48,14 @@ function kadd {
      fi
      kctx
 }
+function kfin {
+    kubectl -n nuvolaris patch "$@"  -p '{"metadata":{"finalizers":[]}}' --type=merge
+}
 
-alias ka="kubectl apply -f"
-alias kg="kubectl get"
-alias kd="kubectl delete -f"
-alias kds="kubectl describe"
-
+alias k="kubectl -n nuvolaris"
+alias ka="kubectl -n nuvolaris apply -f"
+alias kg="kubectl -n nuvolaris get"
+alias kd="kubectl -n nuvolaris delete"
+alias kds="kubectl -n nuvolaris describe"
+for i in config/*.kubeconfig ; do kadd $i ; done
 

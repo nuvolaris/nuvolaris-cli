@@ -94,8 +94,8 @@ func isLocalhostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 			return false, fmt.Errorf("no annotations found")
 		}
 
-		host := cm.Annotations["localhost"]
-		if host == "http://pending" {
+		host := cm.Annotations["apihost"]
+		if host == "http://pending" || host == "" {
 			return false, nil
 		} else {
 			return true, nil
