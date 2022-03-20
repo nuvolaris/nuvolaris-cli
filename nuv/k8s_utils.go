@@ -48,32 +48,6 @@ func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
 	}
 }
 
-func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
-	return func() (bool, error) {
-		fmt.Printf(".")
-
-		_, err := getNamespace(c, namespace)
-		if err != nil {
-			return true, err
-		}
-		return false, nil
-	}
-}
-
-func readAnnotationFromConfigmap(c *KubeClient, namespace string, configmap string, annotation string) (string, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(namespace).Get(c.ctx, configmap, metaV1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	if cm.Annotations == nil {
-		return "", fmt.Errorf("no annotations found")
-	}
-	if val, ok := cm.Annotations[annotation]; ok {
-		return val, nil
-	}
-	return "", fmt.Errorf("value for annotation %q not found", annotation)
-}
-
 func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
@@ -95,21 +69,76 @@ func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
 	}
 }
 
+func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+
+		_, err := getNamespace(c, namespace)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+	}
+}
+
+func isLocalhostSet(c *KubeClient, configmap string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+
+		cm, err := getConfigmap(c, configmap)
+		if err != nil {
+			return false, err
+		}
+
+		if cm.Annotations == nil {
+			return false, fmt.Errorf("no annotations found")
+		}
+
+		host := cm.Annotations["localhost"]
+		if host == "http://pending" {
+			return false, nil
+		} else {
+			return true, nil
+		}
+	}
+}
+
+func readAnnotation(c *KubeClient, configmap string, annotation string) string {
+	cm, _ := getConfigmap(c, configmap)
+	val, _ := cm.Annotations[annotation]
+	return val
+}
+
 func getPod(c *KubeClient, podName string) (*coreV1.Pod, error) {
 	return c.clientset.CoreV1().Pods(c.namespace).Get(c.ctx, podName, metaV1.GetOptions{})
 }
+
 func getNamespace(c *KubeClient, namespace string) (*coreV1.Namespace, error) {
 	return c.clientset.CoreV1().Namespaces().Get(c.ctx, namespace, metaV1.GetOptions{})
 }
 
+func getConfigmap(c *KubeClient, configmapName string) (*coreV1.ConfigMap, error) {
+	return c.clientset.CoreV1().ConfigMaps(c.namespace).Get(c.ctx, configmapName, metaV1.GetOptions{})
+}
+
 func waitForPodRunning(c *KubeClient, podName string, timeoutSec int) error {
-	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isPodRunning(c, podName))
+	return waitFor(c, isPodRunning, podName)
 }
 
 func waitForPodCompleted(c *KubeClient, podName string, timeoutSec int) error {
-	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isPodCompleted(c, podName))
+	return waitFor(c, isPodCompleted, podName)
 }
 
 func waitForNamespaceToBeTerminated(c *KubeClient, namespace string, timeoutSec int) error {
-	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isNamespaceTerminated(c, namespace))
+	return waitFor(c, isNamespaceTerminated, namespace)
 }
+
+func waitForAnnotationSet(c *KubeClient, configmap string) error {
+	return waitFor(c, isLocalhostSet, configmap)
+}
+
+func waitFor(c *KubeClient, f checkCondition, resourceName string) error {
+	return wait.PollImmediate(time.Second, time.Duration(TimeoutInSec)*time.Second, f(c, resourceName))
+}
+
+type checkCondition func(c *KubeClient, resourceName string) wait.ConditionFunc
