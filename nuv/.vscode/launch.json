@@ -11,7 +11,7 @@
             "request": "launch",
             "mode": "exec",
             "program": "/home/nuvolaris/.local/bin/nuv-debug",
-            "args": ["kind", "--", "create", "cluster", "--wait", "1m"]
+            "args": ["setup"]
         }
     ]
 }

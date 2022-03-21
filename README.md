@@ -28,3 +28,5 @@ For developers, check the [Design](DESIGN.md) document.
 You can discuss it in the #[nuvolaris-cli](https://discord.gg/JWqFJJfvED) discord channel and in the forum under the category [CLI](https://github.com/nuvolaris/nuvolaris/discussions/categories/cli).
 
 
+
+

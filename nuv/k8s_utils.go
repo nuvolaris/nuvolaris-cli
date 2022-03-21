@@ -20,11 +20,14 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
@@ -48,6 +51,27 @@ func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
 	}
 }
 
+func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+
+		pod, err := getPod(c, podName)
+		if err != nil {
+			return false, err
+		}
+
+		switch pod.Status.Phase {
+		case coreV1.PodPending, coreV1.PodRunning:
+			return false, nil
+		case coreV1.PodSucceeded:
+			return true, nil
+		case coreV1.PodFailed, coreV1.PodUnknown:
+			return false, fmt.Errorf("pod cannot start...aborting")
+		}
+		return false, nil
+	}
+}
+
 func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
@@ -60,17 +84,79 @@ func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
 	}
 }
 
+func isLocalhostSet(c *KubeClient, configmap string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+
+		cm, err := getConfigmap(c, configmap)
+		if err != nil {
+			return false, err
+		}
+
+		if cm.Annotations == nil {
+			return false, fmt.Errorf("no annotations found")
+		}
+
+		host := cm.Annotations["apihost"]
+		if host == "http://pending" || host == "" {
+			return false, nil
+		} else {
+			return true, nil
+		}
+	}
+}
+
+func readAnnotation(c *KubeClient, configmap string, annotation string) string {
+	cm, _ := getConfigmap(c, configmap)
+	val, _ := cm.Annotations[annotation]
+	return val
+}
+
+func getK8sConfig() (clientcmdapi.Config, error) {
+	kubeconfigPath := getKubeconfigPath()
+	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	return kubeConfig.RawConfig()
+}
+
+func getKubeconfigPath() string {
+	if home, _ := GetHomeDir(); home != "" {
+		return filepath.Join(home, ".kube", "config")
+	}
+	return ""
+}
+
 func getPod(c *KubeClient, podName string) (*coreV1.Pod, error) {
 	return c.clientset.CoreV1().Pods(c.namespace).Get(c.ctx, podName, metaV1.GetOptions{})
 }
+
 func getNamespace(c *KubeClient, namespace string) (*coreV1.Namespace, error) {
 	return c.clientset.CoreV1().Namespaces().Get(c.ctx, namespace, metaV1.GetOptions{})
 }
 
+func getConfigmap(c *KubeClient, configmapName string) (*coreV1.ConfigMap, error) {
+	return c.clientset.CoreV1().ConfigMaps(c.namespace).Get(c.ctx, configmapName, metaV1.GetOptions{})
+}
+
 func waitForPodRunning(c *KubeClient, podName string, timeoutSec int) error {
-	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isPodRunning(c, podName))
+	return waitFor(c, isPodRunning, podName)
+}
+
+func waitForPodCompleted(c *KubeClient, podName string, timeoutSec int) error {
+	return waitFor(c, isPodCompleted, podName)
 }
 
 func waitForNamespaceToBeTerminated(c *KubeClient, namespace string, timeoutSec int) error {
-	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, isNamespaceTerminated(c, namespace))
+	return waitFor(c, isNamespaceTerminated, namespace)
 }
+
+func waitForAnnotationSet(c *KubeClient, configmap string) error {
+	return waitFor(c, isLocalhostSet, configmap)
+}
+
+func waitFor(c *KubeClient, f checkCondition, resourceName string) error {
+	return wait.PollImmediate(time.Second, time.Duration(TimeoutInSec)*time.Second, f(c, resourceName))
+}
+
+type checkCondition func(c *KubeClient, resourceName string) wait.ConditionFunc

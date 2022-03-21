@@ -21,7 +21,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -41,7 +40,7 @@ type KubeClient struct {
 	cfg             *rest.Config
 }
 
-func initClients(createDevcluster bool) (*KubeClient, error) {
+func initClients(createDevcluster bool, k8sContext string) (*KubeClient, error) {
 
 	if createDevcluster {
 		fmt.Println("Starting devcluster...")
@@ -55,20 +54,17 @@ func initClients(createDevcluster bool) (*KubeClient, error) {
 		}
 	}
 
-	var kubeconfig *string
-	if home, _ := GetHomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "")
-	}
+	kubeconfig := flag.String("kubeconfig", getKubeconfigPath(), "")
 	flag.Parse()
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("looks like nuvolaris cluster is not running. Run nuv devcluster create or nuv setup --devcluster")
+		return nil, fmt.Errorf("looks like no cluster is running. Run nuv devcluster create or nuv setup --devcluster")
 	}
 
-	err = assertNuvolarisContext(*kubeconfig)
+	err = assertNuvolarisContext(k8sContext)
 	if err != nil {
-		return nil, fmt.Errorf("looks like nuvolaris cluster is not running. Run nuv devcluster create or nuv setup --devcluster")
+		return nil, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
@@ -90,27 +86,23 @@ func initClients(createDevcluster bool) (*KubeClient, error) {
 	}, nil
 }
 
-func assertNuvolarisContext(kubeconfigPath string) error {
-	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
-	configOverrides := &clientcmd.ConfigOverrides{}
-
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	config, err := kubeConfig.RawConfig()
+func assertNuvolarisContext(k8sContext string) error {
+	config, err := getK8sConfig()
 	if err != nil {
-		return fmt.Errorf("error getting RawConfig: %w", err)
+		return err
 	}
 
 	var nuvolarisContext string
 
 	for context := range config.Contexts {
-		if strings.Contains(context, "nuvolaris") {
+		if context == k8sContext {
 			nuvolarisContext = context
 			break
 		}
 	}
 
 	if nuvolarisContext == "" {
-		return fmt.Errorf("context nuvolaris not found")
+		return fmt.Errorf("context not found")
 	}
 
 	config.CurrentContext = nuvolarisContext
@@ -169,6 +161,16 @@ func (c *KubeClient) cleanup() error {
 	//to avoid namespace staying forever in Terminating state
 	//to find out what resources are preventing deletion of namespace, run
 	//kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get -n nuvolaris
+
+	//TODO: removing operator silently fails
+	// client, err := restClient(c.cfg)
+	// if err != nil {
+	// 	return err
+	// }
+	// err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
+	// if err != nil {
+	// 	return err
+	// }
 	err = c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Delete(c.ctx, FullCRDName, metaV1.DeleteOptions{})
 	if err != nil {
 		return err
