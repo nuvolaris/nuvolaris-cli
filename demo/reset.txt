@@ -1,0 +1,34 @@
+# list contexts
+kubectl config get-contexts -o name
+
+kubectl config use-context kind-nuvolaris
+kubectl get ns
+
+kubectl config use-context lke55272-ctx
+kubectl get ns
+
+kubectl config use-context arn:aws:eks:eu-central-1:008226817162:cluster/nuvolaris-cluster
+kubectl get ns
+
+# cleanup
+../../init.sh destroy
+
+aws eks update-kubeconfig --name=nuvolaris-cluster
+kubectl config use-context arn:aws:eks:eu-central-1:008226817162:cluster/nuvolaris-cluster
+
+kubectl -n nuvolaris get wsk
+kubectl -n nuvolaris delete wsk/controller &
+kubectl -n nuvolaris get po
+kubectl -n nuvolaris patch wsk/controller  -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl delete ns nuvolaris &
+kubectl -n nuvolaris patch ns/nuvolaris  -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl get wsk
+kubectl get ns
+
+
+linode-cli lke kubeconfig-view 55272 --json | jq -r '.[].kubeconfig | @base64d'  >~/.kube/config
+
+kubectl config use-context lke55272-ctx
+kubectl get ns
+
+
