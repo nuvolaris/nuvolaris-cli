@@ -42,8 +42,8 @@ type CLI struct {
 	Devcluster DevClusterCmd `cmd:"" help:"create or destroy kind k8s cluster"`
 	Setup      SetupCmd      `cmd:"" help:"setup nuvolaris"`
 	Scan       ScanCmd       `cmd:"" help:"scan subcommand"`
+	S3         S3Cmd         `cmd:"" name:"s3" help:"s3 subcommand"`
 	Wskprops   WskPropsCmd   `cmd:"" help:"setup a .wskprops file"`
-
 	Version kong.VersionFlag `short:"v" help:"show nuvolaris version"`
 }
 
@@ -55,7 +55,7 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Compact:             true,
-			NoExpandSubcommands: false,
+			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
 			"version":      CLIVersion,
