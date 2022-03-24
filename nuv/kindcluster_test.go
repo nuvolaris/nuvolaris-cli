@@ -73,7 +73,7 @@ func Example_preflightChecksNok() {
 	}
 	config.manageKindCluster(NewLogger(), "create")
 	// Output:
-	// running preflight checks
+	// Running Preflight checks...
 }
 
 func Example_successfullClusterStartFromScratch() {
@@ -97,12 +97,12 @@ func Example_successfullClusterStartFromScratch() {
 
 	config.manageKindCluster(NewLogger(), "create")
 	// Output:
-	// running preflight checks
-	// preflight checks ok
+	// Running Preflight checks...
+	// Preflight checks passed!
 	// nuvolaris config dir created
 	// kind.yaml written
-	// starting nuvolaris kind cluster...hang tight
-	// nuvolaris kind cluster started. Have a nice day! 👋
+	// Starting nuvolaris kind cluster... hang tight
+	// Nuvolaris kind cluster started. Have a nice day! 👋
 }
 
 func Example_destroyRunningCluster() {
