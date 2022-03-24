@@ -18,73 +18,52 @@
 package main
 
 import (
-	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func Example_ensureDockerVersion() {
+func Test_ensureDockerVersion(t *testing.T) {
 	DryRunPush("19.03.5", "10.03.5", MinDockerVersion, "!no docker")
 
-	p := PreflightChecksPipeline{dryRun: true}
+	p := PreflightChecksPipeline{dryRun: true, logger: NewLogger()}
 	p.step(ensureDockerVersion)
-	fmt.Println(p.err)
+	assert.NoError(t, p.err)
 
-	p = PreflightChecksPipeline{dryRun: true}
+	p = PreflightChecksPipeline{dryRun: true, logger: NewLogger()}
 	p.step(ensureDockerVersion)
-	fmt.Println(p.err)
+	assert.Error(t, p.err)
 
-	p = PreflightChecksPipeline{dryRun: true}
+	p = PreflightChecksPipeline{dryRun: true, logger: NewLogger()}
 	p.step(ensureDockerVersion)
-	fmt.Println(p.err)
+	assert.NoError(t, p.err)
 
-	p = PreflightChecksPipeline{dryRun: true}
+	p = PreflightChecksPipeline{dryRun: true, logger: NewLogger()}
 	p.step(ensureDockerVersion)
-	fmt.Println(p.err)
-	// Output:
-	// docker version --format {{.Server.Version}}
-	// installed docker version 19.3.5 ok...
-	// <nil>
-	// docker version --format {{.Server.Version}}
-	// installed docker version 10.3.5 is no longer supported
-	// docker version --format {{.Server.Version}}
-	// installed docker version 18.6.3-ce ok...
-	// <nil>
-	// docker version --format {{.Server.Version}}
-	// no docker
+	assert.Error(t, p.err)
 }
 
-func Example_isInHomePath() {
+func Test_isInHomePath(t *testing.T) {
 	homedir, _ := GetHomeDir()
-	p := PreflightChecksPipeline{dir: homedir}
+	p := PreflightChecksPipeline{dir: homedir, logger: NewLogger()}
 	p.step(isInHomePath)
-	fmt.Println(p.err)
+	assert.NoError(t, p.err)
 
-	p = PreflightChecksPipeline{dir: "/var/run"}
+	p = PreflightChecksPipeline{dir: "/var/run", logger: NewLogger()}
 	p.step(isInHomePath)
-	fmt.Println(p.err)
+	assert.Error(t, p.err)
 
-	p = PreflightChecksPipeline{dir: ""}
+	p = PreflightChecksPipeline{dir: "", logger: NewLogger()}
 	p.step(isInHomePath)
-	fmt.Println(p.err)
-	// Output:
-	// dir tree ok...
-	// <nil>
-	// work directory /var/run should be below your home directory;
-	// this is required to be accessible by Docker
-	// <nil>
+	assert.NoError(t, p.err)
 }
 
-func Example_checkDockerMemory() {
-	p := PreflightChecksPipeline{dockerData: "\nTotal Memory: 11GiB\n"}
+func Test_checkDockerMemory(t *testing.T) {
+	p := PreflightChecksPipeline{dockerData: "\nTotal Memory: 11GiB\n", logger: NewLogger()}
 	p.step(checkDockerMemory)
-	fmt.Println(p.err)
+	assert.NoError(t, p.err)
 
-	p = PreflightChecksPipeline{dockerData: "\nTotal Memory: 3GiB\n"}
+	p = PreflightChecksPipeline{dockerData: "\nTotal Memory: 3GiB\n", logger: NewLogger()}
 	p.step(checkDockerMemory)
-	fmt.Println(p.err)
-	// Output:
-	// docker is running...
-	// enough memory to allocate...
-	// <nil>
-	// docker is running...
-	// nuv needs 4GB memory allocatable on docker
+	assert.Error(t, p.err)
 }
