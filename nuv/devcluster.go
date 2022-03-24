@@ -21,10 +21,10 @@ type DevClusterCmd struct {
 	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
 }
 
-func (devClusterCmd *DevClusterCmd) Run() error {
+func (devClusterCmd *DevClusterCmd) Run(logger *Logger) error {
 	config, err := configKind()
 	if err != nil {
 		return err
 	}
-	return config.manageKindCluster(devClusterCmd.Action)
+	return config.manageKindCluster(logger, devClusterCmd.Action)
 }

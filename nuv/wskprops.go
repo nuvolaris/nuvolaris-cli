@@ -21,6 +21,6 @@ type WskPropsCmd struct {
 	Context string `help:"Kubernetes context from .kubeconfig " type:"string"`
 }
 
-func (s *WskPropsCmd) Run() error {
-	return setupWskProps(s)
+func (s *WskPropsCmd) Run(logger *Logger) error {
+	return setupWskProps(logger, s)
 }

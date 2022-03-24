@@ -26,6 +26,7 @@ type WskPropsPipeline struct {
 	k8sContext string
 	apihost    string
 	err        error
+	logger     *Logger
 }
 
 type wskSetupStep func(sp *WskPropsPipeline)
@@ -37,8 +38,10 @@ func (wsp *WskPropsPipeline) wStep(f wskSetupStep) {
 	f(wsp)
 }
 
-func setupWskProps(cmd *WskPropsCmd) error {
-	wsp := WskPropsPipeline{}
+func setupWskProps(logger *Logger, cmd *WskPropsCmd) error {
+	wsp := WskPropsPipeline{
+		logger: logger,
+	}
 	if len(cmd.Context) == 0 {
 		config, err := getK8sConfig()
 		if err != nil {
@@ -59,7 +62,7 @@ func setupWskProps(cmd *WskPropsCmd) error {
 }
 
 func assertClusterConfig(wsp *WskPropsPipeline) {
-	wsp.kubeClient, wsp.err = initClients(false, wsp.k8sContext)
+	wsp.kubeClient, wsp.err = initClients(wsp.logger, false, wsp.k8sContext)
 }
 
 func readConfigMap(wsp *WskPropsPipeline) {

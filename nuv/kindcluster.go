@@ -34,7 +34,7 @@ type KindConfig struct {
 	nuvolarisConfigDir   string
 	kindConfigFile       string
 	fullConfigPath       string
-	preflightChecks      func(string) error
+	preflightChecks      func(*Logger, string) error
 	kind                 func(...string) error
 }
 
@@ -60,11 +60,11 @@ func configKind() (*KindConfig, error) {
 	return &config, nil
 }
 
-func (config *KindConfig) manageKindCluster(action string) error {
+func (config *KindConfig) manageKindCluster(logger *Logger, action string) error {
 
 	switch action {
 	case "create":
-		if err := config.createCluster(); err != nil {
+		if err := config.createCluster(logger); err != nil {
 			return err
 		}
 	case "destroy":
@@ -77,7 +77,7 @@ func (config *KindConfig) manageKindCluster(action string) error {
 	return nil
 }
 
-func (config *KindConfig) createCluster() (err error) {
+func (config *KindConfig) createCluster(logger *Logger) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error in create cluster: %w", err)
@@ -89,15 +89,15 @@ func (config *KindConfig) createCluster() (err error) {
 		return err
 	}
 	if clusterIsRunning {
-		fmt.Println("nuvolaris kind cluster is already running...skipping")
+		logger.Info("nuvolaris kind cluster is already running...skipping")
 		return nil
 	}
 
-	fmt.Println("running preflight checks")
-	if err = config.preflightChecks(config.homedir); err != nil {
+	logger.Info("Running Preflight checks...")
+	if err = config.preflightChecks(logger, config.homedir); err != nil {
 		return err
 	}
-	fmt.Println("preflight checks ok")
+	logger.Info("Preflight checks passed!")
 
 	_, err = GetOrCreateNuvolarisConfigDir()
 	if err != nil {
@@ -111,12 +111,12 @@ func (config *KindConfig) createCluster() (err error) {
 
 	config.fullConfigPath = fullConfigPath
 
-	fmt.Println("starting nuvolaris kind cluster...hang tight")
+	logger.Info("Starting nuvolaris kind cluster... hang tight")
 	if err = config.startCluster(); err != nil {
 		return err
 	}
 
-	fmt.Println("nuvolaris kind cluster started. Have a nice day! 👋")
+	logger.Info("Nuvolaris kind cluster started. Have a nice day! 👋")
 	return nil
 }
 

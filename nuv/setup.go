@@ -24,6 +24,6 @@ type SetupCmd struct {
 	Context    string `default:"${kube_context}" help:"kubernetes context from kubeconfig"`
 }
 
-func (setupCmd *SetupCmd) Run() error {
-	return setupNuvolaris(setupCmd)
+func (setupCmd *SetupCmd) Run(logger *Logger) error {
+	return setupNuvolaris(logger, setupCmd)
 }
