@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-var dockerImg string = "ghcr.io/nuvolaris/nuvolaris-operator:neo-22.0207.21"
+var dockerImg = "ghcr.io/nuvolaris/nuvolaris-operator:neo-22.0207.21"
 
 func TestCreateServiceAccount(t *testing.T) {
 	testclient.clientset = fake.NewSimpleClientset(nspace)

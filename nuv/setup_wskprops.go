@@ -55,7 +55,11 @@ func setupWskProps(logger *Logger, cmd *WskPropsCmd) error {
 	wsp.wStep(assertClusterConfig)
 	wsp.wStep(readConfigMap)
 	if wsp.err == nil {
-		writeWskPropertiesFile(wsp.apihost)
+		wskPropsEntry := wskPropsKeyValue{
+			wskPropsKey:   "API_HOST",
+			wskPropsValue: wsp.apihost,
+		}
+		writeWskPropertiesFile(wskPropsEntry)
 		fmt.Printf(".wskprops file written with apihost %s\n", wsp.apihost)
 	}
 	return wsp.err

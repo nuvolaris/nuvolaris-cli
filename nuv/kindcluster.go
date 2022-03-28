@@ -39,7 +39,7 @@ type KindConfig struct {
 }
 
 //go:embed embed/kind.yaml
-var kind_yaml []byte
+var kindYaml []byte
 
 func configKind() (*KindConfig, error) {
 
@@ -50,7 +50,7 @@ func configKind() (*KindConfig, error) {
 
 	config := KindConfig{
 		homedir:              homeDir,
-		kindYaml:             kind_yaml,
+		kindYaml:             kindYaml,
 		nuvolarisClusterName: "nuvolaris",
 		kindConfigFile:       "kind.yaml",
 		fullConfigPath:       "",
@@ -138,7 +138,7 @@ func (config *KindConfig) destroyCluster() error {
 
 func (config *KindConfig) clusterAlreadyRunning() (bool, error) {
 	//capture cmd output
-	rescue_stdout := os.Stdout
+	rescueStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
@@ -146,7 +146,7 @@ func (config *KindConfig) clusterAlreadyRunning() (bool, error) {
 
 	w.Close()
 	out, _ := ioutil.ReadAll(r)
-	os.Stdout = rescue_stdout
+	os.Stdout = rescueStdout
 
 	if err != nil {
 		return false, err

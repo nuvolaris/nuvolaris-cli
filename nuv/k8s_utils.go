@@ -44,7 +44,7 @@ func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
 			return false, nil
 		case coreV1.PodRunning:
 			return true, nil
-		case coreV1.PodFailed, coreV1.PodSucceeded, coreV1.PodUnknown:
+		case coreV1.PodFailed, coreV1.PodSucceeded:
 			return false, fmt.Errorf("pod cannot start...aborting")
 		}
 		return false, nil
@@ -65,7 +65,7 @@ func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
 			return false, nil
 		case coreV1.PodSucceeded:
 			return true, nil
-		case coreV1.PodFailed, coreV1.PodUnknown:
+		case coreV1.PodFailed:
 			return false, fmt.Errorf("pod cannot start...aborting")
 		}
 		return false, nil
@@ -84,7 +84,7 @@ func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
 	}
 }
 
-func isLocalhostSet(c *KubeClient, configmap string) wait.ConditionFunc {
+func isApihostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
 
@@ -152,7 +152,7 @@ func waitForNamespaceToBeTerminated(c *KubeClient, namespace string, timeoutSec 
 }
 
 func waitForAnnotationSet(c *KubeClient, configmap string) error {
-	return waitFor(c, isLocalhostSet, configmap)
+	return waitFor(c, isApihostSet, configmap)
 }
 
 func waitFor(c *KubeClient, f checkCondition, resourceName string) error {

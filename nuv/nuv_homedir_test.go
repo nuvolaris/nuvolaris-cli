@@ -47,6 +47,7 @@ func TestGetHomedir(t *testing.T) {
 	home, err = GetHomeDir()
 	assert.Equal(t, home, "", "")
 	assert.Equal(t, err.Error(), "some error returned from homedir", "")
+
 }
 
 func TestGetOrCreateNuvolarisConfigDir(t *testing.T) {

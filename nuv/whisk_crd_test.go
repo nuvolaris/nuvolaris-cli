@@ -24,12 +24,12 @@ import (
 )
 
 func TestConfigureCRD(t *testing.T) {
-	whisk_crd := configureCRD()
-	assert.Equal(t, whisk_crd.Name, "whisks.nuvolaris.org")
-	assert.Equal(t, whisk_crd.Namespace, "nuvolaris")
-	assert.Equal(t, whisk_crd.Spec.Names.Kind, "Whisk")
-	assert.Equal(t, whisk_crd.Spec.Names.Singular, "whisk")
-	assert.Equal(t, whisk_crd.Spec.Names.Plural, "whisks")
-	assert.Equal(t, whisk_crd.Spec.Names.ShortNames, []string{"wsk"})
-	assert.Equal(t, whisk_crd.Spec.Group, "nuvolaris.org")
+	whiskCrd := configureCRD()
+	assert.Equal(t, whiskCrd.Name, "whisks.nuvolaris.org")
+	assert.Equal(t, whiskCrd.Namespace, "nuvolaris")
+	assert.Equal(t, whiskCrd.Spec.Names.Kind, "Whisk")
+	assert.Equal(t, whiskCrd.Spec.Names.Singular, "whisk")
+	assert.Equal(t, whiskCrd.Spec.Names.Plural, "whisks")
+	assert.Equal(t, whiskCrd.Spec.Names.ShortNames, []string{"wsk"})
+	assert.Equal(t, whiskCrd.Spec.Group, "nuvolaris.org")
 }

@@ -46,7 +46,7 @@ type Logger struct {
 
 var _ log.Logger = &Logger{}
 
-// Info is part of the log.NuvLogger interface
+// Debug Info is part of the log.NuvLogger interface
 func (l *Logger) Debug(message string) {
 	l.debug(message)
 }
@@ -72,7 +72,7 @@ func (l *Logger) ActionWithSpinner(msg string, f func() bool) {
 	l.EndSpinner(ok)
 }
 
-// Start starts a new phase of the status, if attached to a terminal
+// StartSpinner starts a new phase of the status, if attached to a terminal
 // there will be a loading spinner with this status
 func (l *Logger) StartSpinner(msg string) {
 	l.EndSpinner(true)
@@ -86,7 +86,7 @@ func (l *Logger) StartSpinner(msg string) {
 	}
 }
 
-// End completes the current status, ending any previous spinning and
+// EndSpinner completes the current status, ending any previous spinning and
 // marking the status as success or failure
 func (l *Logger) EndSpinner(success bool) {
 	if l.spinnerStatus == "" {

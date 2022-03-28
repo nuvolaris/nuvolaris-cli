@@ -47,7 +47,7 @@ var preserveUnknownFields bool = true
 
 func configureCRD() *apiextensions.CustomResourceDefinition {
 
-	whisk_crd := apiextensions.CustomResourceDefinition{
+	whiskCrd := apiextensions.CustomResourceDefinition{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      FullCRDName,
 			Namespace: namespace,
@@ -124,19 +124,12 @@ func configureCRD() *apiextensions.CustomResourceDefinition {
 							JSONPath:    ".status.whisk_create.message",
 							Description: "As returned from the handler (sometimes)",
 						},
-						{
-							Name:        "Apihost",
-							Type:        "string",
-							Priority:    0,
-							JSONPath:    ".status.apihost",
-							Description: "Apihost where operator is deployed",
-						},
 					},
 				},
 			},
 		},
 	}
-	return &whisk_crd
+	return &whiskCrd
 }
 
 func (c *KubeClient) deployCRD() error {
@@ -269,13 +262,8 @@ func createWhisk(obj *Whisk, c *rest.RESTClient) error {
 }
 
 func getWhisk(c *rest.RESTClient) error {
-	res := Whisk{}
-	err := c.Get().Namespace(namespace).Resource(CRDPlural).
-		Name(wskObjectName).Do(context.Background()).Into(&res)
-	if err == nil {
-		fmt.Println(res.Spec)
-	}
-
+	_, err := c.Get().Namespace(namespace).Resource(CRDPlural).
+		Name(wskObjectName).DoRaw(context.Background())
 	return err
 }
 
@@ -320,8 +308,13 @@ func createWhiskOperatorObject(c *KubeClient) error {
 			}
 			fmt.Println("✓ Openwhisk operator created")
 			getWhisk(client)
-			writeWskPropertiesFile(whiskAuthKey)
-			return nil
+
+			wskPropsEntry := wskPropsKeyValue{
+				wskPropsKey:   "AUTH",
+				wskPropsValue: whiskAuthKey,
+			}
+			err = writeWskPropertiesFile(wskPropsEntry)
+			return err
 		}
 		return err
 	}
