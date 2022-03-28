@@ -20,7 +20,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -327,17 +326,5 @@ func createWhiskOperatorObject(c *KubeClient) error {
 		return err
 	}
 	fmt.Println("openwhisk operator already exists...skipping")
-	return nil
-}
-
-const wskApihost = "http://localhost:3233"
-
-func writeWskPropertiesFile(authKey string) error {
-	content := []byte("AUTH=" + authKey + "\nAPIHOST=" + wskApihost)
-	path, err := WriteFileToNuvolarisConfigDir(".wskprops", content)
-	if err != nil {
-		return err
-	}
-	os.Setenv("WSK_CONFIG_FILE", path)
 	return nil
 }
