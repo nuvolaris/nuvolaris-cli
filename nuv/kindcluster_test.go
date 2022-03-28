@@ -28,7 +28,7 @@ var homeDir, _ = GetHomeDir()
 func Example_devClusterWrongAction() {
 
 	config := KindConfig{}
-	config.manageKindCluster("delete")
+	config.manageKindCluster(NewLogger(), "delete")
 	// Output:
 	// did you mean nuv devcluster create/destroy?
 }
@@ -41,7 +41,7 @@ func Example_devClusterAlreadyRunning() {
 			return nil
 		},
 	}
-	config.manageKindCluster("create")
+	config.manageKindCluster(NewLogger(), "create")
 	// Output:
 	// nuvolaris kind cluster is already running...skipping
 }
@@ -55,7 +55,7 @@ func Example_multipleDevClustersRunningWithNuvolaris() {
 			return nil
 		},
 	}
-	config.manageKindCluster("create")
+	config.manageKindCluster(NewLogger(), "create")
 	// Output:
 	// nuvolaris kind cluster is already running...skipping
 }
@@ -67,13 +67,13 @@ func Example_preflightChecksNok() {
 		kind: func(...string) error {
 			return nil
 		},
-		preflightChecks: func(string) error {
+		preflightChecks: func(*Logger, string) error {
 			return fmt.Errorf("docker is not running")
 		},
 	}
-	config.manageKindCluster("create")
+	config.manageKindCluster(NewLogger(), "create")
 	// Output:
-	// running preflight checks
+	// Running Preflight checks...
 }
 
 func Example_successfullClusterStartFromScratch() {
@@ -85,7 +85,7 @@ func Example_successfullClusterStartFromScratch() {
 		nuvolarisConfigDir:   ".nuvolaris",
 		kindConfigFile:       "kind.yaml",
 		fullConfigPath:       "",
-		preflightChecks: func(string) error {
+		preflightChecks: func(*Logger, string) error {
 			return nil
 		},
 		kind: func(...string) error {
@@ -95,14 +95,14 @@ func Example_successfullClusterStartFromScratch() {
 	fullPath := filepath.Join(config.homedir, config.nuvolarisConfigDir)
 	os.RemoveAll(fullPath)
 
-	config.manageKindCluster("create")
+	config.manageKindCluster(NewLogger(), "create")
 	// Output:
-	// running preflight checks
-	// preflight checks ok
+	// Running Preflight checks...
+	// Preflight checks passed!
 	// nuvolaris config dir created
 	// kind.yaml written
-	// starting nuvolaris kind cluster...hang tight
-	// nuvolaris kind cluster started. Have a nice day! 👋
+	// Starting nuvolaris kind cluster... hang tight
+	// Nuvolaris kind cluster started. Have a nice day! 👋
 }
 
 func Example_destroyRunningCluster() {
@@ -115,7 +115,7 @@ func Example_destroyRunningCluster() {
 		},
 	}
 
-	config.manageKindCluster("destroy")
+	config.manageKindCluster(NewLogger(), "destroy")
 	// Output:
 	// nuvolaris
 	// kind cluster nuvolaris destroyed
@@ -130,7 +130,7 @@ func Example_destroyClusterNotRunning() {
 		},
 	}
 
-	config.manageKindCluster("destroy")
+	config.manageKindCluster(NewLogger(), "destroy")
 	// Output:
 	// kind cluster nuvolaris not found...skipping
 }

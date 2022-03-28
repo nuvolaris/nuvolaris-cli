@@ -19,7 +19,6 @@ package main
 
 import (
 	_ "embed"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -33,22 +32,24 @@ type DeployCmd struct {
 
 // AfterApply is an hook that gets called after parsing the command but before Run is executed
 // used to run preflight checks
-func (d DeployCmd) AfterApply() error {
+func (d DeployCmd) AfterApply(logger *Logger) error {
 	if d.NoPreflightChecks {
 		return nil
 	}
+	logger.Info("Running Preflight checks...")
 	homedir, _ := GetHomeDir()
 
-	err := RunPreflightChecks(homedir)
+	err := RunPreflightChecks(logger, homedir)
 
 	if err != nil {
 		return err
 	}
+	logger.Info("Preflight checks passed!")
 	return nil
 }
 
-func (*DeployCmd) Run() error {
-	fmt.Println("Deploying Nuvolaris...")
+func (*DeployCmd) Run(logger *Logger) error {
+	logger.Info("Deploying Nuvolaris...")
 	ioutil.WriteFile("nuvolaris.yml", NuvolarisYml, 0600)
 	Task()
 	return nil

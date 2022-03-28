@@ -40,7 +40,7 @@ type KubeClient struct {
 	cfg             *rest.Config
 }
 
-func initClients(createDevcluster bool, k8sContext string) (*KubeClient, error) {
+func initClients(logger *Logger, createDevcluster bool, k8sContext string) (*KubeClient, error) {
 
 	if createDevcluster {
 		fmt.Println("Starting devcluster...")
@@ -48,7 +48,7 @@ func initClients(createDevcluster bool, k8sContext string) (*KubeClient, error) 
 		if err != nil {
 			return nil, err
 		}
-		err = cfg.manageKindCluster("create")
+		err = cfg.manageKindCluster(logger, "create")
 		if err != nil {
 			return nil, err
 		}

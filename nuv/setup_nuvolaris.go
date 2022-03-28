@@ -27,6 +27,7 @@ type SetupPipeline struct {
 	k8sContext          string
 	operatorDockerImage string
 	err                 error
+	logger              *Logger
 }
 
 type setupStep func(sp *SetupPipeline)
@@ -39,11 +40,12 @@ func (sp *SetupPipeline) step(f setupStep) {
 	time.Sleep(2 * time.Second)
 }
 
-func setupNuvolaris(cmd *SetupCmd) error {
+func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	imgTag := cmd.ImageTag
 
 	sp := SetupPipeline{
 		operatorDockerImage: "ghcr.io/nuvolaris/nuvolaris-operator:" + imgTag,
+		logger:              logger,
 	}
 
 	sp.createDevcluster = cmd.Devcluster
@@ -66,7 +68,7 @@ func setupNuvolaris(cmd *SetupCmd) error {
 }
 
 func assertNuvolarisClusterConfig(sp *SetupPipeline) {
-	sp.kubeClient, sp.err = initClients(sp.createDevcluster, sp.k8sContext)
+	sp.kubeClient, sp.err = initClients(sp.logger, sp.createDevcluster, sp.k8sContext)
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {
