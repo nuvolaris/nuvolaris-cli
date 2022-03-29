@@ -46,20 +46,7 @@ func init() {
 }
 
 func (w *WskCmd) BeforeApply() error {
-	_, ok := os.LookupEnv("WSK_CONFIG_FILE")
-	path, err := getWhiskPropsPath()
-	if err != nil {
-		return err
-	}
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		return fmt.Errorf(".wskprops file not found. Run nuv setup")
-	}
-
-	if !ok {
-		os.Setenv("WSK_CONFIG_FILE", path)
-	}
-	return nil
+	return setWskEnvVariable()
 }
 
 func Wsk(args ...string) error {

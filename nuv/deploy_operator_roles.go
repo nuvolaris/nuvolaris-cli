@@ -120,7 +120,7 @@ func (c *KubeClient) createOperatorPod(dockerImg string) error {
 				return err
 			}
 			fmt.Println("Waiting for nuvolaris operator pod...hang tight")
-			err = waitForPodRunning(c, operatorName, TimeoutInSec)
+			err = waitForPodRunning(c, operatorName)
 			if err != nil {
 				return err
 			}

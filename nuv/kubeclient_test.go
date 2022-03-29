@@ -23,8 +23,8 @@ import (
 	"strings"
 	"testing"
 
-	core_v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -33,8 +33,8 @@ var testclient KubeClient = KubeClient{
 	ctx:       context.Background(),
 }
 
-var nspace = &core_v1.Namespace{
-	ObjectMeta: meta_v1.ObjectMeta{
+var nspace = &coreV1.Namespace{
+	ObjectMeta: metaV1.ObjectMeta{
 		Name: testclient.namespace,
 	},
 }
@@ -42,7 +42,7 @@ var nspace = &core_v1.Namespace{
 func TestCreateNamespace(t *testing.T) {
 	testclient.clientset = fakeclient.NewSimpleClientset()
 	// given namespace does not exist yet
-	_, err := testclient.clientset.CoreV1().Namespaces().Get(testclient.ctx, testclient.namespace, meta_v1.GetOptions{})
+	_, err := testclient.clientset.CoreV1().Namespaces().Get(testclient.ctx, testclient.namespace, metaV1.GetOptions{})
 	if err == nil || !strings.Contains(err.Error(), "not found") {
 		t.Errorf(err.Error())
 	}
@@ -52,7 +52,7 @@ func TestCreateNamespace(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 	// then namespace will exist
-	_, err = testclient.clientset.CoreV1().Namespaces().Get(testclient.ctx, testclient.namespace, meta_v1.GetOptions{})
+	_, err = testclient.clientset.CoreV1().Namespaces().Get(testclient.ctx, testclient.namespace, metaV1.GetOptions{})
 	if err != nil {
 		t.Errorf(err.Error())
 	}

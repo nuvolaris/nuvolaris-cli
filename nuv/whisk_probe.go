@@ -31,24 +31,18 @@ type WskProbe struct {
 }
 
 func readinessProbe(c *KubeClient) error {
-	fmt.Println("Reading cluster config...")
-	err := waitForAnnotationSet(c, "config")
+	fmt.Println("Reading Nuvolaris cluster config...")
+	err := waitForApihostSet(c, NuvolarisConfigmapName)
 	if err != nil {
 		return err
 	}
-	apihost := readAnnotation(c, "config", "apihost")
-	wskPropsEntry := wskPropsKeyValue{
-		wskPropsKey:   "API_HOST",
-		wskPropsValue: apihost,
-	}
-	writeWskPropertiesFile(wskPropsEntry)
-	//TODO read other annotations and write to .wskprops
-	fmt.Printf("wsk properties file written with API_HOST %q\n", apihost)
+
+	writeConfigToWskProps(c, NuvolarisConfigmapName)
 
 	wskProbe := WskProbe{wsk: Wsk}
 
 	fmt.Println("Waiting for openwhisk pod to complete...waiting is the hardest part 💚")
-	err = waitForPodCompleted(c, "wsk-prewarm-nodejs14", TimeoutInSec)
+	err = waitForPodCompleted(c, "wsk-prewarm-nodejs14")
 	if err != nil {
 		return err
 	}

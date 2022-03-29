@@ -268,9 +268,6 @@ func getWhisk(c *rest.RESTClient) error {
 }
 
 func createWhiskOperatorObject(c *KubeClient) error {
-	whiskAuthKey := "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
-	// TODO replace with
-	// whiskAuthKey := keygen(alphanum, 32)
 	whisk := &Whisk{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       CRDKind,
@@ -291,7 +288,7 @@ func createWhiskOperatorObject(c *KubeClient) error {
 			Bucket: awsKeygen(),
 			OW: OpenWhisk{
 				WhiskSystem: keygen(alphanum, 32),
-				Nuvolaris:   whiskAuthKey,
+				Nuvolaris:   keygen(alphanum, 32),
 			},
 		},
 	}
@@ -307,14 +304,7 @@ func createWhiskOperatorObject(c *KubeClient) error {
 				return err
 			}
 			fmt.Println("✓ Openwhisk operator created")
-			getWhisk(client)
-
-			wskPropsEntry := wskPropsKeyValue{
-				wskPropsKey:   "AUTH",
-				wskPropsValue: whiskAuthKey,
-			}
-			err = writeWskPropertiesFile(wskPropsEntry)
-			return err
+			return getWhisk(client)
 		}
 		return err
 	}

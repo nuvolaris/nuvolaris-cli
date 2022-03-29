@@ -35,3 +35,5 @@ const TimeoutInSec = 300
 const ScanFolder = "packages"
 
 const WskPropsFilename = ".wskprops"
+
+const NuvolarisConfigmapName = "config"

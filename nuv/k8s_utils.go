@@ -21,6 +21,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -29,6 +30,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
+
+const apihostAnnotation = "nuvolaris-apihost"
+const nuvAnnotationPrefix = "nuvolaris-"
 
 func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
 	return func() (bool, error) {
@@ -97,7 +101,7 @@ func isApihostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 			return false, fmt.Errorf("no annotations found")
 		}
 
-		host := cm.Annotations["apihost"]
+		host := cm.Annotations[apihostAnnotation]
 		if host == "http://pending" || host == "" {
 			return false, nil
 		} else {
@@ -106,10 +110,30 @@ func isApihostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 	}
 }
 
-func readAnnotation(c *KubeClient, configmap string, annotation string) string {
-	cm, _ := getConfigmap(c, configmap)
-	val, _ := cm.Annotations[annotation]
-	return val
+func readClusterConfig(c *KubeClient, configmap string) (map[string]string, error) {
+	cm, err := getConfigmap(c, configmap)
+	if err != nil {
+		return nil, err
+	}
+	wskPropsEntries := make(map[string]string)
+	for k, v := range cm.Annotations {
+		if strings.HasPrefix(k, nuvAnnotationPrefix) {
+			key := strings.TrimPrefix(k, nuvAnnotationPrefix)
+			key = strings.ToUpper(key)
+			key = strings.ReplaceAll(key, "-", "_")
+			wskPropsEntries[key] = v
+		}
+	}
+	return wskPropsEntries, nil
+}
+
+func writeConfigToWskProps(c *KubeClient, configmapName string) error {
+	wskPropsMap, err := readClusterConfig(c, configmapName)
+	if err != nil {
+		return err
+	}
+	wskPropsEntries := flattenWskPropsMap(wskPropsMap)
+	return writeWskPropsFile(wskPropsEntries...)
 }
 
 func getK8sConfig() (clientcmdapi.Config, error) {
@@ -139,19 +163,19 @@ func getConfigmap(c *KubeClient, configmapName string) (*coreV1.ConfigMap, error
 	return c.clientset.CoreV1().ConfigMaps(c.namespace).Get(c.ctx, configmapName, metaV1.GetOptions{})
 }
 
-func waitForPodRunning(c *KubeClient, podName string, timeoutSec int) error {
+func waitForPodRunning(c *KubeClient, podName string) error {
 	return waitFor(c, isPodRunning, podName)
 }
 
-func waitForPodCompleted(c *KubeClient, podName string, timeoutSec int) error {
+func waitForPodCompleted(c *KubeClient, podName string) error {
 	return waitFor(c, isPodCompleted, podName)
 }
 
-func waitForNamespaceToBeTerminated(c *KubeClient, namespace string, timeoutSec int) error {
+func waitForNamespaceToBeTerminated(c *KubeClient, namespace string) error {
 	return waitFor(c, isNamespaceTerminated, namespace)
 }
 
-func waitForAnnotationSet(c *KubeClient, configmap string) error {
+func waitForApihostSet(c *KubeClient, configmap string) error {
 	return waitFor(c, isApihostSet, configmap)
 }
 

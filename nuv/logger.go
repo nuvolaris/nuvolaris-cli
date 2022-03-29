@@ -46,7 +46,7 @@ type Logger struct {
 
 var _ log.Logger = &Logger{}
 
-// Debug Info is part of the log.NuvLogger interface
+// Debug is part of the log.NuvLogger interface
 func (l *Logger) Debug(message string) {
 	l.debug(message)
 }

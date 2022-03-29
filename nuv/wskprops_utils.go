@@ -18,13 +18,14 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func writeWskPropertiesFile(keyValues ...wskPropsKeyValue) error {
-	currentContent, err := readWskPropertiesAsMap()
+func writeWskPropsFile(keyValues ...wskPropsKeyValue) error {
+	currentContent, err := readWskPropsAsMap()
 	if err != nil {
 		return err
 	}
@@ -36,11 +37,26 @@ func writeWskPropertiesFile(keyValues ...wskPropsKeyValue) error {
 	for k, v := range currentContent {
 		sb.WriteString(k + "=" + v + "\n")
 	}
-	path, err := WriteFileToNuvolarisConfigDir(WskPropsFilename, []byte(sb.String()))
+	_, err = WriteFileToNuvolarisConfigDir(WskPropsFilename, []byte(sb.String()))
 	if err != nil {
 		return err
 	}
-	os.Setenv("WSK_CONFIG_FILE", path)
+	return setWskEnvVariable()
+}
+
+func setWskEnvVariable() error {
+	_, ok := os.LookupEnv("WSK_CONFIG_FILE")
+	if !ok {
+		path, err := getWhiskPropsPath()
+		if err != nil {
+			return err
+		}
+		_, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			return fmt.Errorf(".wskprops file not found. Run nuv setup")
+		}
+		os.Setenv("WSK_CONFIG_FILE", path)
+	}
 	return nil
 }
 
@@ -63,7 +79,7 @@ func getOrCreateWhiskPropsFile() ([]byte, error) {
 	return nil, os.WriteFile(path, nil, 0600)
 }
 
-func readWskPropertiesAsMap() (map[string]string, error) {
+func readWskPropsAsMap() (map[string]string, error) {
 	content, err := getOrCreateWhiskPropsFile()
 	if err != nil {
 		return nil, err
@@ -79,6 +95,17 @@ func readWskPropertiesAsMap() (map[string]string, error) {
 		}
 	}
 	return m, nil
+}
+
+func flattenWskPropsMap(annotations map[string]string) []wskPropsKeyValue {
+	var wskPropsEntries []wskPropsKeyValue
+	for k, v := range annotations {
+		wskPropsEntries = append(wskPropsEntries, wskPropsKeyValue{
+			wskPropsKey:   k,
+			wskPropsValue: v,
+		})
+	}
+	return wskPropsEntries
 }
 
 type wskPropsKeyValue struct {

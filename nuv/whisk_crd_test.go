@@ -32,4 +32,15 @@ func TestConfigureCRD(t *testing.T) {
 	assert.Equal(t, whiskCrd.Spec.Names.Plural, "whisks")
 	assert.Equal(t, whiskCrd.Spec.Names.ShortNames, []string{"wsk"})
 	assert.Equal(t, whiskCrd.Spec.Group, "nuvolaris.org")
+
+	openApiSpecProperties := whiskCrd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"].Properties
+	assert.NotEmpty(t, openApiSpecProperties["debug"])
+	assert.NotEmpty(t, openApiSpecProperties["couchdb"])
+	assert.NotEmpty(t, openApiSpecProperties["couchdb"].Properties["whisk_admin"])
+	assert.NotEmpty(t, openApiSpecProperties["mongodb"])
+	assert.NotEmpty(t, openApiSpecProperties["mongodb"].Properties["whisk_admin"])
+	assert.NotEmpty(t, openApiSpecProperties["bucket"])
+	assert.NotEmpty(t, openApiSpecProperties["openwhisk"])
+	assert.NotEmpty(t, openApiSpecProperties["openwhisk"].Properties["whisk.system"])
+	assert.NotEmpty(t, openApiSpecProperties["openwhisk"].Properties["nuvolaris"])
 }
