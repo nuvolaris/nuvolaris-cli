@@ -47,7 +47,7 @@ var preserveUnknownFields bool = true
 
 func configureCRD() *apiextensions.CustomResourceDefinition {
 
-	whisk_crd := apiextensions.CustomResourceDefinition{
+	whiskCrd := apiextensions.CustomResourceDefinition{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      FullCRDName,
 			Namespace: namespace,
@@ -80,6 +80,26 @@ func configureCRD() *apiextensions.CustomResourceDefinition {
 									Type: "object",
 									Properties: map[string]apiextensions.JSONSchemaProps{
 										"debug": {Type: "boolean"},
+										"couchdb": {
+											Type: "object",
+											Properties: map[string]apiextensions.JSONSchemaProps{
+												"whisk_admin": {Type: "string"},
+											},
+										},
+										"mongodb": {
+											Type: "object",
+											Properties: map[string]apiextensions.JSONSchemaProps{
+												"whisk_admin": {Type: "string"},
+											},
+										},
+										"bucket": {Type: "string"},
+										"openwhisk": {
+											Type: "object",
+											Properties: map[string]apiextensions.JSONSchemaProps{
+												"whisk.system": {Type: "string"},
+												"nuvolaris":    {Type: "string"},
+											},
+										},
 									},
 								},
 								"status": {
@@ -109,7 +129,7 @@ func configureCRD() *apiextensions.CustomResourceDefinition {
 			},
 		},
 	}
-	return &whisk_crd
+	return &whiskCrd
 }
 
 func (c *KubeClient) deployCRD() error {
@@ -130,15 +150,47 @@ func (c *KubeClient) deployCRD() error {
 	return nil
 }
 
+type WhiskSpec struct {
+	Debug   bool      `json:"debug"`
+	Couchdb WskAdmin  `json:"couchdb"`
+	Mongodb WskAdmin  `json:"mongodb"`
+	Bucket  string    `json:"bucket"`
+	OW      OpenWhisk `json:"openwhisk"`
+}
+
+type WskAdmin struct {
+	WhiskAdmin string `json:"whisk_admin"`
+}
+type OpenWhisk struct {
+	WhiskSystem string `json:"whisk.system"`
+	Nuvolaris   string `json:"nuvolaris"`
+}
+
 type Whisk struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata"`
+	Spec              WhiskSpec `json:"spec"`
+}
+
+type WhiskList struct {
+	metaV1.TypeMeta `json:",inline"`
+	metaV1.ListMeta `json:"metadata,omitempty"`
+
+	Items []Whisk `json:"items"`
 }
 
 func (in *Whisk) DeepCopyInto(out *Whisk) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	out.Spec = WhiskSpec{
+		Debug:   in.Spec.Debug,
+		Couchdb: in.Spec.Couchdb,
+		Mongodb: in.Spec.Mongodb,
+		Bucket:  in.Spec.Bucket,
+		OW:      in.Spec.OW,
+	}
+
 }
 
 func (in *Whisk) DeepCopy() *Whisk {
@@ -157,11 +209,27 @@ func (in *Whisk) DeepCopyObject() runtime.Object {
 	return nil
 }
 
+func (in *WhiskList) DeepCopyObject() runtime.Object {
+	out := WhiskList{}
+	out.TypeMeta = in.TypeMeta
+	out.ListMeta = in.ListMeta
+
+	if in.Items != nil {
+		out.Items = make([]Whisk, len(in.Items))
+		for i := range in.Items {
+			in.Items[i].DeepCopyInto(&out.Items[i])
+		}
+	}
+
+	return &out
+}
+
 var SchemeGroupVersion = schema.GroupVersion{Group: CRDGroup, Version: CRDVersion}
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Whisk{},
+		&WhiskList{},
 	)
 	metaV1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
@@ -199,8 +267,7 @@ func getWhisk(c *rest.RESTClient) error {
 	return err
 }
 
-func createWhiskOperatorObject(cfg *rest.Config) error {
-
+func createWhiskOperatorObject(c *KubeClient) error {
 	whisk := &Whisk{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       CRDKind,
@@ -210,8 +277,22 @@ func createWhiskOperatorObject(cfg *rest.Config) error {
 			Name:      wskObjectName,
 			Namespace: namespace,
 		},
+		Spec: WhiskSpec{
+			Debug: false,
+			Couchdb: WskAdmin{
+				WhiskAdmin: GenerateRandomSeq(alphanum, 8),
+			},
+			Mongodb: WskAdmin{
+				WhiskAdmin: GenerateRandomSeq(alphanum, 8),
+			},
+			Bucket: awsKeygen(),
+			OW: OpenWhisk{
+				WhiskSystem: keygen(alphanum, 32),
+				Nuvolaris:   keygen(alphanum, 32),
+			},
+		},
 	}
-	client, err := restClient(cfg)
+	client, err := restClient(c.cfg)
 	if err != nil {
 		return err
 	}
@@ -222,11 +303,11 @@ func createWhiskOperatorObject(cfg *rest.Config) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("✓ Openwhisk operator started")
-			return nil
+			fmt.Println("✓ Openwhisk operator created")
+			return getWhisk(client)
 		}
 		return err
 	}
-	fmt.Println("openwhisk operator already running...skipping")
+	fmt.Println("openwhisk operator already exists...skipping")
 	return nil
 }

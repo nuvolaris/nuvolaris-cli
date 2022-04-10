@@ -31,45 +31,44 @@ type WskProbe struct {
 }
 
 func readinessProbe(c *KubeClient) error {
-	fmt.Println("Reading cluster config...")
-	err := waitForAnnotationSet(c, "config")
+	fmt.Println("Reading Nuvolaris cluster config...")
+	err := waitForApihostSet(c, NuvolarisConfigmapName)
 	if err != nil {
 		return err
 	}
-	apihost := readAnnotation(c, "config", "apihost")
-	writeWskPropertiesFile(apihost)
-	fmt.Printf("wsk properties file written with apihost %q\n", apihost)
 
-	wsk_probe := WskProbe{wsk: Wsk}
+	writeConfigToWskProps(c, NuvolarisConfigmapName)
+
+	wskProbe := WskProbe{wsk: Wsk}
 
 	fmt.Println("Waiting for openwhisk pod to complete...waiting is the hardest part 💚")
-	err = waitForPodCompleted(c, "wsk-prewarm-nodejs14", TimeoutInSec)
+	err = waitForPodCompleted(c, "wsk-prewarm-nodejs14")
 	if err != nil {
 		return err
 	}
 	fmt.Println("✓ Openwhisk running")
 
 	fmt.Println("Creating an action...")
-	hello_content := []byte("function main(args) { return { \"body\":\"hello from Nuvolaris\"} }")
-	path, err := WriteFileToNuvolarisConfigDir("hello.js", hello_content)
+	helloContent := []byte("function main(args) { return { \"body\":\"hello from Nuvolaris\"} }")
+	path, err := WriteFileToNuvolarisConfigDir("hello.js", helloContent)
 	if err != nil {
 		return err
 	}
-	err = wsk_probe.waitFor(TimeoutInSec, wsk_probe.isActionCreated(path))
+	err = wskProbe.waitFor(TimeoutInSec, wskProbe.isActionCreated(path))
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("✓ Openwhisk action succesfully created")
+	fmt.Println("✓ Openwhisk action successfully created")
 
 	fmt.Println("Invoking action...")
 
-	err = wsk_probe.wsk("action", "invoke", "hello", "-r")
+	err = wskProbe.wsk("action", "invoke", "hello", "-r")
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("✓ Openwhisk action succesfully invoked. Done.")
+	fmt.Println("✓ Openwhisk action successfully invoked. Done.")
 	fmt.Println("  You are all set! Thanks for using Nuvolaris 😊")
 	return nil
 }
@@ -86,11 +85,11 @@ func (probe *WskProbe) isOpenWhiskDeployed() wait.ConditionFunc {
 	}
 }
 
-func (probe *WskProbe) isActionCreated(path_to_hello string) wait.ConditionFunc {
+func (probe *WskProbe) isActionCreated(pathToHello string) wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
 
-		err := probe.wsk("action", "create", "hello", path_to_hello)
+		err := probe.wsk("action", "create", "hello", pathToHello)
 		if err != nil {
 			if strings.Contains(err.Error(), "resource already exists") {
 				fmt.Println("Openwhisk action already created...skipping")
@@ -102,6 +101,6 @@ func (probe *WskProbe) isActionCreated(path_to_hello string) wait.ConditionFunc 
 	}
 }
 
-func (probe *WskProbe) waitFor(timeout_sec int, function wait.ConditionFunc) error {
-	return wait.PollImmediate(time.Second, time.Duration(timeout_sec)*time.Second, function)
+func (probe *WskProbe) waitFor(timeoutSec int, function wait.ConditionFunc) error {
+	return wait.PollImmediate(time.Second, time.Duration(timeoutSec)*time.Second, function)
 }

@@ -80,7 +80,7 @@ func Example_successfullClusterStartFromScratch() {
 
 	config := KindConfig{
 		homedir:              homeDir,
-		kindYaml:             kind_yaml,
+		kindYaml:             kindYaml,
 		nuvolarisClusterName: "nuvolaris",
 		nuvolarisConfigDir:   ".nuvolaris",
 		kindConfigFile:       "kind.yaml",

@@ -19,13 +19,11 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-
 	"github.com/apache/openwhisk-cli/commands"
 	"github.com/apache/openwhisk-cli/wski18n"
 	"github.com/apache/openwhisk-client-go/whisk"
 	goi18n "github.com/nicksnyder/go-i18n/i18n"
+	"os"
 )
 
 type WskCmd struct {
@@ -48,20 +46,7 @@ func init() {
 }
 
 func (w *WskCmd) BeforeApply() error {
-	_, ok := os.LookupEnv("WSK_CONFIG_FILE")
-	path, err := getWhiskPropsPath()
-	if err != nil {
-		return err
-	}
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		return fmt.Errorf(".wskprops file not found. Run nuv setup")
-	}
-
-	if !ok {
-		os.Setenv("WSK_CONFIG_FILE", path)
-	}
-	return nil
+	return setWskEnvVariable()
 }
 
 func Wsk(args ...string) error {
@@ -77,25 +62,4 @@ func Wsk(args ...string) error {
 
 func (wsk *WskCmd) Run() error {
 	return Wsk(wsk.Args...)
-}
-
-const wskAuth = "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
-
-func writeWskPropertiesFile(apihost string) error {
-	content := []byte("AUTH=" + wskAuth + "\nAPIHOST=" + apihost)
-	path, err := WriteFileToNuvolarisConfigDir(".wskprops", content)
-	if err != nil {
-		return err
-	}
-	os.Setenv("WSK_CONFIG_FILE", path)
-	return nil
-}
-
-func getWhiskPropsPath() (string, error) {
-	path, err := GetOrCreateNuvolarisConfigDir()
-	if err != nil {
-		return "", err
-	}
-	wpath := filepath.Join(path, ".wskprops")
-	return wpath, nil
 }

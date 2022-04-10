@@ -26,7 +26,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-//detects the user's home directory in cross-compilation environments
+// GetHomeDir detects the user's home directory in cross-compilation environments
 var GetHomeDir = func() (string, error) {
 	homedir, err := homedir.Dir()
 	if err != nil {
@@ -35,7 +35,7 @@ var GetHomeDir = func() (string, error) {
 	return homedir, nil
 }
 
-//creates .nuvolaris dir under user's homedir, if not already there
+// GetOrCreateNuvolarisConfigDir creates .nuvolaris dir under user's homedir, if not already there
 func GetOrCreateNuvolarisConfigDir() (string, error) {
 	homedir, err := GetHomeDir()
 	if err != nil {
@@ -53,7 +53,7 @@ func GetOrCreateNuvolarisConfigDir() (string, error) {
 	return path, nil
 }
 
-//writes file to .nuvolaris dir
+// WriteFileToNuvolarisConfigDir writes file to .nuvolaris dir
 func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, error) {
 	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
 	if err != nil {
@@ -70,7 +70,7 @@ func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, err
 	return path, nil
 }
 
-//reads file from .nuvolaris dir
+// ReadFileFromNuvolarisConfigDir reads file from .nuvolaris dir
 func ReadFileFromNuvolarisConfigDir(filename string) ([]byte, error) {
 	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
 	if err != nil {

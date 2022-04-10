@@ -33,3 +33,7 @@ const MinDockerMem = (4 * 1000 * 1000 * 1000) - 1
 const TimeoutInSec = 300
 
 const ScanFolder = "packages"
+
+const WskPropsFilename = ".wskprops"
+
+const NuvolarisConfigmapName = "config"

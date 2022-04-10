@@ -17,14 +17,9 @@
 //
 package main
 
-import (
-	"fmt"
-)
-
 type WskPropsPipeline struct {
 	kubeClient *KubeClient
 	k8sContext string
-	apihost    string
 	err        error
 	logger     *Logger
 }
@@ -53,11 +48,8 @@ func setupWskProps(logger *Logger, cmd *WskPropsCmd) error {
 	}
 
 	wsp.wStep(assertClusterConfig)
-	wsp.wStep(readConfigMap)
-	if wsp.err == nil {
-		writeWskPropertiesFile(wsp.apihost)
-		fmt.Printf(".wskprops file written with apihost %s\n", wsp.apihost)
-	}
+	wsp.wStep(writeNuvClusterConfig)
+
 	return wsp.err
 }
 
@@ -65,7 +57,7 @@ func assertClusterConfig(wsp *WskPropsPipeline) {
 	wsp.kubeClient, wsp.err = initClients(wsp.logger, false, wsp.k8sContext)
 }
 
-func readConfigMap(wsp *WskPropsPipeline) {
-	wsp.err = waitForAnnotationSet(wsp.kubeClient, "config")
-	wsp.apihost = readAnnotation(wsp.kubeClient, "config", "apihost")
+func writeNuvClusterConfig(wsp *WskPropsPipeline) {
+	wsp.err = waitForApihostSet(wsp.kubeClient, NuvolarisConfigmapName)
+	wsp.err = writeConfigToWskProps(wsp.kubeClient, NuvolarisConfigmapName)
 }

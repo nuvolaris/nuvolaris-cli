@@ -30,7 +30,7 @@ type DeployCmd struct {
 	NoPreflightChecks bool     `help:"Disable preflight checks."`
 }
 
-// AfterApply is an hook that gets called after parsing the command but before Run is executed
+// AfterApply is a hook that gets called after parsing the command but before Run is executed
 // used to run preflight checks
 func (d DeployCmd) AfterApply(logger *Logger) error {
 	if d.NoPreflightChecks {

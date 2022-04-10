@@ -182,7 +182,7 @@ func (c *KubeClient) cleanup() error {
 	}
 
 	fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
-	waitForNamespaceToBeTerminated(c, c.namespace, TimeoutInSec)
+	waitForNamespaceToBeTerminated(c, c.namespace)
 	fmt.Println("nuvolaris setup cleanup done.")
 	return nil
 }

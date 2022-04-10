@@ -92,7 +92,7 @@ func runNuvolarisOperatorPod(sp *SetupPipeline) {
 }
 
 func deployOperatorObject(sp *SetupPipeline) {
-	sp.err = createWhiskOperatorObject(sp.kubeClient.cfg)
+	sp.err = createWhiskOperatorObject(sp.kubeClient)
 }
 
 func waitForOpenWhiskReady(sp *SetupPipeline) {
