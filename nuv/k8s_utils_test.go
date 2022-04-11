@@ -32,7 +32,7 @@ var configmap = &coreV1.ConfigMap{
 		Name:      "config",
 		Namespace: "nuvolaris",
 		Annotations: map[string]string{
-			"nuvolaris-apihost":        "http://localhost:3232",
+			"nuvolaris-apihost":        "https://localhost:3232",
 			"nuvolaris-auth":           "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
 			"nuvolaris-mongo-db-pass":  "338fe176-4856-4b21-adae-1fe7a8a9a4c9:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
 			"nuvolaris-couchdb":        "19fb8b3b-8a34-403b-a120-4205a7749e97:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",

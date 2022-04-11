@@ -23,14 +23,14 @@ import (
 
 // CLIVersion holds the current version, to be set by the build with
 //  go build -ldflags "-X main.CLIVersion=<version>"
-var CLIVersion string = "latest"
+var CLIVersion = "latest"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
-var ImageTag string = "0.2.0-trinity.22032018"
+var ImageTag = "0.2.0-trinity.22041023"
 
 // KubeContext holds kubernetes context from kubeconfig
-var KubeContext string = "kind-nuvolaris"
+var KubeContext = "kind-nuvolaris"
 
 type CLI struct {
 	Deploy     DeployCmd        `cmd:"" help:"deploy a nuvolaris cluster"`
