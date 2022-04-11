@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strings"
 
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -45,189 +44,179 @@ const (
 
 var preserveUnknownFields bool = true
 
-func configureCRD() *apiextensions.CustomResourceDefinition {
+//func configureCRD() *apiextensions.CustomResourceDefinition {
+//
+//	whiskCrd := apiextensions.CustomResourceDefinition{
+//		ObjectMeta: metaV1.ObjectMeta{
+//			Name:      FullCRDName,
+//			Namespace: namespace,
+//		},
+//		Status: apiextensions.CustomResourceDefinitionStatus{
+//			StoredVersions: []string{CRDVersion},
+//		},
+//		Spec: apiextensions.CustomResourceDefinitionSpec{
+//			Scope: apiextensions.NamespaceScoped,
+//			Group: CRDGroup,
+//			Names: apiextensions.CustomResourceDefinitionNames{
+//				Kind:       CRDKind,
+//				Plural:     CRDPlural,
+//				Singular:   CRDSingular,
+//				ShortNames: []string{CRDShortName},
+//			},
+//			Versions: []apiextensions.CustomResourceDefinitionVersion{
+//				{
+//					Name:    CRDVersion,
+//					Served:  true,
+//					Storage: true,
+//					Subresources: &apiextensions.CustomResourceSubresources{
+//						Status: &apiextensions.CustomResourceSubresourceStatus{},
+//					},
+//					Schema: &apiextensions.CustomResourceValidation{
+//						OpenAPIV3Schema: &apiextensions.JSONSchemaProps{
+//							Type: "object",
+//							Properties: map[string]apiextensions.JSONSchemaProps{
+//								"spec": {
+//									Type: "object",
+//									Properties: map[string]apiextensions.JSONSchemaProps{
+//										"components": {
+//											Type: "object",
+//											Properties: map[string]apiextensions.JSONSchemaProps{
+//												// start openwhisk
+//												"openwhisk": {Type: "boolean"},
+//												"invoker":   {Type: "boolean"},
+//												// start couchdb
+//												"couchdb": {Type: "boolean"},
+//												// start kafka
+//												"kafka": {Type: "boolean"},
+//												// start mongodb
+//												"mongodb": {Type: "boolean"},
+//												// start redis
+//												"redis": {Type: "boolean"},
+//												// start s3ninja
+//												"s3bucket": {Type: "boolean"},
+//											},
+//										},
+//										"openwhisk": {
+//											Type: "object",
+//											Properties: map[string]apiextensions.JSONSchemaProps{
+//												"namespaces": {
+//													Type: "object",
+//													Properties: map[string]apiextensions.JSONSchemaProps{
+//														"whisk-system": {Type: "string"},
+//														"nuvolaris":    {Type: "string"},
+//													},
+//												},
+//											},
+//										},
+//										"couchdb": {
+//											Type: "object",
+//											Properties: map[string]apiextensions.JSONSchemaProps{
+//												"host":        {Type: "string"},
+//												"volume-size": {Type: "integer"},
+//												"admin": {
+//													Type: "object",
+//													Properties: map[string]apiextensions.JSONSchemaProps{
+//														"user":     {Type: "string"},
+//														"password": {Type: "string"},
+//													},
+//												},
+//												"controller": {
+//													Type: "object",
+//													Properties: map[string]apiextensions.JSONSchemaProps{
+//														"user":     {Type: "string"},
+//														"password": {Type: "string"},
+//													},
+//												},
+//												"invoker": {
+//													Type: "object",
+//													Properties: map[string]apiextensions.JSONSchemaProps{
+//														"user":     {Type: "string"},
+//														"password": {Type: "string"},
+//													},
+//												},
+//											},
+//										},
+//										"mongodb": {
+//											Type: "object",
+//											Properties: map[string]apiextensions.JSONSchemaProps{
+//												"host":        {Type: "string"},
+//												"volume-size": {Type: "integer"},
+//												"admin": {
+//													Type: "object",
+//													Properties: map[string]apiextensions.JSONSchemaProps{
+//														"user":     {Type: "string"},
+//														"password": {Type: "string"},
+//													},
+//												},
+//											},
+//										},
+//										"kafka": {
+//											Type: "object",
+//											Properties: map[string]apiextensions.JSONSchemaProps{
+//												"host":        {Type: "string"},
+//												"volume-size": {Type: "integer"},
+//											},
+//										},
+//										"s3": {
+//											Type: "object",
+//											Properties: map[string]apiextensions.JSONSchemaProps{
+//												"volume-size": {Type: "integer"},
+//												"id":          {Type: "string"},
+//												"key":         {Type: "string"},
+//												"region":      {Type: "string"},
+//											},
+//										},
+//									},
+//								},
+//								"status": {
+//									Type:                   "object",
+//									XPreserveUnknownFields: &preserveUnknownFields,
+//								},
+//							},
+//						},
+//					},
+//					AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
+//						{
+//							Name:        "Debug",
+//							Type:        "string",
+//							Priority:    0,
+//							JSONPath:    ".spec.debug",
+//							Description: "Debugging enabled",
+//						},
+//						{
+//							Name:        "Message",
+//							Type:        "string",
+//							Priority:    0,
+//							JSONPath:    ".status.whisk_create.message",
+//							Description: "As returned from the handler (sometimes)",
+//						},
+//					},
+//				},
+//			},
+//		},
+//	}
+//	return &whiskCrd
+//}
 
-	whisk_crd := apiextensions.CustomResourceDefinition{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      FullCRDName,
-			Namespace: namespace,
-		},
-		Status: apiextensions.CustomResourceDefinitionStatus{
-			StoredVersions: []string{CRDVersion},
-		},
-		Spec: apiextensions.CustomResourceDefinitionSpec{
-			Scope: apiextensions.NamespaceScoped,
-			Group: CRDGroup,
-			Names: apiextensions.CustomResourceDefinitionNames{
-				Kind:       CRDKind,
-				Plural:     CRDPlural,
-				Singular:   CRDSingular,
-				ShortNames: []string{CRDShortName},
-			},
-			Versions: []apiextensions.CustomResourceDefinitionVersion{
-				{
-					Name:    CRDVersion,
-					Served:  true,
-					Storage: true,
-					Subresources: &apiextensions.CustomResourceSubresources{
-						Status: &apiextensions.CustomResourceSubresourceStatus{},
-					},
-					Schema: &apiextensions.CustomResourceValidation{
-						OpenAPIV3Schema: &apiextensions.JSONSchemaProps{
-							Type: "object",
-							Properties: map[string]apiextensions.JSONSchemaProps{
-								"spec": {
-									Type: "object",
-									Properties: map[string]apiextensions.JSONSchemaProps{
-										// not used - should enable debugger for openwhisk
-										"debug": {Type: "boolean"},
-										// if empty, assigned by the system with a load balancer
-										"apihost":  {Type: "string"},
-										"apiport":  {Type: "string"},
-										"protocol": {Type: "string"},
-										// if empty allocate a volume with default storage class otherwise allocate volumes in the hostpath
-										// useful only for kind
-										"hostpath": {Type: "string"},
-										"components": {
-											Type: "object",
-											Properties: map[string]apiextensions.JSONSchemaProps{
-												// start openwhisk
-												"openwhisk": {Type: "boolean"},
-												// start couchdb
-												"couchdb": {Type: "boolean"},
-												// start kafka
-												"kafka": {Type: "boolean"},
-												// start mongodb
-												"mongodb": {Type: "boolean"},
-												// start redis
-												"redis": {Type: "boolean"},
-												// start s3ninja
-												"s3ninja": {Type: "boolean"},
-											},
-										},
-										"openwhisk": {
-											Type: "object",
-											Properties: map[string]apiextensions.JSONSchemaProps{
-												"namespaces": {
-													Type: "object",
-													Properties: map[string]apiextensions.JSONSchemaProps{
-														"whisk-system": {Type: "string"},
-														"nuvolaris":    {Type: "string"},
-													},
-												},
-											},
-										},
-										"couchdb": {
-											Type: "object",
-											Properties: map[string]apiextensions.JSONSchemaProps{
-												"volume-size": {Type: "integer"},
-												"admin": {
-													Type: "object",
-													Properties: map[string]apiextensions.JSONSchemaProps{
-														"user":     {Type: "string"},
-														"password": {Type: "string"},
-													},
-												},
-												"controller": {
-													Type: "object",
-													Properties: map[string]apiextensions.JSONSchemaProps{
-														"user":     {Type: "string"},
-														"password": {Type: "string"},
-													},
-												},
-												"invoker": {
-													Type: "object",
-													Properties: map[string]apiextensions.JSONSchemaProps{
-														"user":     {Type: "string"},
-														"password": {Type: "string"},
-													},
-												},
-											},
-										},
-										"mongodb": {
-											Type: "object",
-											Properties: map[string]apiextensions.JSONSchemaProps{
-												"volume-size": {Type: "integer"},
-												"admin": {
-													Type: "object",
-													Properties: map[string]apiextensions.JSONSchemaProps{
-														"user":     {Type: "string"},
-														"password": {Type: "string"},
-													},
-												},
-											},
-										},
-										"kafka": {
-											Type: "object",
-											Properties: map[string]apiextensions.JSONSchemaProps{
-												"volume-size": {Type: "integer"},
-											},
-										},
-										"s3": {
-											Type: "object",
-											Properties: map[string]apiextensions.JSONSchemaProps{
-												"volume-size": {Type: "integer"},
-												"id":          {Type: "string"},
-												"key":         {Type: "string"},
-												"region":      {Type: "string"},
-											},
-										},
-									},
-								},
-								"status": {
-									Type:                   "object",
-									XPreserveUnknownFields: &preserveUnknownFields,
-								},
-							},
-						},
-					},
-					AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
-						{
-							Name:        "Debug",
-							Type:        "string",
-							Priority:    0,
-							JSONPath:    ".spec.debug",
-							Description: "Debugging enabled",
-						},
-						{
-							Name:        "Message",
-							Type:        "string",
-							Priority:    0,
-							JSONPath:    ".status.whisk_create.message",
-							Description: "As returned from the handler (sometimes)",
-						},
-					},
-				},
-			},
-		},
-	}
-	return &whisk_crd
-}
-
-func (c *KubeClient) deployCRD() error {
-	_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Get(c.ctx, FullCRDName, metaV1.GetOptions{})
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			crd := configureCRD()
-			_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Create(c.ctx, crd, metaV1.CreateOptions{})
-			if err != nil {
-				return err
-			}
-			fmt.Println("✓ Custom resource definition for openwhisk created")
-			return nil
-		}
-		return err
-	}
-	fmt.Println("custom resource definition for whisk already exists...skipping")
-	return nil
-}
+//func (c *KubeClient) deployCRD() error {
+//	_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Get(c.ctx, FullCRDName, metaV1.GetOptions{})
+//	if err != nil {
+//		if strings.Contains(err.Error(), "not found") {
+//			crd := configureCRD()
+//			_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Create(c.ctx, crd, metaV1.CreateOptions{})
+//			if err != nil {
+//				return err
+//			}
+//			fmt.Println("✓ Custom resource definition for openwhisk created")
+//			return nil
+//		}
+//		return err
+//	}
+//	fmt.Println("custom resource definition for whisk already exists...skipping")
+//	return nil
+//}
 
 type WhiskSpec struct {
-	Debug      bool        `json:"debug"`
-	Apihost    string      `json:"apihost"`
-	Apiport    string      `json:"apiport"`
-	Protocol   string      `json:"protocol"`
-	Hostpath   string      `json:"hostpath"`
 	Components ComponentsS `json:"components"`
 	OpenWhisk  OpenWhiskS  `json:"openwhisk"`
 	CouchDb    CouchDbS    `json:"couchdb"`
@@ -238,11 +227,12 @@ type WhiskSpec struct {
 
 type ComponentsS struct {
 	Openwhisk bool `json:"openwhisk"`
+	Invoker   bool `json:"invoker"`
 	CouchDb   bool `json:"couchdb"`
 	Kafka     bool `json:"kafka"`
 	MongoDb   bool `json:"mongodb"`
 	Redis     bool `json:"redis"`
-	S3Ninja   bool `json:"s3ninja"`
+	S3Bucket  bool `json:"s3bucket"`
 }
 
 type OpenWhiskS struct {
@@ -255,6 +245,7 @@ type NamespacesS struct {
 }
 
 type CouchDbS struct {
+	Host       string `json:"host"`
 	VolumeSize int    `json:"volume-size"`
 	Admin      AdminS `json:"admin"`
 	Controller AdminS `json:"controller"`
@@ -267,12 +258,14 @@ type AdminS struct {
 }
 
 type MongoDbS struct {
+	Host       string `json:"host"`
 	VolumeSize int    `json:"volume-size"`
 	Admin      AdminS `json:"admin"`
 }
 
 type KafkaS struct {
-	VolumeSize int `json:"volume-size"`
+	Host       string `json:"host"`
+	VolumeSize int    `json:"volume-size"`
 }
 
 type S3S struct {
@@ -288,16 +281,18 @@ type Whisk struct {
 	Spec              WhiskSpec `json:"spec"`
 }
 
+type WhiskList struct {
+	metaV1.TypeMeta `json:",inline"`
+	metaV1.ListMeta `json:"metadata,omitempty"`
+
+	Items []Whisk `json:"items"`
+}
+
 func (in *Whisk) DeepCopyInto(out *Whisk) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	out.Spec = WhiskSpec{
-		Debug:      in.Spec.Debug,
-		Apihost:    in.Spec.Apihost,
-		Apiport:    in.Spec.Apiport,
-		Protocol:   in.Spec.Protocol,
-		Hostpath:   in.Spec.Hostpath,
 		Components: in.Spec.Components,
 		OpenWhisk:  in.Spec.OpenWhisk,
 		CouchDb:    in.Spec.CouchDb,
@@ -324,11 +319,27 @@ func (in *Whisk) DeepCopyObject() runtime.Object {
 	return nil
 }
 
+func (in *WhiskList) DeepCopyObject() runtime.Object {
+	out := WhiskList{}
+	out.TypeMeta = in.TypeMeta
+	out.ListMeta = in.ListMeta
+
+	if in.Items != nil {
+		out.Items = make([]Whisk, len(in.Items))
+		for i := range in.Items {
+			in.Items[i].DeepCopyInto(&out.Items[i])
+		}
+	}
+
+	return &out
+}
+
 var SchemeGroupVersion = schema.GroupVersion{Group: CRDGroup, Version: CRDVersion}
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Whisk{},
+		&WhiskList{},
 	)
 	metaV1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
@@ -366,8 +377,7 @@ func getWhisk(c *rest.RESTClient) error {
 	return err
 }
 
-func createWhiskOperatorObject(cfg *rest.Config) error {
-
+func createWhiskOperatorObject(c *KubeClient) error {
 	whisk := &Whisk{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       CRDKind,
@@ -378,59 +388,58 @@ func createWhiskOperatorObject(cfg *rest.Config) error {
 			Namespace: namespace,
 		},
 		Spec: WhiskSpec{
-			Debug:    false,
-			Apihost:  "",
-			Apiport:  "",
-			Protocol: "",
-			Hostpath: "",
 			Components: ComponentsS{
 				Openwhisk: true,
+				Invoker:   false,
 				CouchDb:   true,
 				Kafka:     false,
 				MongoDb:   false,
 				Redis:     false,
-				S3Ninja:   false,
+				S3Bucket:  false,
 			},
 			OpenWhisk: OpenWhiskS{
 				Namespaces: NamespacesS{
-					WhiskSystem: "789c46b1-71f6-4ed5-8c54-816aa4f8c502:abczO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
-					Nuvolaris:   "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+					WhiskSystem: keygen(alphanum, 32),
+					Nuvolaris:   keygen(alphanum, 32),
 				},
 			},
 			CouchDb: CouchDbS{
+				Host:       "couchdb",
 				VolumeSize: 10,
 				Admin: AdminS{
 					User:     "whisk_admin",
-					Password: "s0meP@ass",
+					Password: GenerateRandomSeq(alphanum, 8),
 				},
 				Controller: AdminS{
 					User:     "invoker_admin",
-					Password: "s0meP@ass1",
+					Password: GenerateRandomSeq(alphanum, 8),
 				},
 				Invoker: AdminS{
 					User:     "controller_admin",
-					Password: "s0meP@ass2",
+					Password: GenerateRandomSeq(alphanum, 8),
 				},
 			},
 			MongoDb: MongoDbS{
+				Host:       "mongodb",
 				VolumeSize: 10,
 				Admin: AdminS{
 					User:     "admin",
-					Password: "0therPa55",
+					Password: GenerateRandomSeq(alphanum, 8),
 				},
 			},
 			Kafka: KafkaS{
+				Host:       "kafka",
 				VolumeSize: 10,
 			},
 			S3: S3S{
 				VolumeSize: 10,
-				Id:         "AKIAIOSFODNN7EXAMPLE",
-				Key:        "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+				Id:         generateAwsAccessKeyId(),
+				Key:        generateAwsSecretAccessKey(),
 				Region:     "eu-central-1",
 			},
 		},
 	}
-	client, err := restClient(cfg)
+	client, err := restClient(c.cfg)
 	if err != nil {
 		return err
 	}

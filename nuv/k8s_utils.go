@@ -124,6 +124,9 @@ func readClusterConfig(c *KubeClient, configmap string) (map[string]string, erro
 			wskPropsEntries[key] = v
 		}
 	}
+	//TODO remove temporary workaround to replace https with http
+	wskPropsEntries["APIHOST"] = strings.ReplaceAll(wskPropsEntries["APIHOST"], "https", "http")
+
 	return wskPropsEntries, nil
 }
 
