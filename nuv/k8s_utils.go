@@ -31,7 +31,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const apihostAnnotation = "nuvolaris-apihost"
+const apihostAnnotation = "apihost"
 const nuvAnnotationPrefix = "nuvolaris-"
 
 func isPodRunning(c *KubeClient, podName string) wait.ConditionFunc {
@@ -124,9 +124,9 @@ func readClusterConfig(c *KubeClient, configmap string) (map[string]string, erro
 			wskPropsEntries[key] = v
 		}
 	}
+	apihost := cm.Annotations["apihost"]
 	//TODO remove temporary workaround to replace https with http
-	wskPropsEntries["APIHOST"] = strings.ReplaceAll(wskPropsEntries["APIHOST"], "https", "http")
-
+	wskPropsEntries["APIHOST"] = strings.ReplaceAll(apihost, "https", "http")
 	return wskPropsEntries, nil
 }
 

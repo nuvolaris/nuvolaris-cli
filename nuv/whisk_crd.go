@@ -378,6 +378,7 @@ func getWhisk(c *rest.RESTClient) error {
 }
 
 func createWhiskOperatorObject(c *KubeClient) error {
+	authKey := keygen(alphanum, 32)
 	whisk := &Whisk{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       CRDKind,
@@ -399,8 +400,8 @@ func createWhiskOperatorObject(c *KubeClient) error {
 			},
 			OpenWhisk: OpenWhiskS{
 				Namespaces: NamespacesS{
-					WhiskSystem: keygen(alphanum, 32),
-					Nuvolaris:   keygen(alphanum, 32),
+					WhiskSystem: authKey,
+					Nuvolaris:   authKey,
 				},
 			},
 			CouchDb: CouchDbS{
@@ -451,6 +452,11 @@ func createWhiskOperatorObject(c *KubeClient) error {
 				return err
 			}
 			fmt.Println("✓ Openwhisk operator started")
+			//TODO remove temporary workaround
+			writeWskPropsFile(wskPropsKeyValue{
+				wskPropsKey:   "AUTH",
+				wskPropsValue: authKey,
+			})
 			return nil
 		}
 		return err
