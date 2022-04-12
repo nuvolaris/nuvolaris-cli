@@ -139,7 +139,7 @@ func appendKubeConfig() {
 }
 
 func GenerateUUID() string {
-	id := uuid.New()
+	id, _ := uuid.NewRandom()
 	return id.String()
 }
 

@@ -102,7 +102,7 @@ func isApihostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 		}
 
 		host := cm.Annotations[apihostAnnotation]
-		if host == "http://pending" || host == "" {
+		if host == "https://pending" || host == "" {
 			return false, nil
 		} else {
 			return true, nil
