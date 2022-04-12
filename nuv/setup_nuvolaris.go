@@ -57,7 +57,6 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.step(resetNuvolaris)
 	} else {
 		sp.step(createNuvolarisNamespace)
-		//sp.step(deployWhiskCrd)
 		sp.step(deployServiceAccount)
 		sp.step(deployClusterRoleBinding)
 		sp.step(runNuvolarisOperatorPod)
@@ -74,10 +73,6 @@ func assertNuvolarisClusterConfig(sp *SetupPipeline) {
 func createNuvolarisNamespace(sp *SetupPipeline) {
 	sp.err = sp.kubeClient.createNuvolarisNamespace()
 }
-
-//func deployWhiskCrd(sp *SetupPipeline) {
-//	sp.err = sp.kubeClient.deployCRD()
-//}
 
 func deployServiceAccount(sp *SetupPipeline) {
 	sp.err = sp.kubeClient.createServiceAccount()

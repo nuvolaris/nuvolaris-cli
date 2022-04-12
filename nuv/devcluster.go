@@ -18,7 +18,7 @@
 package main
 
 type DevClusterCmd struct {
-	Action string `arg:"" name:"action" help:"create/destroy" type:"string"`
+	Action string `arg:"" required:"" enum:"create,destroy" help:"create/destroy" type:"string"`
 }
 
 func (devClusterCmd *DevClusterCmd) Run(logger *Logger) error {

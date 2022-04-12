@@ -21,6 +21,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -157,42 +158,33 @@ func (c *KubeClient) cleanup() error {
 		return nil
 	}
 
-	//manually remove wsk crd!
+	//manually remove wsk controller
 	//to avoid namespace staying forever in Terminating state
 	//to find out what resources are preventing deletion of namespace, run
 	//kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get -n nuvolaris
 
-	//TODO: removing operator silently fails
-	// client, err := restClient(c.cfg)
-	// if err != nil {
-	// 	return err
-	// }
-
-	c.clientset.CoreV1().Pods(c.namespace).Delete(c.ctx, "nuvolaris-operator", metaV1.DeleteOptions{})
+	client, err := restClient(c.cfg)
 	if err != nil {
 		return err
 	}
 
+	patch := []byte(`{"metadata":{"finalizers":[]}}`)
+	err = client.Patch(types.MergePatchType).Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Body(patch).Do(c.ctx).Error()
+	if err != nil {
+		return err
+	}
+	err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
+	if err != nil {
+		return err
+	}
+
+	err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
+	waitForNamespaceToBeTerminated(c, c.namespace)
+	fmt.Println("nuvolaris uninstalled.")
 	return nil
-	/*
-		err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
-		if err != nil {
-			return err
-		}
-
-		err = c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Delete(c.ctx, FullCRDName, metaV1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-
-		err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
-		waitForNamespaceToBeTerminated(c, c.namespace)
-		fmt.Println("nuvolaris setup cleanup done.")
-		return nil
-	*/
 }
