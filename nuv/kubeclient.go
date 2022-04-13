@@ -167,22 +167,32 @@ func (c *KubeClient) cleanup() error {
 	// if err != nil {
 	// 	return err
 	// }
-	// err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
-	// if err != nil {
-	// 	return err
-	// }
-	err = c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Delete(c.ctx, FullCRDName, metaV1.DeleteOptions{})
+
+	c.clientset.CoreV1().Pods(c.namespace).Delete(c.ctx, "nuvolaris-operator", metaV1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 
-	err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
-	waitForNamespaceToBeTerminated(c, c.namespace)
-	fmt.Println("nuvolaris setup cleanup done.")
 	return nil
+	/*
+		err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
+		if err != nil {
+			return err
+		}
+
+		err = c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Delete(c.ctx, FullCRDName, metaV1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+
+		err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
+		waitForNamespaceToBeTerminated(c, c.namespace)
+		fmt.Println("nuvolaris setup cleanup done.")
+		return nil
+	*/
 }

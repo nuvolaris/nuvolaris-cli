@@ -1,0 +1,64 @@
+## this is not a script but collection of commands 
+## to be copied and executed in the termina
+
+# kubeconfig
+PAGER= aws eks list-clusters --output=text
+rm ~/.kube/config
+aws eks update-kubeconfig --name=nuvolaris-cluster
+
+# create and destroy clusters
+eksctl create cluster --name=test1
+eksctl delete cluster --name=test1
+
+# set context
+kubectl config current-context
+kubectl config get-contexts
+kubectl config use-context xxx
+kubectl config set-context --current --namespace nuvolaris
+kubectl get nodes
+
+# install
+sudo dscacheutil -flushcache;sudo killall -HUP mDNSResponder
+CTX=$(kubectl config current-context) ; echo $CTX
+./nuv setup --context=$CTX
+
+watch kubectl get po
+watch kubectl get cm/config -o yaml
+kubectl get cm/config -o yaml
+
+# demo
+./nuv wsk action list
+./nuv wsk action update hi hi.js
+./nuv wsk action invoke hi -r
+./nuv wsk action invoke hi -r -p name Michele
+./nuv wsk action update hi hi.js --web=true
+./nuv wsk action get hi --url
+
+# uninstall
+kubectl delete wsk/controller
+kubectl delete po/nuvolaris-operator
+
+
+
+
+
+
+
+# delete 
+kubectl get po
+kubectl delete wsk/controller
+kubectl -n nuvolaris patch wsk/controller --type=merge --patch '{"metadata": {"finalizers":[] } }'
+kubectl delete cm --all
+kubectl delete secret --all
+
+# delete
+kubectl delete wsk/controller
+kubectl delete pod/nuvolaris-operator
+
+
+# help
+aws eks help  
+aws eks update-kubeconfig help  
+
+# new cluster
+eksctl create cluster --name test

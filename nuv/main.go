@@ -27,7 +27,7 @@ var CLIVersion = "latest"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
-var ImageTag = "0.2.0-trinity.22041023"
+var ImageTag = "0.2.0-trinity.22041219"
 
 // KubeContext holds kubernetes context from kubeconfig
 var KubeContext = "kind-nuvolaris"
