@@ -59,7 +59,7 @@ func getCurrentK8sConfig(up *UninstallPipeline) {
 }
 
 func initK8sClient(up *UninstallPipeline) {
-	up.kubeClient, up.err = initClients(nil, false, up.currentContext)
+	up.kubeClient, up.err = initClients(up.currentContext)
 }
 
 func resetNuv(up *UninstallPipeline) {

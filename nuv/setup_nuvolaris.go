@@ -18,12 +18,12 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
 type SetupPipeline struct {
 	kubeClient          *KubeClient
-	createDevcluster    bool
 	k8sContext          string
 	operatorDockerImage string
 	err                 error
@@ -41,33 +41,60 @@ func (sp *SetupPipeline) step(f setupStep) {
 }
 
 func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
-	imgTag := cmd.ImageTag
 
+	setupWithNoFlags := !cmd.Devcluster &&
+		!cmd.Configure &&
+		cmd.ImageTag == ImageTag &&
+		cmd.Uninstall == "" &&
+		cmd.Context == ""
+
+	if setupWithNoFlags {
+		err := listAvailableContexts()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if cmd.ImageTag != ImageTag && cmd.Context == "" {
+		fmt.Println("Specify Kubernetes context with --context flag")
+		return nil
+	}
+
+	if cmd.Configure {
+		//TODO setup ~/.nuvolaris/config.yaml
+	}
+
+	imgTag := cmd.ImageTag
 	sp := SetupPipeline{
 		operatorDockerImage: "ghcr.io/nuvolaris/nuvolaris-operator:" + imgTag,
 		logger:              logger,
 	}
 
-	sp.createDevcluster = cmd.Devcluster
-	sp.k8sContext = cmd.Context
+	if cmd.Devcluster {
+		sp.err = startDevCluster(sp.logger)
+		sp.k8sContext = "kind-nuvolaris"
+	}
 
-	sp.step(assertNuvolarisClusterConfig)
+	if cmd.Context != "" {
+		sp.k8sContext = cmd.Context
+	}
 
-	if cmd.Reset {
+	if cmd.Uninstall != "" {
+		sp.k8sContext = cmd.Uninstall
+		sp.kubeClient, sp.err = initClients(sp.k8sContext)
 		sp.step(resetNuvolaris)
+		return sp.err
 	} else {
+		sp.kubeClient, sp.err = initClients(sp.k8sContext)
 		sp.step(createNuvolarisNamespace)
 		sp.step(deployServiceAccount)
 		sp.step(deployClusterRoleBinding)
 		sp.step(runNuvolarisOperatorPod)
 		sp.step(deployOperatorObject)
 		sp.step(waitForOpenWhiskReady)
+		return sp.err
 	}
-	return sp.err
-}
-
-func assertNuvolarisClusterConfig(sp *SetupPipeline) {
-	sp.kubeClient, sp.err = initClients(sp.logger, sp.createDevcluster, sp.k8sContext)
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {

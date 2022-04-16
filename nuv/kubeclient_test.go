@@ -29,7 +29,7 @@ import (
 )
 
 var testclient KubeClient = KubeClient{
-	namespace: "nuvolaris",
+	namespace: NuvolarisNamespace,
 	ctx:       context.Background(),
 }
 

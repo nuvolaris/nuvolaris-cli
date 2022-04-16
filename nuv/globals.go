@@ -36,4 +36,7 @@ const ScanFolder = "packages"
 
 const WskPropsFilename = ".wskprops"
 
+// NuvolarisNamespace is Kubernetes namespace where nuvolaris components are deployed
+const NuvolarisNamespace = "nuvolaris"
+
 const NuvolarisConfigmapName = "config"

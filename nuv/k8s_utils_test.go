@@ -29,8 +29,8 @@ import (
 
 var configmap = &coreV1.ConfigMap{
 	ObjectMeta: metaV1.ObjectMeta{
-		Name:      "config",
-		Namespace: "nuvolaris",
+		Name:      NuvolarisConfigmapName,
+		Namespace: NuvolarisNamespace,
 		Annotations: map[string]string{
 			"apihost":                  "https://localhost:3232",
 			"nuvolaris-auth":           "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",

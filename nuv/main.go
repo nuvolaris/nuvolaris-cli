@@ -29,9 +29,6 @@ var CLIVersion = "latest"
 // operator used in setup
 var ImageTag = "0.2.0-trinity.22041219"
 
-// KubeContext holds kubernetes context from kubeconfig
-var KubeContext = "kind-nuvolaris"
-
 type CLI struct {
 	Deploy     DeployCmd        `cmd:"" help:"deploy a nuvolaris cluster"`
 	Uninstall  UninstallCmd     `cmd:"" help:"uninstall nuvolaris"`
@@ -60,9 +57,8 @@ func main() {
 			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
-			"version":      CLIVersion,
-			"image_tag":    ImageTag,
-			"kube_context": KubeContext,
+			"version":   CLIVersion,
+			"image_tag": ImageTag,
 		},
 		kong.Bind(logger),
 	)
