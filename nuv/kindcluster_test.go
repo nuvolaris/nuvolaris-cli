@@ -25,14 +25,6 @@ import (
 
 var homeDir, _ = GetHomeDir()
 
-func Example_devClusterWrongAction() {
-
-	config := KindConfig{}
-	config.manageKindCluster(NewLogger(), "delete")
-	// Output:
-	// did you mean nuv devcluster create/destroy?
-}
-
 func Example_devClusterAlreadyRunning() {
 	config := KindConfig{
 		nuvolarisClusterName: "nuvolaris",

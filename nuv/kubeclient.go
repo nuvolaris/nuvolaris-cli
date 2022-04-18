@@ -21,6 +21,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -40,19 +41,7 @@ type KubeClient struct {
 	cfg             *rest.Config
 }
 
-func initClients(logger *Logger, createDevcluster bool, k8sContext string) (*KubeClient, error) {
-
-	if createDevcluster {
-		fmt.Println("Starting devcluster...")
-		cfg, err := configKind()
-		if err != nil {
-			return nil, err
-		}
-		err = cfg.manageKindCluster(logger, "create")
-		if err != nil {
-			return nil, err
-		}
-	}
+func initClients(k8sContext string) (*KubeClient, error) {
 
 	kubeconfig := flag.String("kubeconfig", getKubeconfigPath(), "")
 	flag.Parse()
@@ -62,7 +51,7 @@ func initClients(logger *Logger, createDevcluster bool, k8sContext string) (*Kub
 		return nil, fmt.Errorf("looks like no cluster is running. Run nuv devcluster create or nuv setup --devcluster")
 	}
 
-	err = assertNuvolarisContext(k8sContext)
+	err = setNuvolarisContext(k8sContext)
 	if err != nil {
 		return nil, err
 	}
@@ -80,13 +69,42 @@ func initClients(logger *Logger, createDevcluster bool, k8sContext string) (*Kub
 	return &KubeClient{
 		clientset:       clientset,
 		apiextclientset: apics,
-		namespace:       "nuvolaris",
+		namespace:       NuvolarisNamespace,
 		ctx:             context.Background(),
 		cfg:             config,
 	}, nil
 }
 
-func assertNuvolarisContext(k8sContext string) error {
+func startDevCluster(logger *Logger) error {
+	fmt.Println("Starting kind devcluster...")
+	cfg, err := configKind()
+	if err != nil {
+		return err
+	}
+	err = cfg.manageKindCluster(logger, "create")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func listAvailableContexts() error {
+	config, err := getK8sConfig()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Available Kubernetes contexts:")
+	for context := range config.Contexts {
+		fmt.Println(context)
+	}
+	if config.CurrentContext != "" {
+		fmt.Println("✓ Current context set to ", config.CurrentContext)
+	}
+	return nil
+}
+
+func setNuvolarisContext(k8sContext string) error {
 	config, err := getK8sConfig()
 	if err != nil {
 		return err
@@ -111,7 +129,7 @@ func assertNuvolarisContext(k8sContext string) error {
 		return fmt.Errorf("error ModifyConfig: %w", err)
 	}
 
-	fmt.Println("✓ Current context set to", nuvolarisContext)
+	fmt.Println("✓ Current Kubernetes context set to", nuvolarisContext)
 	return nil
 }
 
@@ -157,42 +175,33 @@ func (c *KubeClient) cleanup() error {
 		return nil
 	}
 
-	//manually remove wsk crd!
+	//manually remove wsk controller
 	//to avoid namespace staying forever in Terminating state
 	//to find out what resources are preventing deletion of namespace, run
 	//kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get -n nuvolaris
 
-	//TODO: removing operator silently fails
-	// client, err := restClient(c.cfg)
-	// if err != nil {
-	// 	return err
-	// }
-
-	c.clientset.CoreV1().Pods(c.namespace).Delete(c.ctx, "nuvolaris-operator", metaV1.DeleteOptions{})
+	client, err := restClient(c.cfg)
 	if err != nil {
 		return err
 	}
 
+	patch := []byte(`{"metadata":{"finalizers":[]}}`)
+	err = client.Patch(types.MergePatchType).Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Body(patch).Do(c.ctx).Error()
+	if err != nil {
+		return err
+	}
+	err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
+	if err != nil {
+		return err
+	}
+
+	err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
+	waitForNamespaceToBeTerminated(c, c.namespace)
+	fmt.Println("nuvolaris uninstalled")
 	return nil
-	/*
-		err = client.Delete().Namespace(c.namespace).Resource(CRDPlural).Name(wskObjectName).Do(c.ctx).Error()
-		if err != nil {
-			return err
-		}
-
-		err = c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Delete(c.ctx, FullCRDName, metaV1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-
-		err = c.clientset.CoreV1().Namespaces().Delete(c.ctx, c.namespace, metaV1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("waiting for nuvolaris namespace to be terminated...a little patience please")
-		waitForNamespaceToBeTerminated(c, c.namespace)
-		fmt.Println("nuvolaris setup cleanup done.")
-		return nil
-	*/
 }

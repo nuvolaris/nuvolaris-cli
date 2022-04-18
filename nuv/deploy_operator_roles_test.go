@@ -34,9 +34,9 @@ func TestCreateServiceAccount(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	account, _ := testclient.clientset.CoreV1().ServiceAccounts("nuvolaris").Get(testclient.ctx, "nuvolaris-operator", meta_v1.GetOptions{})
+	account, _ := testclient.clientset.CoreV1().ServiceAccounts(NuvolarisNamespace).Get(testclient.ctx, "nuvolaris-operator", meta_v1.GetOptions{})
 	assert.Equal(t, account.Name, "nuvolaris-operator")
-	assert.Equal(t, account.Namespace, "nuvolaris")
+	assert.Equal(t, account.Namespace, NuvolarisNamespace)
 	assert.Equal(t, account.Labels, map[string]string{"app": "nuvolaris-operator"})
 }
 

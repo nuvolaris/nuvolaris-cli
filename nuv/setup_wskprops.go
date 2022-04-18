@@ -54,7 +54,7 @@ func setupWskProps(logger *Logger, cmd *WskPropsCmd) error {
 }
 
 func assertClusterConfig(wsp *WskPropsPipeline) {
-	wsp.kubeClient, wsp.err = initClients(wsp.logger, false, wsp.k8sContext)
+	wsp.kubeClient, wsp.err = initClients(wsp.k8sContext)
 }
 
 func writeNuvClusterConfig(wsp *WskPropsPipeline) {
