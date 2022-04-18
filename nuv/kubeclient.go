@@ -19,9 +19,9 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"strings"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -43,25 +43,28 @@ type KubeClient struct {
 
 func initClients(k8sContext string) (*KubeClient, error) {
 
-	kubeconfig := flag.String("kubeconfig", getKubeconfigPath(), "")
-	flag.Parse()
-
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		return nil, fmt.Errorf("looks like no cluster is running. Run nuv devcluster create or nuv setup --devcluster")
-	}
-
-	err = setNuvolarisContext(k8sContext)
+	clientConfig := getK8sConfig()
+	cmdapiConfig, err := clientConfig.RawConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	err = setNuvolarisContext(cmdapiConfig, k8sContext)
+	if err != nil {
+		return nil, err
+	}
+
+	restConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubernetes client: %s", err)
 	}
 
-	apics, err := extclientset.NewForConfig(config)
+	apics, err := extclientset.NewForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create apiextensions client: %s", err)
 	}
@@ -71,7 +74,7 @@ func initClients(k8sContext string) (*KubeClient, error) {
 		apiextclientset: apics,
 		namespace:       NuvolarisNamespace,
 		ctx:             context.Background(),
-		cfg:             config,
+		cfg:             restConfig,
 	}, nil
 }
 
@@ -89,11 +92,11 @@ func startDevCluster(logger *Logger) error {
 }
 
 func listAvailableContexts() error {
-	config, err := getK8sConfig()
+	clientConfig := getK8sConfig()
+	config, err := clientConfig.RawConfig()
 	if err != nil {
 		return err
 	}
-
 	fmt.Println("Available Kubernetes contexts:")
 	for context := range config.Contexts {
 		fmt.Println(context)
@@ -104,32 +107,26 @@ func listAvailableContexts() error {
 	return nil
 }
 
-func setNuvolarisContext(k8sContext string) error {
-	config, err := getK8sConfig()
+func assertContext(config api.Config, k8sContext string) error {
+	if _, ok := config.Contexts[k8sContext]; !ok {
+		return fmt.Errorf("context not found")
+	}
+	return nil
+}
+
+func setNuvolarisContext(config api.Config, k8sContext string) error {
+	err := assertContext(config, k8sContext)
 	if err != nil {
 		return err
 	}
 
-	var nuvolarisContext string
-
-	for context := range config.Contexts {
-		if context == k8sContext {
-			nuvolarisContext = context
-			break
-		}
-	}
-
-	if nuvolarisContext == "" {
-		return fmt.Errorf("context not found")
-	}
-
-	config.CurrentContext = nuvolarisContext
+	config.CurrentContext = k8sContext
 	err = clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), config, true)
 	if err != nil {
 		return fmt.Errorf("error ModifyConfig: %w", err)
 	}
 
-	fmt.Println("✓ Current Kubernetes context set to", nuvolarisContext)
+	fmt.Println("✓ Current Kubernetes context set to", k8sContext)
 	return nil
 }
 

@@ -62,7 +62,7 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	}
 
 	if cmd.Configure {
-		//TODO setup ~/.nuvolaris/config.yaml
+		return configureCrd()
 	}
 
 	imgTag := cmd.ImageTag
@@ -84,7 +84,6 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.k8sContext = cmd.Uninstall
 		sp.kubeClient, sp.err = initClients(sp.k8sContext)
 		sp.step(resetNuvolaris)
-		return sp.err
 	} else {
 		sp.kubeClient, sp.err = initClients(sp.k8sContext)
 		sp.step(createNuvolarisNamespace)
@@ -93,8 +92,8 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.step(runNuvolarisOperatorPod)
 		sp.step(deployOperatorObject)
 		sp.step(waitForOpenWhiskReady)
-		return sp.err
 	}
+	return sp.err
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {
