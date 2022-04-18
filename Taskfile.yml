@@ -47,3 +47,18 @@ tasks:
       - integration-test
 
   setup: {silent: true} 
+
+
+includes:
+  kind:  
+    taskfile: "../nuvolaris-testing/public/clusters/kind.yml"
+    dir: "../nuvolaris-testing/public/clusters"
+    optional: yes
+  eks:
+    taskfile: ../nuvolaris-testing/public/clusters/eks.yml
+    dir: "../nuvolaris-testing/public/clusters"
+    optional: yes
+  lks:  
+    taskfile: ../nuvolaris-testing/public/clusters/lks.yml
+    dir: ../nuvolaris-testing/public/clusters/
+    optional: yes
