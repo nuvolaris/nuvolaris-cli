@@ -35,6 +35,15 @@ tasks:
 
   build:
     cmds:
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -tags subcommands -o ./nuv
+    sources:
+      - "*.go"
+      - "embed/*"
+    generates:
+      - "{{.NUV}}"
+
+  build-fast:
+    cmds:
       - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o ./nuv
     sources:
       - "*.go"

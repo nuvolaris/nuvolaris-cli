@@ -15,38 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+
+//go:build !subcommands
+// +build !subcommands
+
 package main
 
-import (
-	"github.com/alecthomas/kong"
-)
-
-// CLIVersion holds the current version, to be set by the build with
-//  go build -ldflags "-X main.CLIVersion=<version>"
-var CLIVersion = "latest"
-
-// ImageTag holds the version of the Docker image used for the nuvolaris
-// operator used in setup
-var ImageTag = "0.2.0-trinity.22041219"
-
-func main() {
-	cli := CLI{}
-	logger := NewLogger()
-
-	ctx := kong.Parse(&cli,
-		kong.Name(Name),
-		kong.Description(Description),
-		kong.UsageOnError(),
-		kong.ConfigureHelp(kong.HelpOptions{
-			Compact:             true,
-			NoExpandSubcommands: true,
-		}),
-		kong.Vars{
-			"version":   CLIVersion,
-			"image_tag": ImageTag,
-		},
-		kong.Bind(logger),
-	)
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
+func Wsk(args ...string) error {
+	return nil
 }

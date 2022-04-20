@@ -15,15 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+
+//go:build subcommands
+// +build subcommands
+
 package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/apache/openwhisk-cli/commands"
 	"github.com/apache/openwhisk-cli/wski18n"
 	"github.com/apache/openwhisk-client-go/whisk"
 	goi18n "github.com/nicksnyder/go-i18n/i18n"
-	"os"
 )
 
 type WskCmd struct {
