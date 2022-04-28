@@ -26,8 +26,7 @@ import (
 )
 
 type CLI struct {
-	Deploy    DeployCmd    `cmd:"" help:"deploy a nuvolaris cluster"`
-	Uninstall UninstallCmd `cmd:"" help:"uninstall nuvolaris"`
+	Deploy DeployCmd `cmd:"" help:"deploy a nuvolaris cluster"`
 	//Wsk        WskCmd           `cmd:"" passthrough:"" help:"wsk subcommand"`
 	//Kops       KopsCmd          `cmd:"" passthrough:"" help:"kops subcommand"`
 	//Task       TaskCmd          `cmd:"" help:"task subcommand"`

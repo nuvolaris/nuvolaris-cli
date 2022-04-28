@@ -29,21 +29,6 @@ var CLIVersion = "latest"
 // operator used in setup
 var ImageTag = "0.2.0-trinity.22041219"
 
-type CLI struct {
-	Deploy     DeployCmd        `cmd:"" help:"deploy a nuvolaris cluster"`
-	Uninstall  UninstallCmd     `cmd:"" help:"uninstall nuvolaris"`
-	Wsk        WskCmd           `cmd:"" passthrough:"" help:"wsk subcommand"`
-	Kops       KopsCmd          `cmd:"" passthrough:"" help:"kops subcommand"`
-	Task       TaskCmd          `cmd:"" help:"task subcommand"`
-	Kind       KindCmd          `cmd:"" help:"kind subcommand"`
-	Devcluster DevClusterCmd    `cmd:"" help:"create or destroy kind k8s cluster"`
-	Setup      SetupCmd         `cmd:"" help:"setup nuvolaris"`
-	Scan       ScanCmd          `cmd:"" help:"scan subcommand"`
-	S3         S3Cmd            `cmd:"" name:"s3" help:"s3 subcommand"`
-	Wskprops   WskPropsCmd      `cmd:"" help:"setup a .wskprops file"`
-	Version    kong.VersionFlag `short:"v" help:"show nuvolaris version"`
-}
-
 func main() {
 	cli := CLI{}
 	logger := NewLogger()
