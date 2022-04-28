@@ -28,6 +28,8 @@ tasks:
 
   build: task build -d nuv
 
+  build-fast: task build-fast -d nuv
+  
   install: task install -d nuv
 
   clean: task clean -d nuv

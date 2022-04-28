@@ -15,6 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+
+//go:build subcommands
+// +build subcommands
+
 package main
 
 import (

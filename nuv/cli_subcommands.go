@@ -22,21 +22,20 @@
 package main
 
 import (
-	"os"
-
-	kops "github.com/giusdp/embeddable-kops"
+	"github.com/alecthomas/kong"
 )
 
-type KopsCmd struct {
-	Args []string `arg:"" optional:"" name:"args" help:"kops subcommand args"`
-}
-
-func Kops(args []string) error {
-	os.Args = append([]string{"kops"}, args...)
-	kops.KopsMain([]string{})
-	return nil
-}
-
-func (k *KopsCmd) Run() error {
-	return Kops(k.Args)
+type CLI struct {
+	Deploy     DeployCmd        `cmd:"" help:"deploy a nuvolaris cluster"`
+	Uninstall  UninstallCmd     `cmd:"" help:"uninstall nuvolaris"`
+	Wsk        WskCmd           `cmd:"" passthrough:"" help:"wsk subcommand"`
+	Kops       KopsCmd          `cmd:"" passthrough:"" help:"kops subcommand"`
+	Task       TaskCmd          `cmd:"" help:"task subcommand"`
+	Kind       KindCmd          `cmd:"" help:"kind subcommand"`
+	Devcluster DevClusterCmd    `cmd:"" help:"create or destroy kind k8s cluster"`
+	Setup      SetupCmd         `cmd:"" help:"setup nuvolaris"`
+	Scan       ScanCmd          `cmd:"" help:"scan subcommand"`
+	S3         S3Cmd            `cmd:"" name:"s3" help:"s3 subcommand"`
+	Wskprops   WskPropsCmd      `cmd:"" help:"setup a .wskprops file"`
+	Version    kong.VersionFlag `short:"v" help:"show nuvolaris version"`
 }
