@@ -34,6 +34,7 @@ var configYaml []byte
 type WhiskSpec struct {
 	Components ComponentsS `json:"components" yaml:"components"`
 	OpenWhisk  OpenWhiskS  `json:"openwhisk" yaml:"openwhisk"`
+	Nuvolaris  NuvolarisS  `json:"nuvolaris" yaml:"nuvolaris"`
 	CouchDb    CouchDbS    `json:"couchdb" yaml:"couchdb"`
 	MongoDb    MongoDbS    `json:"mongodb" yaml:"mongodb"`
 	Kafka      KafkaS      `json:"kafka" yaml:"kafka"`
@@ -70,6 +71,10 @@ type CouchDbS struct {
 type AdminS struct {
 	User     string `json:"user" yaml:"user"`
 	Password string `json:"password" yaml:"password"`
+}
+
+type NuvolarisS struct {
+	Host string `json:"host" yaml:"host"`
 }
 
 type MongoDbS struct {
@@ -110,6 +115,7 @@ func (in *Whisk) DeepCopyInto(out *Whisk) {
 	out.Spec = WhiskSpec{
 		Components: in.Spec.Components,
 		OpenWhisk:  in.Spec.OpenWhisk,
+		Nuvolaris:  in.Spec.Nuvolaris,
 		CouchDb:    in.Spec.CouchDb,
 		MongoDb:    in.Spec.MongoDb,
 		Kafka:      in.Spec.Kafka,
@@ -149,11 +155,12 @@ func (in *WhiskList) DeepCopyObject() runtime.Object {
 	return &out
 }
 
-func configureCrd() error {
+func configureCrd(apiHost string) error {
 	var result WhiskSpec
 	yaml.Unmarshal(configYaml, &result)
 	result.OpenWhisk.Namespaces.WhiskSystem = keygen(alphanum, 64)
 	result.OpenWhisk.Namespaces.Nuvolaris = keygen(alphanum, 64)
+	result.Nuvolaris.Host = apiHost
 	result.CouchDb.Admin.Password = GenerateRandomSeq(alphanum, 8)
 	result.CouchDb.Controller.Password = GenerateRandomSeq(alphanum, 8)
 	result.CouchDb.Invoker.Password = GenerateRandomSeq(alphanum, 8)
@@ -172,7 +179,7 @@ func configureCrd() error {
 	return err
 }
 
-func readOrCreateCrdConfig() (*WhiskSpec, error) {
+func readOrCreateCrdConfig(apiHost string) (*WhiskSpec, error) {
 	var result WhiskSpec
 	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
 	if err != nil {
@@ -180,7 +187,7 @@ func readOrCreateCrdConfig() (*WhiskSpec, error) {
 	}
 	path := filepath.Join(nuvHomedir, "config.yaml")
 	if _, err := os.Stat(path); err != nil {
-		err = configureCrd()
+		err = configureCrd(apiHost)
 		if err != nil {
 			return nil, err
 		}

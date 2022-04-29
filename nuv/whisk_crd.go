@@ -84,8 +84,8 @@ func getWhisk(c *rest.RESTClient) error {
 	return err
 }
 
-func createWhiskOperatorObject(c *KubeClient) error {
-	spec, err := readOrCreateCrdConfig()
+func createWhiskOperatorObject(c *KubeClient, apiHost string) error {
+	spec, err := readOrCreateCrdConfig(apiHost)
 	if err != nil {
 		return err
 	}
