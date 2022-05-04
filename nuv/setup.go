@@ -23,6 +23,7 @@ type SetupCmd struct {
 	ImageTag   string `default:"${image_tag}" help:"nuvolaris operator docker image tag to deploy"`
 	Uninstall  string `help:"uninstall nuvolaris from given context" xor:"devcluster-or-uninstall-or-context"`
 	Context    string `help:"set kubernetes context to install nuvolaris" xor:"devcluster-or-uninstall-or-context"`
+	Apihost    string `help:"set kubernetes host IP"`
 }
 
 func (setupCmd *SetupCmd) Run(logger *Logger) error {

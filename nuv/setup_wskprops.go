@@ -38,7 +38,8 @@ func setupWskProps(logger *Logger, cmd *WskPropsCmd) error {
 		logger: logger,
 	}
 	if len(cmd.Context) == 0 {
-		config, err := getK8sConfig()
+		clientConfig := getK8sConfig()
+		config, err := clientConfig.RawConfig()
 		if err != nil {
 			return err
 		}

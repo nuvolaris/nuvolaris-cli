@@ -25,6 +25,7 @@ import (
 type SetupPipeline struct {
 	kubeClient          *KubeClient
 	k8sContext          string
+	apiHost             string
 	operatorDockerImage string
 	err                 error
 	logger              *Logger
@@ -62,7 +63,7 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	}
 
 	if cmd.Configure {
-		//TODO setup ~/.nuvolaris/config.yaml
+		return configureCrd("")
 	}
 
 	imgTag := cmd.ImageTag
@@ -77,14 +78,21 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	}
 
 	if cmd.Context != "" {
+		if cmd.Apihost == "" {
+			fmt.Println("please specify the public IP of your Kubernetes cluster - if your Kubernetes has a load balancer, specify --apihost=auto")
+			return nil
+		}
 		sp.k8sContext = cmd.Context
+		sp.apiHost = ""
+		if cmd.Apihost != "auto" {
+			sp.apiHost = cmd.Apihost
+		}
 	}
 
 	if cmd.Uninstall != "" {
 		sp.k8sContext = cmd.Uninstall
 		sp.kubeClient, sp.err = initClients(sp.k8sContext)
 		sp.step(resetNuvolaris)
-		return sp.err
 	} else {
 		sp.kubeClient, sp.err = initClients(sp.k8sContext)
 		sp.step(createNuvolarisNamespace)
@@ -93,8 +101,8 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.step(runNuvolarisOperatorPod)
 		sp.step(deployOperatorObject)
 		sp.step(waitForOpenWhiskReady)
-		return sp.err
 	}
+	return sp.err
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {
@@ -114,7 +122,7 @@ func runNuvolarisOperatorPod(sp *SetupPipeline) {
 }
 
 func deployOperatorObject(sp *SetupPipeline) {
-	sp.err = createWhiskOperatorObject(sp.kubeClient)
+	sp.err = createWhiskOperatorObject(sp.kubeClient, sp.apiHost)
 }
 
 func waitForOpenWhiskReady(sp *SetupPipeline) {

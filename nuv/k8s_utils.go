@@ -28,7 +28,6 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 const apihostAnnotation = "apihost"
@@ -109,8 +108,19 @@ func isApihostSet(c *KubeClient, configmap string) wait.ConditionFunc {
 		}
 	}
 }
+func isConfigmapReady(c *KubeClient, configmap string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+		_, err := getConfigmap(c, configmap)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+}
 
 func readClusterConfig(c *KubeClient, configmap string) (map[string]string, error) {
+	waitForConfigmapReady(c, configmap)
 	cm, err := getConfigmap(c, configmap)
 	if err != nil {
 		return nil, err
@@ -139,12 +149,11 @@ func writeConfigToWskProps(c *KubeClient, configmapName string) error {
 	return writeWskPropsFile(wskPropsEntries...)
 }
 
-func getK8sConfig() (clientcmdapi.Config, error) {
-	kubeconfigPath := getKubeconfigPath()
-	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
-	configOverrides := &clientcmd.ConfigOverrides{}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	return kubeConfig.RawConfig()
+func getK8sConfig() clientcmd.ClientConfig {
+	kubeConfig := getKubeconfigPath()
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfig},
+		&clientcmd.ConfigOverrides{})
 }
 
 func getKubeconfigPath() string {
@@ -176,6 +185,10 @@ func waitForPodCompleted(c *KubeClient, podName string) error {
 
 func waitForNamespaceToBeTerminated(c *KubeClient, namespace string) error {
 	return waitFor(c, isNamespaceTerminated, namespace)
+}
+
+func waitForConfigmapReady(c *KubeClient, configmap string) error {
+	return waitFor(c, isConfigmapReady, configmap)
 }
 
 func waitForApihostSet(c *KubeClient, configmap string) error {
