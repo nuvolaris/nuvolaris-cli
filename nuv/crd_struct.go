@@ -74,7 +74,7 @@ type AdminS struct {
 }
 
 type NuvolarisS struct {
-	Host string `json:"host" yaml:"host"`
+	Host string `json:"apihost" yaml:"apihost"`
 }
 
 type MongoDbS struct {
