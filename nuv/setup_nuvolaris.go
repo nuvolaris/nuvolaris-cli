@@ -63,7 +63,11 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	}
 
 	if cmd.Configure {
-		return configureCrd("")
+		err := checkApiHost(cmd)
+		if err != nil {
+			return err
+		}
+		return configureCrd(cmd.Apihost)
 	}
 
 	imgTag := cmd.ImageTag
@@ -78,15 +82,12 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	}
 
 	if cmd.Context != "" {
-		if cmd.Apihost == "" {
-			fmt.Println("please specify the public IP of your Kubernetes cluster - if your Kubernetes has a load balancer, specify --apihost=auto")
-			return nil
+		err := checkApiHost(cmd)
+		if err != nil {
+			return err
 		}
 		sp.k8sContext = cmd.Context
-		sp.apiHost = ""
-		if cmd.Apihost != "auto" {
-			sp.apiHost = cmd.Apihost
-		}
+		sp.apiHost = cmd.Apihost
 	}
 
 	if cmd.Uninstall != "" {
@@ -103,6 +104,13 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.step(waitForOpenWhiskReady)
 	}
 	return sp.err
+}
+
+func checkApiHost(cmd *SetupCmd) error {
+	if cmd.Apihost == "" {
+		return fmt.Errorf("please specify the public IP of your Kubernetes cluster - if your Kubernetes has a load balancer, specify --apihost=auto")
+	}
+	return nil
 }
 
 func createNuvolarisNamespace(sp *SetupPipeline) {

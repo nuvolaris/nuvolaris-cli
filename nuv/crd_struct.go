@@ -34,7 +34,7 @@ var configYaml []byte
 type WhiskSpec struct {
 	Components ComponentsS `json:"components" yaml:"components"`
 	OpenWhisk  OpenWhiskS  `json:"openwhisk" yaml:"openwhisk"`
-	Nuvolaris  NuvolarisS  `json:"nuvolaris" yaml:"nuvolaris"`
+	Nuvolaris  *NuvolarisS `json:"nuvolaris,omitempty" yaml:"nuvolaris, omitempty"`
 	CouchDb    CouchDbS    `json:"couchdb" yaml:"couchdb"`
 	MongoDb    MongoDbS    `json:"mongodb" yaml:"mongodb"`
 	Kafka      KafkaS      `json:"kafka" yaml:"kafka"`
@@ -74,7 +74,7 @@ type AdminS struct {
 }
 
 type NuvolarisS struct {
-	Host string `json:"apihost" yaml:"apihost"`
+	ApiHost string `json:"apihost" yaml:"apihost"`
 }
 
 type MongoDbS struct {
@@ -160,7 +160,11 @@ func configureCrd(apiHost string) error {
 	yaml.Unmarshal(configYaml, &result)
 	result.OpenWhisk.Namespaces.WhiskSystem = keygen(alphanum, 64)
 	result.OpenWhisk.Namespaces.Nuvolaris = keygen(alphanum, 64)
-	result.Nuvolaris.Host = apiHost
+	if apiHost == "auto" {
+		result.Nuvolaris = nil
+	} else {
+		result.Nuvolaris.ApiHost = apiHost
+	}
 	result.CouchDb.Admin.Password = GenerateRandomSeq(alphanum, 8)
 	result.CouchDb.Controller.Password = GenerateRandomSeq(alphanum, 8)
 	result.CouchDb.Invoker.Password = GenerateRandomSeq(alphanum, 8)
