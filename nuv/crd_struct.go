@@ -21,10 +21,11 @@ import (
 	_ "embed"
 	"fmt"
 	"io/ioutil"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path/filepath"
+
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 )
 
@@ -53,6 +54,7 @@ type ComponentsS struct {
 
 type OpenWhiskS struct {
 	Namespaces NamespacesS `json:"namespaces" yaml:"namespaces"`
+	Limits     LimitsS     `json:"limits" yaml:"limits"`
 }
 
 type NamespacesS struct {
@@ -60,8 +62,23 @@ type NamespacesS struct {
 	Nuvolaris   string `json:"nuvolaris" yaml:"nuvolaris"`
 }
 
+type LimitsS struct {
+	LimitActions  LimitActionsS  `json:"actions" yaml:"actions"`
+	LimitTriggers LimitTriggersS `json:"triggers" yaml:"triggers"`
+}
+
+type LimitActionsS struct {
+	SequenceMaxLength string `json:"sequence-maxLength" yaml:"sequence-maxLength"`
+	InvokesPerMinute  string `json:"invokes-perMinute" yaml:"invokes-perMinute"`
+	InvokesConcurrent string `json:"invokes-concurrent" yaml:"invokes-concurrent"`
+}
+
+type LimitTriggersS struct {
+	FiresPerMinute string `json:"fires-perMinute" yaml:"fires-perMinute"`
+}
+
 type CouchDbS struct {
-	Host       string `json:"host" yaml:"host"`
+	//Host       string `json:"host" yaml:"host"`
 	VolumeSize int    `json:"volume-size" yaml:"volume-size"`
 	Admin      AdminS `json:"admin" yaml:"admin"`
 	Controller AdminS `json:"controller" yaml:"controller"`
