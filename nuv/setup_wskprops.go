@@ -17,48 +17,40 @@
 //
 package main
 
-type WskPropsPipeline struct {
-	kubeClient *KubeClient
-	k8sContext string
-	err        error
-	logger     *Logger
-}
+import (
+	"fmt"
+	"sigs.k8s.io/yaml"
+)
 
-type wskSetupStep func(sp *WskPropsPipeline)
+func setupWskProps(cmd *WskPropsCmd) error {
+	var auth, apihost string
 
-func (wsp *WskPropsPipeline) wStep(f wskSetupStep) {
-	if wsp.err != nil {
-		return
-	}
-	f(wsp)
-}
+	setupWithNoFlags := cmd.Apihost == "" || cmd.Auth == ""
+	var errMessage = "nuvolaris setup config file not found. Please setup nuvolaris or specify both --apihost and --auth"
 
-func setupWskProps(logger *Logger, cmd *WskPropsCmd) error {
-	wsp := WskPropsPipeline{
-		logger: logger,
-	}
-	if len(cmd.Context) == 0 {
-		clientConfig := getK8sConfig()
-		config, err := clientConfig.RawConfig()
+	if setupWithNoFlags {
+		config, err := ReadFileFromNuvolarisConfigDir("config.yaml")
 		if err != nil {
-			return err
+			return fmt.Errorf(errMessage)
 		}
-		wsp.k8sContext = config.CurrentContext
+		var result WhiskSpec
+		yaml.Unmarshal(config, &result)
+		auth = result.OpenWhisk.Namespaces.Nuvolaris
+		apihost = result.Nuvolaris.ApiHost
+		if auth == "" || apihost == "" {
+			return fmt.Errorf(errMessage)
+		}
 	} else {
-		wsp.k8sContext = cmd.Context
+		auth = cmd.Auth
+		apihost = cmd.Apihost
 	}
-
-	wsp.wStep(assertClusterConfig)
-	wsp.wStep(writeNuvClusterConfig)
-
-	return wsp.err
-}
-
-func assertClusterConfig(wsp *WskPropsPipeline) {
-	wsp.kubeClient, wsp.err = initClients(wsp.k8sContext)
-}
-
-func writeNuvClusterConfig(wsp *WskPropsPipeline) {
-	wsp.err = waitForApihostSet(wsp.kubeClient, NuvolarisConfigmapName)
-	wsp.err = writeConfigToWskProps(wsp.kubeClient, NuvolarisConfigmapName)
+	writeWskPropsFile(wskPropsKeyValue{
+		wskPropsKey:   "AUTH",
+		wskPropsValue: auth,
+	})
+	writeWskPropsFile(wskPropsKeyValue{
+		wskPropsKey:   "APIHOST",
+		wskPropsValue: apihost,
+	})
+	return nil
 }

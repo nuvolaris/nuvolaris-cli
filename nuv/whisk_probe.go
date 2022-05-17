@@ -41,8 +41,14 @@ func readinessProbe(c *KubeClient) error {
 
 	wskProbe := WskProbe{wsk: Wsk}
 
+	var podName = "wsk-prewarm-nodejs14"
+	err = waitForPod(c, podName)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("Waiting for openwhisk pod to complete...waiting is the hardest part 💚")
-	err = waitForPodCompleted(c, "wsk-prewarm-nodejs14")
+	err = waitForPodCompleted(c, podName)
 	if err != nil {
 		return err
 	}
