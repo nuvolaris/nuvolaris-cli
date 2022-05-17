@@ -203,9 +203,18 @@ func configureCrd(apiHost string) error {
 func updateApihostInConfig(apiHost string) error {
 	var result WhiskSpec
 	content, err := ReadFileFromNuvolarisConfigDir("config.yaml")
-	yaml.Unmarshal(content, &result)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(content, &result)
+	if err != nil {
+		return err
+	}
 	result.Nuvolaris.ApiHost = apiHost
-	content, _ = yaml.Marshal(result)
+	content, err = yaml.Marshal(result)
+	if err != nil {
+		return err
+	}
 	_, err = WriteFileToNuvolarisConfigDir("config.yaml", content)
 	return err
 }
