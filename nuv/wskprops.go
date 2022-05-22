@@ -18,9 +18,10 @@
 package main
 
 type WskPropsCmd struct {
-	Context string `help:"Kubernetes context from .kubeconfig " type:"string"`
+	Apihost string `help:"manually specify apihost" type:"string"`
+	Auth    string `help:"manually specify authorization key" type:"string"`
 }
 
 func (s *WskPropsCmd) Run(logger *Logger) error {
-	return setupWskProps(logger, s)
+	return setupWskProps(s)
 }

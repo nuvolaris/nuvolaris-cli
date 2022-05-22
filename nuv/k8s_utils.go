@@ -75,6 +75,17 @@ func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
 	}
 }
 
+func isPodCreated(c *KubeClient, podName string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+		_, err := getPod(c, podName)
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	}
+}
+
 func isNamespaceTerminated(c *KubeClient, namespace string) wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
@@ -137,6 +148,7 @@ func readClusterConfig(c *KubeClient, configmap string) (map[string]string, erro
 	apihost := cm.Annotations["apihost"]
 	//TODO remove temporary workaround to replace https with http
 	wskPropsEntries["APIHOST"] = strings.ReplaceAll(apihost, "https", "http")
+	updateApihostInConfig(wskPropsEntries["APIHOST"])
 	return wskPropsEntries, nil
 }
 
@@ -173,6 +185,10 @@ func getNamespace(c *KubeClient, namespace string) (*coreV1.Namespace, error) {
 
 func getConfigmap(c *KubeClient, configmapName string) (*coreV1.ConfigMap, error) {
 	return c.clientset.CoreV1().ConfigMaps(c.namespace).Get(c.ctx, configmapName, metaV1.GetOptions{})
+}
+
+func waitForPod(c *KubeClient, podName string) error {
+	return waitFor(c, isPodCreated, podName)
 }
 
 func waitForPodRunning(c *KubeClient, podName string) error {
