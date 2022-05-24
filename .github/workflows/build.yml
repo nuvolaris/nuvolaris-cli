@@ -13,12 +13,11 @@
 # limitations under the License.
 
 name: nuvolaris-cli
+
 on: 
   push:
-    branches:
-      - *
     tags-ignore:
-      - v*
+      - 'v*'
 
 jobs:
   build:
