@@ -20,7 +20,7 @@ on:
   push:
     tags:
       - 'v*'
-  branches-ignore:
+    branches-ignore:
       - '*'
 
 jobs:
