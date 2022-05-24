@@ -21,6 +21,8 @@ on:
   push:
     tags:
       - 'v*'
+  branches-ignore:
+      - main
 
 jobs:
 
