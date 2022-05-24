@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+
 	"sigs.k8s.io/yaml"
 )
 
@@ -36,6 +37,9 @@ func setupWskProps(cmd *WskPropsCmd) error {
 		var result WhiskSpec
 		yaml.Unmarshal(config, &result)
 		auth = result.OpenWhisk.Namespaces.Nuvolaris
+		if result.Nuvolaris == nil {
+			result.Nuvolaris = &NuvolarisS{}
+		}
 		apihost = result.Nuvolaris.ApiHost
 		if auth == "" || apihost == "" {
 			return fmt.Errorf(errMessage)

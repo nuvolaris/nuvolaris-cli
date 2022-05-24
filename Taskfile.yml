@@ -34,9 +34,9 @@ tasks:
 
   clean: task clean -d nuv
 
-  unit-test: task test -d nuv
+  utest: task test -d nuv
 
-  integration-test:
+  itest:
     deps: [build]
     cmds:
       - nuv/nuv setup --devcluster
@@ -44,23 +44,7 @@ tasks:
       - nuv/nuv wsk action invoke hi -r | grep hi
 
   test: 
-    deps:
-      - unit-test
-      - integration-test
-
+    - task: utest
+    - task: itest
+  
   setup: {silent: true} 
-
-
-includes:
-  kind:  
-    taskfile: "../nuvolaris-testing/public/clusters/kind.yml"
-    dir: "../nuvolaris-testing/public/clusters"
-    optional: yes
-  eks:
-    taskfile: ../nuvolaris-testing/public/clusters/eks.yml
-    dir: "../nuvolaris-testing/public/clusters"
-    optional: yes
-  lks:  
-    taskfile: ../nuvolaris-testing/public/clusters/lks.yml
-    dir: ../nuvolaris-testing/public/clusters/
-    optional: yes

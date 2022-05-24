@@ -76,3 +76,8 @@ tasks:
 
   clean: rm -f {{.NUV}} {{.NUV}}-debug
   setup: {silent:true} 
+
+  # operator commands
+  op: task -t ../../nuvolaris-operator/Taskfile.yml {{.CLI_ARGS}} 
+  opwatch: 
+    - task op -- watch 

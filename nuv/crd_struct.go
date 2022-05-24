@@ -210,6 +210,9 @@ func updateApihostInConfig(apiHost string) error {
 	if err != nil {
 		return err
 	}
+	if result.Nuvolaris == nil {
+		result.Nuvolaris = &NuvolarisS{}
+	}
 	result.Nuvolaris.ApiHost = apiHost
 	content, err = yaml.Marshal(result)
 	if err != nil {
