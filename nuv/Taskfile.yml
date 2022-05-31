@@ -19,23 +19,28 @@ version: '3'
 vars:
 
   BASETAG: 0.2.0-trinity
-  MILESTONE: neo
-  NUV:
-    sh: echo ${GOBIN:-.}/nuv
   TAG:
-    sh: git describe --tags --abbrev=0 2>/dev/null || echo {{.MILESTONE}}-latest
+    sh: git describe --tags --abbrev=0 2>/dev/null || echo latest
+  NUV:
+    sh: echo ./nuv
+  CONTEXT:
+    sh: kubectl config get-contexts | awk '/\*/ { print $2}'
+  OPT: "-t ../../nuvolaris-operator/Taskfile.yml"
 
-dotenv: [../../nuvolaris-operator/nuvolaris-test/.env]
+
+dotenv: ["../../nuvolaris-operator/.env"]
 
 tasks:
 
   default: task --list-all
 
+  setup: {silent:true} 
+
   cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
 
   build:
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -tags subcommands -o ./nuv
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -tags subcommands -o {{.NUV}}
     sources:
       - "*.go"
       - "embed/*"
@@ -44,17 +49,12 @@ tasks:
 
   build-fast:
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o ./nuv
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.NUV}}-fast
     sources:
       - "*.go"
       - "embed/*"
     generates:
-      - "{{.NUV}}"
-
-  install:
-    deps: [build]
-    cmds:
-      - cp ./nuv {{.NUV}}
+      - "{{.NUV}}-fast"
 
   vendor:
     cmds:
@@ -74,10 +74,36 @@ tasks:
     generates:
       - "{{.NUV}}-debug"
 
-  clean: rm -f {{.NUV}} {{.NUV}}-debug
-  setup: {silent:true} 
+  clean: 
+    - rm -f {{.NUV}} {{.NUV}}-debug {{.NUV}}-fast
+    - go clean -testcache -modcache -cache
+    - rm -Rvf vendor
+  
+
+  deploy:
+    deps: 
+      - build-fast
+    cmds:
+      - rm -Rvf ~/.nuvolaris
+      - ./nuv-fast setup --context={{.CONTEXT}} --apihost=auto
+
+  destroy:
+    deps: 
+      - build-fast
+    cmds:
+      - ./nuv-fast setup --uninstall={{.CONTEXT}}
 
   # operator commands
-  op: task -t ../../nuvolaris-operator/Taskfile.yml {{.CLI_ARGS}} 
-  opwatch: 
-    - task op -- watch 
+  watch: task {{.OPT}} watch
+  wtest: task {{.OPT}} wtest
+  use: task {{.OPT}} use
+  
+  1: task {{.OPT}} use N=1
+  2: task {{.OPT}} use N=2
+  3: task {{.OPT}} use N=3
+  4: task {{.OPT}} use N=4
+  5: task {{.OPT}} use N=5
+  6: task {{.OPT}} use N=6
+  7: task {{.OPT}} use N=7
+  8: task {{.OPT}} use N=8
+  9: task {{.OPT}} use N=9

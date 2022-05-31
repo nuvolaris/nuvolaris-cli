@@ -15,8 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 {
-	"name": "nuvolaris",
-	"image": "ghcr.io/nuvolaris/nuvolaris-devkit:0.2.0-trinity.22050119",
+	"name": "nuvolaris-cli",
+        "image": "ghcr.io/nuvolaris/nuvolaris-devkit:0.2.0-trinity.22052519",
 	//"build": { "dockerfile": "Dockerfile" },
 	"mounts": [
 		"source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"

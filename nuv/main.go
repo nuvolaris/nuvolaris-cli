@@ -27,7 +27,7 @@ var CLIVersion = "latest"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
-var ImageTag = "0.2.0-trinity.22052321"
+var ImageTag = "0.2.0-trinity.22053014"
 
 func main() {
 	cli := CLI{}
@@ -42,7 +42,7 @@ func main() {
 			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
-			"version":   CLIVersion,
+			"version":   CLIVersion + " operator:" + ImageTag,
 			"image_tag": ImageTag,
 		},
 		kong.Bind(logger),

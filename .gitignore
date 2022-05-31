@@ -17,6 +17,8 @@
 #
 .*-version
 nuv/nuv
+nuv/nuv-debug
+nuv/nuv-fast
 kubeconfig
 *.kubeconfig
 .env
