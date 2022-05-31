@@ -20,14 +20,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"strings"
 
 	coreV1 "k8s.io/api/core/v1"
 	extclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )

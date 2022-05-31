@@ -25,6 +25,7 @@ vars:
     sh: echo ./nuv
   CONTEXT:
     sh: kubectl config get-contexts | awk '/\*/ { print $2}'
+  APIHOST: '{{default "auto" .APIHOST}}'
   OPT: "-t ../../nuvolaris-operator/Taskfile.yml"
 
 
@@ -79,13 +80,12 @@ tasks:
     - go clean -testcache -modcache -cache
     - rm -Rvf vendor
   
-
   deploy:
     deps: 
       - build-fast
     cmds:
       - rm -Rvf ~/.nuvolaris
-      - ./nuv-fast setup --context={{.CONTEXT}} --apihost=auto
+      - ./nuv-fast setup --context={{.CONTEXT}} --apihost={{.APIHOST}}
 
   destroy:
     deps: 
