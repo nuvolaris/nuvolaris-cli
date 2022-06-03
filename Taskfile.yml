@@ -24,7 +24,9 @@ tasks:
 
   default: task --list-all
 
-  tag: git tag -d $(git tag) ; git tag -f {{.BASETAG}}.$(date +%y%m%d%H)
+  tag: 
+    - git tag -d $(git tag) 
+    - git tag -f {{.BASETAG}}.$(date +%y%m%d%H)
 
   build: task build -d nuv
 

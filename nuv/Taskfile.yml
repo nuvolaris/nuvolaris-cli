@@ -16,24 +16,23 @@
 # under the License.
 #
 version: '3'
-vars:
 
+vars:
   BASETAG: 0.2.0-trinity
+  DIR: "../../nuvolaris-operator/"
+  OPT: "-t ../../nuvolaris-operator/Taskfile.yml"
+  CFG: '{{default "kind" .CFG}}'
   TAG:
     sh: git describe --tags --abbrev=0 2>/dev/null || echo latest
   NUV:
     sh: echo ./nuv
-  CONTEXT:
-    sh: kubectl config get-contexts | awk '/\*/ { print $2}'
-  APIHOST: '{{default "auto" .APIHOST}}'
-  OPT: "-t ../../nuvolaris-operator/Taskfile.yml"
-
 
 dotenv: ["../../nuvolaris-operator/.env"]
 
 tasks:
 
-  default: task --list-all
+  default:
+    - task: use
 
   setup: {silent:true} 
 
@@ -80,19 +79,6 @@ tasks:
     - go clean -testcache -modcache -cache
     - rm -Rvf vendor
   
-  deploy:
-    deps: 
-      - build-fast
-    cmds:
-      - rm -Rvf ~/.nuvolaris
-      - ./nuv-fast setup --context={{.CONTEXT}} --apihost={{.APIHOST}}
-
-  destroy:
-    deps: 
-      - build-fast
-    cmds:
-      - ./nuv-fast setup --uninstall={{.CONTEXT}}
-
   # operator commands
   watch: task {{.OPT}} watch
   wtest: task {{.OPT}} wtest
@@ -107,3 +93,23 @@ tasks:
   7: task {{.OPT}} use N=7
   8: task {{.OPT}} use N=8
   9: task {{.OPT}} use N=9
+
+  all-kubes: 
+    cmds: 
+      - |-
+        if test -z "{{.CLI_ARGS}}"
+        then echo 'use "task all-kubes -- <target> runs the target against all the available kubes'
+        else  for cfg in {{.DIR}}/clusters/*.kubeconfig
+              do  KUBE="$(basename $cfg .kubeconfig)"
+                  echo "*** $KUBE ***"
+                  cp $cfg ~/.kube/config 
+                  task CFG="$KUBE" {{.CLI_ARGS}} 
+              done
+        fi
+    #silent: true
+
+
+includes:
+  t:
+    taskfile: tests/Taskfile.yml
+    dir: tests

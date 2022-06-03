@@ -1,0 +1,45 @@
+version: '3'
+
+vars:
+  NUV: '{{default "../nuv" .NUV}}'
+  CONTEXT:
+    sh: kubectl config get-contexts | awk '/\*/ { print $2}'
+  CFG: '{{.CFG | default "kind" }}'
+  APIHOST:
+    sh: |-
+        if [[ "{{.CFG}}" = "microk8s" ]]
+        then echo apidev.nuvolaris.io
+        else echo auto
+        fi 
+
+tasks:
+  
+  apihost:
+   silent: true
+   cmds:
+    - 'echo {{.CFG}}: {{.APIHOST}}'
+    #- kubectl get nodes
+
+  test:
+    - task: uninstall
+    - task: install
+    - task: hello
+    - task: ping
+
+  hello: 
+    - '{{.NUV}} wsk action update hello hello.js'
+    - '{{.NUV}} wsk action invoke hello -r | grep hello'
+
+  ping:
+      - kubectl -n nuvolaris wait po/redis-0 --for=condition=ready
+      - '{{.NUV}} wsk package update redis -p redis redis://redis'
+      - '{{.NUV}} wsk action update redis/ping ping.js'
+      - '{{.NUV}} wsk action invoke redis/ping -r | grep PONG'
+
+  install:
+    cmds:
+      - rm -Rvf ~/.nuvolaris
+      - '{{.NUV}} setup --context={{.CONTEXT}} --apihost={{.APIHOST}}'
+
+  uninstall:
+      - '{{.NUV}} setup --uninstall={{.CONTEXT}}'
