@@ -102,8 +102,12 @@ tasks:
         else  for cfg in {{.DIR}}/clusters/*.kubeconfig
               do  KUBE="$(basename $cfg .kubeconfig)"
                   echo "*** $KUBE ***"
-                  cp $cfg ~/.kube/config 
-                  task CFG="$KUBE" {{.CLI_ARGS}} 
+                  cp $cfg ~/.kube/config
+                  APIHOST="auto"
+                  if [[ "$KUBE" = "microk8s" ]]
+                  then APIHOST="apidev.nuvolaris.io"
+                  fi
+                  task CFG="$KUBE" APIHOST="$APIHOST" {{.CLI_ARGS}} 
               done
         fi
     #silent: true

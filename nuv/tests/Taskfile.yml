@@ -21,21 +21,14 @@ vars:
   NUV: '{{default "../nuv" .NUV}}'
   CONTEXT:
     sh: kubectl config get-contexts | awk '/\*/ { print $2}'
-  CFG: '{{.CFG | default "kind" }}'
-  APIHOST:
-    sh: |-
-        if [[ "{{.CFG}}" = "microk8s" ]]
-        then echo apidev.nuvolaris.io
-        else echo auto
-        fi 
+  APIHOST: '{{.APIHOST | default ""}}'
 
 tasks:
   
   apihost:
-   silent: true
-   cmds:
+    silent: true
+    cmds:
     - 'echo {{.CFG}}: {{.APIHOST}}'
-    #- kubectl get nodes
 
   test:
     - task: uninstall
@@ -54,9 +47,14 @@ tasks:
       - '{{.NUV}} wsk action invoke redis/ping -r | grep PONG'
 
   install:
+    silent: true
     cmds:
       - rm -Rvf ~/.nuvolaris
-      - '{{.NUV}} setup --context={{.CONTEXT}} --apihost={{.APIHOST}}'
+      - |
+        if test -n "{{.APIHOST}}"
+        then {{.NUV}} setup --context={{.CONTEXT}} --apihost={{.APIHOST}}
+        else echo "missing APIHOST"
+        fi
 
   uninstall:
       - '{{.NUV}} setup --uninstall={{.CONTEXT}}'
