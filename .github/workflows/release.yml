@@ -46,10 +46,6 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Prepare
-      run: |
-          bash .github/cisetup.sh        
-    # not using the release matrix because builds fails for unknown reasons
     - name: Release Go Binaries linux-amd64
       uses: wangyoucao577/go-release-action@v1.22
       with:
@@ -57,6 +53,7 @@ jobs:
         goos: "linux"
         goarch: "amd64"
         project_path: "./nuv"
+        pre_command: bash ../.github/cisetup.sh
         build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
@@ -67,6 +64,7 @@ jobs:
         goos: "linux"
         goarch: "arm64"
         project_path: "./nuv"
+        pre_command: bash ../.github/cisetup.sh
         build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
@@ -77,6 +75,7 @@ jobs:
         goos: "darwin"
         goarch: "amd64"
         project_path: "./nuv"
+        pre_command: bash ../.github/cisetup.sh
         build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
@@ -87,6 +86,7 @@ jobs:
         goos: "darwin"
         goarch: "arm64"
         project_path: "./nuv"
+        pre_command: bash ../.github/cisetup.sh
         build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
@@ -97,6 +97,7 @@ jobs:
         goos: "windows"
         goarch: "amd64"
         project_path: "./nuv"
+        pre_command: bash ../.github/cisetup.sh
         build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
