@@ -54,6 +54,7 @@ jobs:
         goos: "linux"
         goarch: "amd64"
         project_path: "./nuv"
+        build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
     - name: Release Go Binaries linux-arm64
@@ -63,6 +64,7 @@ jobs:
         goos: "linux"
         goarch: "arm64"
         project_path: "./nuv"
+        build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
     - name: Release Go Binaries darwin-amd64
@@ -72,6 +74,7 @@ jobs:
         goos: "darwin"
         goarch: "amd64"
         project_path: "./nuv"
+        build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
     - name: Release Go Binaries darwin-arm64
@@ -81,6 +84,7 @@ jobs:
         goos: "darwin"
         goarch: "arm64"
         project_path: "./nuv"
+        build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
     - name: Release Go Binaries windows-amd64
@@ -90,5 +94,6 @@ jobs:
         goos: "windows"
         goarch: "amd64"
         project_path: "./nuv"
+        build_command: "task build"
         binary_name: "nuv"
         extra_files: LICENSE nuv.txt
