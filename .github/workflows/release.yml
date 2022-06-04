@@ -46,6 +46,9 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Prepare
+        run: |
+          bash .github/cisetup.sh        
     # not using the release matrix because builds fails for unknown reasons
     - name: Release Go Binaries linux-amd64
       uses: wangyoucao577/go-release-action@v1.22
