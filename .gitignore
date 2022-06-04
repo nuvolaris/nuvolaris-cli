@@ -27,3 +27,4 @@ nuvolaris.yml
 vendor/
 bin/
 config/
+./task/
