@@ -16,5 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo latest)
+if test -z "$1"
+then TAG="$(git describe --tags --abbrev=0 2>/dev/null || echo latest)"
+else TAG="$1"
+fi
 go build -ldflags "-X main.CLIVersion=$TAG" -tags subcommands -o nuv
