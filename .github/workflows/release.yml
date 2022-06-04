@@ -47,7 +47,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Prepare
-        run: |
+      run: |
           bash .github/cisetup.sh        
     # not using the release matrix because builds fails for unknown reasons
     - name: Release Go Binaries linux-amd64
