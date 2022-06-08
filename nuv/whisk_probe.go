@@ -30,6 +30,9 @@ type WskProbe struct {
 	wsk func(...string) error
 }
 
+//go:embed embed/hello.js
+var helloContent []byte
+
 func readinessProbe(c *KubeClient) error {
 	fmt.Println("Reading Nuvolaris cluster config...")
 	err := waitForApihostSet(c, NuvolarisConfigmapName)
@@ -55,7 +58,6 @@ func readinessProbe(c *KubeClient) error {
 	fmt.Println("✓ Openwhisk running")
 
 	fmt.Println("Creating an action...")
-	helloContent := []byte("function main(args) { return { \"body\":\"hello from Nuvolaris\"} }")
 	path, err := WriteFileToNuvolarisConfigDir("hello.js", helloContent)
 	if err != nil {
 		return err
