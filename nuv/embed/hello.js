@@ -16,8 +16,11 @@
 // under the License.
 
 function main(args) {
+    let url = "https://welcome.nuvolaris.io/nuv/"
+    if("__OW_API_HOST" in process.env)
+      url += process.env["__OW_API_HOST"].replace(/:/g, "-")
     return new Promise(function(resolve) {
-        let req = require("https").get("https://welcome.nuvolaris.io", 
+        let req = require("https").get(url, 
           (res) => {
            res.on('data', (data) => resolve( {"body":data.toString()}))
           })
