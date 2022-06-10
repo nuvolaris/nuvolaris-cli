@@ -125,3 +125,13 @@ func createWhiskOperatorObject(c *KubeClient, apiHost string) error {
 	fmt.Println("openwhisk operator already running...skipping")
 	return nil
 }
+
+func crdProbe(c *KubeClient) error {
+	fmt.Println("Waiting for crd definition to be ready...")
+	err := waitForCrdDefinition(c)
+	if err != nil {
+		return err
+	}
+	fmt.Println("✓ CRD definition ready")
+	return nil
+}
