@@ -130,6 +130,17 @@ func isConfigmapReady(c *KubeClient, configmap string) wait.ConditionFunc {
 	}
 }
 
+func isCrdDefinitionReady(c *KubeClient, crdName string) wait.ConditionFunc {
+	return func() (bool, error) {
+		fmt.Printf(".")
+		_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Get(c.ctx, crdName, metaV1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+}
+
 func readClusterConfig(c *KubeClient, configmap string) (map[string]string, error) {
 	waitForConfigmapReady(c, configmap)
 	cm, err := getConfigmap(c, configmap)
@@ -209,6 +220,10 @@ func waitForConfigmapReady(c *KubeClient, configmap string) error {
 
 func waitForApihostSet(c *KubeClient, configmap string) error {
 	return waitFor(c, isApihostSet, configmap)
+}
+
+func waitForCrdDefinition(c *KubeClient) error {
+	return waitFor(c, isCrdDefinitionReady, CRDPlural+"."+CRDGroup)
 }
 
 func waitFor(c *KubeClient, f checkCondition, resourceName string) error {

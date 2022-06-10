@@ -100,6 +100,7 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.step(deployServiceAccount)
 		sp.step(deployClusterRoleBinding)
 		sp.step(runNuvolarisOperatorPod)
+		sp.step(waitForCrdDefinitionReady)
 		sp.step(deployOperatorObject)
 		sp.step(waitForOpenWhiskReady)
 	}
@@ -127,6 +128,10 @@ func deployClusterRoleBinding(sp *SetupPipeline) {
 
 func runNuvolarisOperatorPod(sp *SetupPipeline) {
 	sp.err = sp.kubeClient.createOperatorPod(sp.operatorDockerImage)
+}
+
+func waitForCrdDefinitionReady(sp *SetupPipeline) {
+	sp.err = crdProbe(sp.kubeClient)
 }
 
 func deployOperatorObject(sp *SetupPipeline) {
