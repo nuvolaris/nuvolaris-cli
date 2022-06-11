@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"sigs.k8s.io/yaml"
 )
@@ -52,6 +53,12 @@ func setupWskProps(cmd *WskPropsCmd) error {
 		wskPropsKey:   "AUTH",
 		wskPropsValue: auth,
 	})
+
+	// TODO: temporary workaround adding http: all the time
+	if !strings.HasPrefix(apihost, "http://") {
+		apihost = "http://" + apihost
+	}
+	apihost = strings.ReplaceAll(apihost, "https:", "http:")
 	writeWskPropsFile(wskPropsKeyValue{
 		wskPropsKey:   "APIHOST",
 		wskPropsValue: apihost,
