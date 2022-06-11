@@ -19,13 +19,19 @@ version: '3'
 
 vars:
   BASETAG: 0.2.0-trinity
+  OPERATOR: "-t ../../nuvolaris-operator/Taskfile.yml"
   DIR: "../../nuvolaris-operator/"
-  OPT: "-t ../../nuvolaris-operator/Taskfile.yml"
   CFG: '{{default "kind" .CFG}}'
   TAG:
     sh: git describe --tags --abbrev=0 2>/dev/null || echo latest
-  NUV:
-    sh: echo ./nuv
+  CMD: "./nuv"
+
+  VENDOR:
+    sh: |-
+        if test -d ./vendor
+        then echo "-mod=vendor"
+        else echo ""
+        fi
 
 dotenv: ["../../nuvolaris-operator/.env"]
 
@@ -39,22 +45,24 @@ tasks:
   cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
 
   build:
+    description: full build
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -tags subcommands -o {{.NUV}}
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -tags subcommands -o {{.CMD}}
     sources:
       - "*.go"
       - "embed/*"
     generates:
-      - "{{.NUV}}"
+      - "{{.CMD}}"
 
-  build-fast:
+  fast:
+    description: fast build with debugging without subcommands
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.NUV}}-fast
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}-fast" -o {{.CMD}}-fast -gcflags '-N -l'
     sources:
       - "*.go"
       - "embed/*"
     generates:
-      - "{{.NUV}}-fast"
+      - "{{.CMD}}-fast"
 
   vendor:
     cmds:
@@ -67,32 +75,36 @@ tasks:
       - go test -v -cover
 
   debug:
+    description: full build with debugging and vendoring
     deps:
       - vendor
+    sources:
+      - "*.go"
+      - "embed/*"
     cmds:
-      - go build -gcflags '-N -l' -mod=vendor -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.NUV}}-debug
+      - go build -gcflags '-N -l' -mod=vendor -ldflags "-X main.CLIVersion={{.TAG}}-debug" -o {{.CMD}}-debug
     generates:
-      - "{{.NUV}}-debug"
+      - "{{.CMD}}-debug"
 
   clean: 
-    - rm -f {{.NUV}} {{.NUV}}-debug {{.NUV}}-fast
+    - rm -f {{.CMD}} {{.CMD}}-debug {{.CMD}}-fast
     - go clean -testcache -modcache -cache
     - rm -Rvf vendor
   
   # operator commands
-  watch: task {{.OPT}} watch
-  wtest: task {{.OPT}} wtest
-  use: task {{.OPT}} use
+  watch: task {{.OPERATOR}} watch
+  wtest: task {{.OPERATOR}} wtest
+  use: task {{.OPERATOR}} use
   
-  1: task {{.OPT}} use N=1
-  2: task {{.OPT}} use N=2
-  3: task {{.OPT}} use N=3
-  4: task {{.OPT}} use N=4
-  5: task {{.OPT}} use N=5
-  6: task {{.OPT}} use N=6
-  7: task {{.OPT}} use N=7
-  8: task {{.OPT}} use N=8
-  9: task {{.OPT}} use N=9
+  1: task {{.OPERATOR}} use N=1
+  2: task {{.OPERATOR}} use N=2
+  3: task {{.OPERATOR}} use N=3
+  4: task {{.OPERATOR}} use N=4
+  5: task {{.OPERATOR}} use N=5
+  6: task {{.OPERATOR}} use N=6
+  7: task {{.OPERATOR}} use N=7
+  8: task {{.OPERATOR}} use N=8
+  9: task {{.OPERATOR}} use N=9
 
   all-kubes: 
     cmds: 

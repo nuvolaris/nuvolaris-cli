@@ -6,11 +6,11 @@
     "configurations": [ 
         {
             
-            "name": "debug nuv",
+            "name": "nuv-fast",
             "type": "go",
             "request": "launch",
             "mode": "exec",
-            "program": "/home/nuvolaris/.local/bin/nuv-debug",
+            "program": "./nuv-fast",
             "args": ["setup", "--apihost=auto", "--context=kind-nuvolaris"]
         }
     ]

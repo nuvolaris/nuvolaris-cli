@@ -135,7 +135,7 @@ func isCrdDefinitionReady(c *KubeClient, crdName string) wait.ConditionFunc {
 		fmt.Printf(".")
 		_, err := c.apiextclientset.ApiextensionsV1().CustomResourceDefinitions().Get(c.ctx, crdName, metaV1.GetOptions{})
 		if err != nil {
-			return false, err
+			return false, nil
 		}
 		return true, nil
 	}
@@ -159,7 +159,7 @@ func readClusterConfig(c *KubeClient, configmap string) (map[string]string, erro
 	apihost := cm.Annotations["apihost"]
 	//TODO remove temporary workaround to replace https with http
 	wskPropsEntries["APIHOST"] = strings.ReplaceAll(apihost, "https", "http")
-	updateApihostInConfig(wskPropsEntries["APIHOST"])
+	//updateApihostInConfig(wskPropsEntries["APIHOST"])
 	return wskPropsEntries, nil
 }
 
