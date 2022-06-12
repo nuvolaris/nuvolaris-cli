@@ -21,7 +21,7 @@ vars:
   NUV: '{{default "../nuv" .NUV}}'
   CONTEXT:
     sh: kubectl config get-contexts | awk '/\*/ { print $2}'
-  APIHOST: '{{.APIHOST | default ""}}'
+  APIHOST: '{{.APIHOST | default "auto"}}'
 
 tasks:
   

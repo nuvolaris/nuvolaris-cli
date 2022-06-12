@@ -35,6 +35,11 @@ vars:
 
 dotenv: ["../../nuvolaris-operator/.env"]
 
+includes:
+  t:
+    taskfile: tests/Taskfile.yml
+    dir: tests
+
 tasks:
 
   default:
@@ -64,16 +69,6 @@ tasks:
     generates:
       - "{{.CMD}}-fast"
 
-  vendor:
-    cmds:
-      - go mod vendor
-    status:
-      - test -d vendor
-
-  test:
-    cmds:
-      - go test -v -cover
-
   debug:
     description: full build with debugging and vendoring
     deps:
@@ -86,16 +81,31 @@ tasks:
     generates:
       - "{{.CMD}}-debug"
 
+  vendor:
+    cmds:
+      - go mod vendor
+    status:
+      - test -d vendor
+
+  test:
+    - task: utest
+    - task: dtest
+
+  utest:
+    cmds:
+      - go test -v -cover
+    
+  dtest:
+    - task: t:test
+
+
   clean: 
     - rm -f {{.CMD}} {{.CMD}}-debug {{.CMD}}-fast
     - go clean -testcache -modcache -cache
     - rm -Rvf vendor
   
-  # operator commands
   watch: task {{.OPERATOR}} watch
-  wtest: task {{.OPERATOR}} wtest
-  use: task {{.OPERATOR}} use
-  
+  use: task {{.OPERATOR}} use 
   1: task {{.OPERATOR}} use N=1
   2: task {{.OPERATOR}} use N=2
   3: task {{.OPERATOR}} use N=3
@@ -125,7 +135,3 @@ tasks:
     #silent: true
 
 
-includes:
-  t:
-    taskfile: tests/Taskfile.yml
-    dir: tests
