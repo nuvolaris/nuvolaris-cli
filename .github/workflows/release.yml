@@ -39,14 +39,6 @@ jobs:
         repository: nuvolaris/nuvolaris-cli
         ref: ${{ github.ref }}
         submodules: recursive
-    - name: License
-      uses: apache/skywalking-eyes@main
-    - name: Registry
-      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Release Go Binaries linux-amd64
       uses: wangyoucao577/go-release-action@v1.28
       with:
