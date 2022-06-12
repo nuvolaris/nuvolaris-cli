@@ -28,3 +28,4 @@ vendor/
 bin/
 config/
 ./task/
+*.off
