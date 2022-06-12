@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+name: Release
 on:
   push:
     tags:
@@ -47,7 +48,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Release Go Binaries linux-amd64
-      uses: wangyoucao577/go-release-action@v1.22
+      uses: wangyoucao577/go-release-action@v1.28
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: "linux"
@@ -57,7 +58,7 @@ jobs:
         binary_name: "nuv"
         extra_files: LICENSE
     - name: Release Go Binaries linux-arm64
-      uses: wangyoucao577/go-release-action@v1.22
+      uses: wangyoucao577/go-release-action@v1.28
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: "linux"
@@ -67,7 +68,7 @@ jobs:
         binary_name: "nuv"
         extra_files: LICENSE
     - name: Release Go Binaries darwin-amd64
-      uses: wangyoucao577/go-release-action@v1.22
+      uses: wangyoucao577/go-release-action@v1.28
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: "darwin"
@@ -77,7 +78,7 @@ jobs:
         binary_name: "nuv"
         extra_files: LICENSE
     - name: Release Go Binaries darwin-arm64
-      uses: wangyoucao577/go-release-action@v1.22
+      uses: wangyoucao577/go-release-action@v1.28
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: "darwin"
@@ -87,7 +88,7 @@ jobs:
         binary_name: "nuv"
         extra_files: LICENSE
     - name: Release Go Binaries windows-amd64
-      uses: wangyoucao577/go-release-action@v1.22
+      uses: wangyoucao577/go-release-action@v1.28
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: "windows"
