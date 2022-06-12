@@ -55,7 +55,7 @@ jobs:
         project_path: "./nuv"
         build_command: "env TAG=${{github.ref_name}} bash cibuild.sh"
         binary_name: "nuv"
-        extra_files: LICENSE nuv.txt
+        extra_files: LICENSE
     - name: Release Go Binaries linux-arm64
       uses: wangyoucao577/go-release-action@v1.22
       with:
@@ -65,7 +65,7 @@ jobs:
         project_path: "./nuv"
         build_command: "env TAG=${{github.ref_name}} bash cibuild.sh"
         binary_name: "nuv"
-        extra_files: LICENSE nuv.txt
+        extra_files: LICENSE
     - name: Release Go Binaries darwin-amd64
       uses: wangyoucao577/go-release-action@v1.22
       with:
@@ -75,7 +75,7 @@ jobs:
         project_path: "./nuv"
         build_command: "env TAG=${{github.ref_name}} bash cibuild.sh"
         binary_name: "nuv"
-        extra_files: LICENSE nuv.txt
+        extra_files: LICENSE
     - name: Release Go Binaries darwin-arm64
       uses: wangyoucao577/go-release-action@v1.22
       with:
@@ -85,7 +85,7 @@ jobs:
         project_path: "./nuv"
         build_command: "env TAG=${{github.ref_name}} bash cibuild.sh"
         binary_name: "nuv"
-        extra_files: LICENSE nuv.txt
+        extra_files: LICENSE
     - name: Release Go Binaries windows-amd64
       uses: wangyoucao577/go-release-action@v1.22
       with:
@@ -95,4 +95,4 @@ jobs:
         project_path: "./nuv"
         build_command: "env TAG=${{github.ref_name}} bash cibuild.sh"
         binary_name: "nuv"
-        extra_files: LICENSE nuv.txt
+        extra_files: LICENSE
