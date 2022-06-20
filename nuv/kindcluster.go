@@ -163,7 +163,9 @@ func (config *KindConfig) rewriteKindConfigFile() (string, error) {
 	if _, err := os.Stat(path); err == nil {
 		os.Remove(path)
 	}
-	if err := os.WriteFile(path, config.kindYaml, 0600); err != nil {
+
+	replacedConfigYaml := strings.ReplaceAll(string(config.kindYaml), "$NUV_HOME", config.homedir)
+	if err := os.WriteFile(path, []byte(replacedConfigYaml), 0600); err != nil {
 		return "", err
 	}
 	fmt.Println(config.kindConfigFile + " written")
