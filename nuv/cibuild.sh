@@ -17,7 +17,7 @@
 # under the License.
 
 if test -z "$TAG"
-then TAG="$(git describe --tags --abbrev=0 2>/dev/null || echo latest)"
+then TAG="$(git describe --tags --abbrev=0 2>/dev/null || git rev-parse --short HEAD)"
 fi
 echo "Building $TAG"
-go build -ldflags "-X main.CLIVersion=$TAG" -tags subcommands "$@"
+go build -ldflags "-X main.CLIVersion=$TAG" "$@"

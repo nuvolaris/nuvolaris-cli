@@ -18,7 +18,7 @@
 version: '3'
 
 vars:
-  BASETAG: 0.2.0-trinity
+  BASETAG: 0.2.1-trinity
   OPERATOR: "-t ../../nuvolaris-operator/Taskfile.yml"
   DIR: "../../nuvolaris-operator/"
   CFG: '{{default "kind" .CFG}}'
@@ -52,7 +52,7 @@ tasks:
   build:
     description: full build
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -tags subcommands -o {{.CMD}}
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.CMD}}
     sources:
       - "*.go"
       - "embed/*"
@@ -62,7 +62,7 @@ tasks:
   fast:
     description: fast build with debugging without subcommands
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}-fast" -o {{.CMD}}-fast -gcflags '-N -l'
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}-fast" -tags fast -o {{.CMD}}-fast -gcflags '-N -l'
     sources:
       - "*.go"
       - "embed/*"

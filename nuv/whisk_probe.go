@@ -27,7 +27,7 @@ import (
 )
 
 type WskProbe struct {
-	wsk func(...string) error
+	wsk func([]string, ...string) error
 }
 
 //go:embed embed/hello.js
@@ -71,7 +71,7 @@ func readinessProbe(c *KubeClient) error {
 
 	fmt.Println("Invoking action...")
 
-	err = wskProbe.wsk("action", "invoke", "hello", "-r")
+	err = wskProbe.wsk([]string{"wsk", "action"}, "invoke", "hello", "-r")
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (probe *WskProbe) isOpenWhiskDeployed() wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
 
-		err := probe.wsk("namespace", "get")
+		err := probe.wsk([]string{"wsk", "namespace"}, "get")
 		if err != nil {
 			return false, nil
 		}
@@ -97,7 +97,7 @@ func (probe *WskProbe) isActionCreated(pathToHello string) wait.ConditionFunc {
 	return func() (bool, error) {
 		fmt.Printf(".")
 
-		err := probe.wsk("action", "create", "hello", pathToHello)
+		err := probe.wsk([]string{"wsk", "action"}, "create", "hello", pathToHello)
 		if err != nil {
 			if strings.Contains(err.Error(), "resource already exists") {
 				fmt.Println("Openwhisk action already created...skipping")

@@ -16,12 +16,13 @@
 // under the License.
 //
 
-//go:build !fast
-// +build !fast
+//go:build fast
+// +build fast
 
 package main
 
 import (
+	"fmt"
 	"github.com/alecthomas/kong"
 )
 
@@ -50,7 +51,18 @@ type CLI struct {
 	S3   S3Cmd   `cmd:"" name:"s3" help:"s3 subcommand" hidden:""`
 
 	// not to be seen by users
-	Wsk  WskCmd  `cmd:"" passthrough:"" help:"legacy wsk subcommand"`
-	Task TaskCmd `cmd:"" passthrough:"" help:"task subcommand" hidden:""`
-	Kind KindCmd `cmd:"" passthrough:"" help:"kind subcommand" hidden:""`
+	//Wsk  WskCmd  `cmd:"" passthrough:"" help:"legacy wsk subcommand"`
+	//Task TaskCmd `cmd:"" passthrough:"" help:"task subcommand" hidden:""`
+	//Kind KindCmd `cmd:"" passthrough:"" help:"kind subcommand" hidden:""`
+}
+
+func Wsk(command []string, args ...string) error {
+	for _, cmd := range command {
+		fmt.Printf("%s ", cmd)
+	}
+	for _, arg := range args {
+		fmt.Printf("%s ", arg)
+	}
+	fmt.Println()
+	return nil
 }

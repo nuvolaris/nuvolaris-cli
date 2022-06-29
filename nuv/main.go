@@ -18,6 +18,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/alecthomas/kong"
 )
 
@@ -27,11 +29,23 @@ var CLIVersion = "latest"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
-var ImageTag = "0.2.0-trinity.22053014"
+var defaultOperatorTag = "0.2.1-trinity.22062808"
+var defaultOperatorImage = "ghcr.io/nuvolaris/nuvolaris-operator"
 
 func main() {
+
 	cli := CLI{}
 	logger := NewLogger()
+
+	operatorImage := os.Getenv("OPERATOR_IMAGE")
+	if operatorImage == "" {
+		operatorImage = defaultOperatorImage
+	}
+
+	operatorTag := os.Getenv("OPERATOR_TAG")
+	if operatorTag == "" {
+		operatorTag = defaultOperatorTag
+	}
 
 	ctx := kong.Parse(&cli,
 		kong.Name(Name),
@@ -42,8 +56,9 @@ func main() {
 			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
-			"version":   CLIVersion + " operator:" + ImageTag,
-			"image_tag": ImageTag,
+			"version":        "nuv: " + CLIVersion + "\nnuvolaris-operator: " + operatorImage + ":" + operatorTag + "\n(change operator with env vars OPERATOR_IMAGE and OPERATOR_TAG)",
+			"operator_image": operatorImage,
+			"operator_tag":   operatorTag,
 		},
 		kong.Bind(logger),
 	)

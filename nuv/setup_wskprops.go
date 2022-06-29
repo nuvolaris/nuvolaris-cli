@@ -24,13 +24,12 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func setupWskProps(cmd *WskPropsCmd) error {
+func setupWskProps(cmd *AuthCmd) error {
 	var auth, apihost string
 
-	setupWithNoFlags := cmd.Apihost == "" || cmd.Auth == ""
 	var errMessage = "nuvolaris setup config file not found. Please setup nuvolaris or specify both --apihost and --auth"
 
-	if setupWithNoFlags {
+	if cmd.Apihost == "" || cmd.Auth == "" {
 		config, err := ReadFileFromNuvolarisConfigDir("config.yaml")
 		if err != nil {
 			return fmt.Errorf(errMessage)
@@ -63,5 +62,10 @@ func setupWskProps(cmd *WskPropsCmd) error {
 		wskPropsKey:   "APIHOST",
 		wskPropsValue: apihost,
 	})
+	if cmd.Show {
+		fmt.Printf("Configure authentication:\nnuv auth --apihost %s --auth %s\n", apihost, auth)
+	} else {
+		fmt.Printf("Autentication ready.\n")
+	}
 	return nil
 }

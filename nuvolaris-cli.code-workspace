@@ -15,13 +15,36 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
-
-type WskPropsCmd struct {
-	Apihost string `help:"manually specify apihost" type:"string"`
-	Auth    string `help:"manually specify authorization key" type:"string"`
-}
-
-func (s *WskPropsCmd) Run(logger *Logger) error {
-	return setupWskProps(s)
+{
+	"folders": [
+		{
+			"path": "nuv"
+		},
+		{
+			"path": "openwhisk-cli"
+		},
+		{
+			"path": "task"
+		},
+		{
+			"path": "kind"
+		},
+		{
+			"path": ".github"
+		},
+		{
+			"path": "embeddable-kops"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"activityBar.background": "#4F1E1E"
+		},
+		"gopls.env": {
+			"GOFLAGS": "-tags=subcommands"
+		}
+	}
 }

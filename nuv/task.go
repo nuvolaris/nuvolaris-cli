@@ -16,8 +16,8 @@
 // under the License.
 //
 
-//go:build subcommands
-// +build subcommands
+//go:build !fast
+// +build !fast
 
 package main
 
@@ -29,6 +29,7 @@ type TaskCmd struct {
 	Args []string `arg:"" optional:"" name:"args" help:"task subcommand args"`
 }
 
+// Task runs embedded task
 func Task(args ...string) error {
 	taskmain.TaskMain(append([]string{"task"}, args...))
 	return nil

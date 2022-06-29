@@ -45,7 +45,6 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 
 	setupWithNoFlags := !cmd.Devcluster &&
 		!cmd.Configure &&
-		cmd.ImageTag == ImageTag &&
 		cmd.Uninstall == "" &&
 		cmd.Context == ""
 
@@ -57,7 +56,7 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		return nil
 	}
 
-	if cmd.ImageTag != ImageTag && cmd.Context == "" {
+	if cmd.Context == "" {
 		fmt.Println("Specify Kubernetes context with --context flag")
 		return nil
 	}
@@ -70,9 +69,8 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		return configureCrd(cmd.Apihost)
 	}
 
-	imgTag := cmd.ImageTag
 	sp := SetupPipeline{
-		operatorDockerImage: "ghcr.io/nuvolaris/nuvolaris-operator:" + imgTag,
+		operatorDockerImage: cmd.OperatorImage + ":" + cmd.OperatorTag,
 		logger:              logger,
 	}
 

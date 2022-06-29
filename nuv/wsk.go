@@ -16,8 +16,8 @@
 // under the License.
 //
 
-//go:build subcommands
-// +build subcommands
+//go:build !fast
+// +build !fast
 
 package main
 
@@ -31,10 +31,7 @@ import (
 	goi18n "github.com/nicksnyder/go-i18n/i18n"
 )
 
-type WskCmd struct {
-	Args []string `arg:"" name:"args"`
-}
-
+// prepare wsk execution
 var cliDebug = os.Getenv("WSK_CLI_DEBUG") // Useful for tracing init() code
 
 var T goi18n.TranslateFunc
@@ -50,12 +47,14 @@ func init() {
 	commands.Properties.CLIVersion = CLIVersion
 }
 
-func (w *WskCmd) BeforeApply() error {
-	return setWskEnvVariable()
-}
-
-func Wsk(args ...string) error {
-	os.Args = append([]string{"wsk"}, args...)
+// Wsk invokes wsk subcommand
+func Wsk(command []string, args ...string) error {
+	// set wsk variable
+	setWskEnvVariable()
+	// compose the command
+	os.Args = command
+	os.Args = append(os.Args, args...)
+	// cleanup
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
@@ -63,8 +62,4 @@ func Wsk(args ...string) error {
 		}
 	}()
 	return commands.Execute()
-}
-
-func (wsk *WskCmd) Run() error {
-	return Wsk(wsk.Args...)
 }

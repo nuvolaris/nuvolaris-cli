@@ -18,12 +18,13 @@
 package main
 
 type SetupCmd struct {
-	Devcluster bool   `help:"start dev kind k8s cluster" xor:"devcluster-or-uninstall-or-context"`
-	Configure  bool   `help:"generate configuration file"`
-	ImageTag   string `default:"${image_tag}" help:"nuvolaris operator docker image tag to deploy"`
-	Uninstall  string `help:"uninstall nuvolaris from given context" xor:"devcluster-or-uninstall-or-context"`
-	Context    string `help:"set kubernetes context to install nuvolaris" xor:"devcluster-or-uninstall-or-context"`
-	Apihost    string `help:"set kubernetes host IP"`
+	Devcluster    bool   `help:"start dev kind k8s cluster" xor:"devcluster-or-uninstall-or-context"`
+	Configure     bool   `help:"generate configuration file"`
+	OperatorImage string `default:"${operator_image}" help:"nuvolaris operator docker image tag to deploy"`
+	OperatorTag   string `default:"${operator_tag}" help:"nuvolaris operator docker image tag to deploy"`
+	Uninstall     string `help:"uninstall nuvolaris from given context" xor:"devcluster-or-uninstall-or-context"`
+	Context       string `help:"set kubernetes context to install nuvolaris" xor:"devcluster-or-uninstall-or-context"`
+	Apihost       string `help:"set kubernetes host IP"`
 }
 
 func (setupCmd *SetupCmd) Run(logger *Logger) error {
