@@ -6,7 +6,7 @@ type WskCmd struct {
 }
 
 func (wsk *WskCmd) Run() error {
-	return Wsk(nil, wsk.Args...)
+	return Wsk([]string{"wsk"}, wsk.Args...)
 }
 
 // action cmd
@@ -16,6 +16,15 @@ type ActionCmd struct {
 
 func (wsk *ActionCmd) Run() error {
 	return Wsk([]string{"wsk", "action"}, wsk.Args...)
+}
+
+// action cmd
+type ActivationCmd struct {
+	Args []string `arg:"" name:"args"`
+}
+
+func (wsk *ActivationCmd) Run() error {
+	return Wsk([]string{"wsk", "activation"}, wsk.Args...)
 }
 
 // package cmd
@@ -74,13 +83,13 @@ func (wsk *InvokeCmd) Run() error {
 }
 
 // log cmd
-type LogCmd struct {
-	Args []string `arg:"" name:"args"`
+type LogsCmd struct {
+	Args []string `arg:"" optional:""`
 }
 
-func (wsk *LogCmd) Run() error {
+func (wsk *LogsCmd) Run() error {
 	if len(wsk.Args) == 0 {
-		return Wsk([]string{"wsk", "activation", "logs", "--last"})
+		return Wsk([]string{"wsk", "activation", "logs"}, "--last")
 	}
 	return Wsk([]string{"wsk", "activation", "logs"}, wsk.Args...)
 
@@ -88,7 +97,7 @@ func (wsk *LogCmd) Run() error {
 
 // result cmd
 type ResultCmd struct {
-	Args []string `arg:"" name:"args"`
+	Args []string `arg:"" optional:""`
 }
 
 func (wsk *ResultCmd) Run() error {
@@ -109,11 +118,10 @@ func (wsk *UrlCmd) Run() error {
 
 // result cmd
 type PollCmd struct {
-	Args []string `arg:"" name:"args"`
 }
 
 func (wsk *PollCmd) Run() error {
-	return Wsk([]string{"activation"}, wsk.Args...)
+	return Wsk([]string{"wsk", "activation", "poll"})
 }
 
 // auth cmd

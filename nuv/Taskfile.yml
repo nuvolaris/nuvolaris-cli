@@ -59,6 +59,11 @@ tasks:
     generates:
       - "{{.CMD}}"
 
+  install:
+    - task: build
+    - sudo install ./nuv /usr/bin/nuv
+    - nuv -v
+
   fast:
     description: fast build with debugging without subcommands
     cmds:

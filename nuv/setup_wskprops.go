@@ -63,7 +63,7 @@ func setupWskProps(cmd *AuthCmd) error {
 		wskPropsValue: apihost,
 	})
 	if cmd.Show {
-		fmt.Printf("Configure authentication:\nnuv auth --apihost %s --auth %s\n", apihost, auth)
+		fmt.Printf("nuv auth --apihost %s --auth %s\n", apihost, auth)
 	} else {
 		fmt.Printf("Autentication ready.\n")
 	}
