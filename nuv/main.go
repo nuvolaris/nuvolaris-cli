@@ -29,7 +29,7 @@ var CLIVersion = "latest"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
-var defaultOperatorTag = "0.2.1-trinity.22062808"
+var defaultOperatorTag = "0.2.1-trinity.22063010"
 var defaultOperatorImage = "ghcr.io/nuvolaris/nuvolaris-operator"
 
 func main() {
