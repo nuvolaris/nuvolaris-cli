@@ -164,7 +164,7 @@ func (config *KindConfig) rewriteKindConfigFile() (string, error) {
 		os.Remove(path)
 	}
 
-	replacedConfigYaml := strings.ReplaceAll(string(config.kindYaml), "$NUV_HOME", config.homedir)
+	replacedConfigYaml := strings.ReplaceAll(string(config.kindYaml), "$NUV_HOME", filepath.Join(config.homedir, config.nuvolarisConfigDir))
 	if err := os.WriteFile(path, []byte(replacedConfigYaml), 0600); err != nil {
 		return "", err
 	}
