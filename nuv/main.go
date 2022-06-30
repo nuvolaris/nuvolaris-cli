@@ -56,7 +56,7 @@ func main() {
 			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
-			"version":        "nuv: " + CLIVersion + "\nnuvolaris-operator: " + operatorImage + ":" + operatorTag + "\n(change operator with env vars OPERATOR_IMAGE and OPERATOR_TAG)",
+			"version":        "nuv: " + CLIVersion + "\nnuvolaris-operator: " + operatorImage + ":" + operatorTag,
 			"operator_image": operatorImage,
 			"operator_tag":   operatorTag,
 		},

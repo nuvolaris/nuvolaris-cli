@@ -56,11 +56,6 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		return nil
 	}
 
-	if cmd.Context == "" {
-		fmt.Println("Specify Kubernetes context with --context flag")
-		return nil
-	}
-
 	if cmd.Configure {
 		err := checkApiHost(cmd)
 		if err != nil {
@@ -77,6 +72,9 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 	if cmd.Devcluster {
 		sp.err = startDevCluster(sp.logger)
 		sp.k8sContext = "kind-nuvolaris"
+	} else if cmd.Context == "" {
+		fmt.Println("Specify Kubernetes context with --context flag")
+		return nil
 	}
 
 	if cmd.Context != "" {
