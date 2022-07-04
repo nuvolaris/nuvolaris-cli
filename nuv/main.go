@@ -18,6 +18,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -64,4 +65,12 @@ func main() {
 	)
 	err := ctx.Run()
 	ctx.FatalIfErrorf(err)
+}
+
+var Debugging = os.Getenv("DEBUG") != ""
+
+func debug(format string, args ...any) {
+	if Debugging {
+		fmt.Printf(">>> "+format, args...)
+	}
 }

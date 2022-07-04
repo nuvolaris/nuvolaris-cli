@@ -104,12 +104,13 @@ tasks:
     - task: t:test
 
 
-  clean: 
+  gclean: 
     - rm -f {{.CMD}} {{.CMD}}-debug {{.CMD}}-fast
     - go clean -testcache -modcache -cache
     - rm -Rvf vendor
   
   watch: task {{.OPERATOR}} watch
+  kclean: task {{.OPERATOR}} clean
   use: task {{.OPERATOR}} use 
   1: task {{.OPERATOR}} use N=1
   2: task {{.OPERATOR}} use N=2

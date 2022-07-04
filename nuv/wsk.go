@@ -49,8 +49,12 @@ func init() {
 
 // Wsk invokes wsk subcommand
 func Wsk(command []string, args ...string) error {
+
 	// set wsk variable
-	setWskEnvVariable()
+	setWskEnvVariable(false)
+
+	debug("WSK_CONFIG_FILE=" + os.Getenv("WSK_CONFIG_FILE"))
+
 	// compose the command
 	os.Args = command
 	os.Args = append(os.Args, args...)

@@ -63,7 +63,9 @@ func isPodCompleted(c *KubeClient, podName string) wait.ConditionFunc {
 			return false, err
 		}
 
-		switch pod.Status.Phase {
+		phase := pod.Status.Phase
+		debug("\npod  %s is in phase %s\n", podName, phase)
+		switch phase {
 		case coreV1.PodPending, coreV1.PodRunning:
 			return false, nil
 		case coreV1.PodSucceeded:

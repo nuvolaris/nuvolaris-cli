@@ -27,19 +27,21 @@ import (
 )
 
 type CLI struct {
-	Version kong.VersionFlag `short:"v" cmd:"" passthrough:"" help:"show nuvolaris version"`
-	Action  ActionCmd        `aliases:"a,act" cmd:"" passthrough:"" help:"work with actions"`
-	Package PackageCmd       `aliases:"p,pkg" cmd:"" passthrough:"" help:"work with packages"`
-	Rule    RuleCmd          `aliases:"ru" cmd:"" passthrough:"" help:"work with rules"`
-	Trigger TriggerCmd       `aliases:"tr" cmd:"" passthrough:"" help:"work with triggers"`
-	Project ProjectCmd       `aliases:"pr" cmd:"" passthrough:"" help:"work with projects"`
+	Version    kong.VersionFlag `short:"v" cmd:"" passthrough:"" help:"show nuvolaris version"`
+	Debug      bool             `help:"enable debugging messages"`
+	Action     ActionCmd        `aliases:"a" cmd:"" passthrough:"" help:"work with actions"`
+	Package    PackageCmd       `aliases:"p" cmd:"" passthrough:"" help:"work with packages"`
+	Activation ActivationCmd    `aliases:"ac" cmd:"" passthrough:"" help:"work with actions"`
+	Rule       RuleCmd          `aliases:"ru" cmd:"" passthrough:"" help:"work with rules"`
+	Trigger    TriggerCmd       `aliases:"tr" cmd:"" passthrough:"" help:"work with triggers"`
+	Project    ProjectCmd       `aliases:"pr" cmd:"" passthrough:"" help:"work with projects"`
 
 	// utils
-	Invoke InvokeCmd `aliases:"i,inv" cmd:"" help:"invoke an action and return the result"`
+	Invoke InvokeCmd `aliases:"i" cmd:"" help:"invoke an action and return the result"`
 	Url    UrlCmd    `cmd:"" passthrough:"" help:"show url of an action"`
-	Log    LogCmd    `aliases:"l" cmd:"" passthrough:"" help:"show activation logs"`
-	Result ResultCmd `aliases:"r, res" cmd:"" passthrough:"" help:"show  activation results"`
-	Poll   PollCmd   `aliases:"po" cmd:"" passthrough:"" help:"poll activations"`
+	Logs   LogsCmd   `aliases:"l" cmd:"" passthrough:"" help:"show activation logs"`
+	Result ResultCmd `aliases:"r"  cmd:"" passthrough:"" help:"show activation results"`
+	Poll   PollCmd   `aliases:"po" cmd:"" help:"poll activations"`
 
 	// Setup
 	Setup      SetupCmd      `cmd:"" help:"setup nuvolaris"`
@@ -49,11 +51,6 @@ type CLI struct {
 	// work in progress
 	Scan ScanCmd `cmd:"" help:"scan subcommand" hidden:""`
 	S3   S3Cmd   `cmd:"" name:"s3" help:"s3 subcommand" hidden:""`
-
-	// not to be seen by users
-	//Wsk  WskCmd  `cmd:"" passthrough:"" help:"legacy wsk subcommand"`
-	//Task TaskCmd `cmd:"" passthrough:"" help:"task subcommand" hidden:""`
-	//Kind KindCmd `cmd:"" passthrough:"" help:"kind subcommand" hidden:""`
 }
 
 func Wsk(command []string, args ...string) error {

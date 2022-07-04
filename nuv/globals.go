@@ -39,4 +39,5 @@ const WskPropsFilename = ".wskprops"
 // NuvolarisNamespace is Kubernetes namespace where nuvolaris components are deployed
 const NuvolarisNamespace = "nuvolaris"
 
+// NuvolarisConfigmapName is the config map from where to read annotations
 const NuvolarisConfigmapName = "config"

@@ -44,17 +44,28 @@ func readinessProbe(c *KubeClient) error {
 
 	wskProbe := WskProbe{wsk: Wsk}
 
-	var podName = "wsk-prewarm-nodejs14"
-	err = waitForPod(c, podName)
-	if err != nil {
-		return err
+	//fmt.Println("\nNow, waiting for openwhisk pods to start...waiting is the hardest part 💚")
+
+	pods := []string{"controller", "couchdb", "redis"}
+	for _, pod := range pods {
+		fmt.Printf("\nWaiting for %s Running...", pod)
+		err = waitForPodRunning(c, pod+"-0")
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println("Waiting for openwhisk pod to complete...waiting is the hardest part 💚")
-	err = waitForPodCompleted(c, podName)
-	if err != nil {
-		return err
+	runtimes := []string{"go117", "nodejs14", "python37"}
+	for _, runtime := range runtimes {
+		fmt.Printf("\nWaiting for Runtime %s Ready...", runtime)
+		podName := "preload-runtime-" + runtime
+		debug("preloading " + podName)
+		err = waitForPodCompleted(c, podName)
+		if err != nil {
+			return err
+		}
 	}
+
 	fmt.Println("✓ Openwhisk running")
 
 	fmt.Println("Creating an action...")

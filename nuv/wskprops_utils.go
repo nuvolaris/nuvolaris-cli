@@ -41,19 +41,21 @@ func writeWskPropsFile(keyValues ...wskPropsKeyValue) error {
 	if err != nil {
 		return err
 	}
-	return setWskEnvVariable()
+	return setWskEnvVariable(true)
 }
 
-func setWskEnvVariable() error {
+func setWskEnvVariable(check bool) error {
 	_, ok := os.LookupEnv("WSK_CONFIG_FILE")
 	if !ok {
 		path, err := getWhiskPropsPath()
 		if err != nil {
 			return err
 		}
-		_, err = os.Stat(path)
-		if os.IsNotExist(err) {
-			return fmt.Errorf(".wskprops file not found. Run nuv setup")
+		if check {
+			_, err = os.Stat(path)
+			if os.IsNotExist(err) {
+				return fmt.Errorf(".wskprops file not found. Run nuv setup")
+			}
 		}
 		os.Setenv("WSK_CONFIG_FILE", path)
 	}

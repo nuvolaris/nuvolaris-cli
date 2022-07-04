@@ -49,9 +49,9 @@ type CLI struct {
 	// work in progress
 	Scan ScanCmd `cmd:"" help:"scan subcommand" hidden:""`
 	S3   S3Cmd   `cmd:"" name:"s3" help:"s3 subcommand" hidden:""`
+	Wsk  WskCmd  `cmd:"" passthrough:"" help:"legacy wsk subcommand"`
 
 	// not to be seen by users
-	Wsk  WskCmd  `cmd:"" passthrough:"" help:"legacy wsk subcommand"`
 	Task TaskCmd `cmd:"" passthrough:"" help:"task subcommand" hidden:""`
 	Kind KindCmd `cmd:"" passthrough:"" help:"kind subcommand" hidden:""`
 }
