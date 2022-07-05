@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -99,6 +100,7 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		sp.step(waitForCrdDefinitionReady)
 		sp.step(deployOperatorObject)
 		sp.step(waitForOpenWhiskReady)
+		sp.step(manifestDeploy)
 	}
 	return sp.err
 }
@@ -136,6 +138,15 @@ func deployOperatorObject(sp *SetupPipeline) {
 
 func waitForOpenWhiskReady(sp *SetupPipeline) {
 	sp.err = readinessProbe(sp.kubeClient)
+}
+
+func manifestDeploy(sp *SetupPipeline) {
+	if _, err := os.Stat("./manifest.yaml"); err == nil {
+		fmt.Println("Deploying manifest.yaml")
+		sp.err = Wsk([]string{"wsk", "project", "deploy"})
+	} else {
+		sp.err = nil
+	}
 }
 
 func resetNuvolaris(sp *SetupPipeline) {
