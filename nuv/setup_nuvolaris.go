@@ -70,38 +70,38 @@ func setupNuvolaris(logger *Logger, cmd *SetupCmd) error {
 		logger:              logger,
 	}
 
+	if cmd.Uninstall != "" {
+		sp.k8sContext = cmd.Uninstall
+		sp.kubeClient, sp.err = initClients(sp.k8sContext)
+		sp.step(resetNuvolaris)
+		return sp.err
+	}
+
 	if cmd.Devcluster {
 		sp.err = startDevCluster(sp.logger)
 		sp.k8sContext = "kind-nuvolaris"
-	} else if cmd.Context == "" {
-		fmt.Println("Specify Kubernetes context with --context flag")
-		return nil
-	}
-
-	if cmd.Context != "" {
+	} else if cmd.Context != "" {
 		err := checkApiHost(cmd)
 		if err != nil {
 			return err
 		}
 		sp.k8sContext = cmd.Context
 		sp.apiHost = cmd.Apihost
+	} else {
+		fmt.Println("Specify Kubernetes context with --context flag")
+		return nil
 	}
 
-	if cmd.Uninstall != "" {
-		sp.k8sContext = cmd.Uninstall
-		sp.kubeClient, sp.err = initClients(sp.k8sContext)
-		sp.step(resetNuvolaris)
-	} else {
-		sp.kubeClient, sp.err = initClients(sp.k8sContext)
-		sp.step(createNuvolarisNamespace)
-		sp.step(deployServiceAccount)
-		sp.step(deployClusterRoleBinding)
-		sp.step(runNuvolarisOperatorPod)
-		sp.step(waitForCrdDefinitionReady)
-		sp.step(deployOperatorObject)
-		sp.step(waitForOpenWhiskReady)
-		sp.step(manifestDeploy)
-	}
+	sp.kubeClient, sp.err = initClients(sp.k8sContext)
+	sp.step(createNuvolarisNamespace)
+	sp.step(deployServiceAccount)
+	sp.step(deployClusterRoleBinding)
+	sp.step(runNuvolarisOperatorPod)
+	sp.step(waitForCrdDefinitionReady)
+	sp.step(deployOperatorObject)
+	sp.step(waitForOpenWhiskReady)
+	sp.step(manifestDeploy)
+
 	return sp.err
 }
 
