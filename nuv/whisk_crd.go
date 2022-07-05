@@ -132,6 +132,6 @@ func crdProbe(c *KubeClient) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("✓ CRD definition ready")
+	fmt.Println("\n✓ CRD definition ready")
 	return nil
 }
