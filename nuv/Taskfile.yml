@@ -24,6 +24,8 @@ vars:
   CFG: '{{default "kind" .CFG}}'
   TAG:
     sh: git describe --tags --abbrev=0 2>/dev/null || echo latest
+  HASH: 
+    sh: git rev-parse --short {{.TAG}}
   CMD: "./nuv"
 
   VENDOR:
@@ -52,7 +54,7 @@ tasks:
   build:
     description: full build
     cmds:
-      - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.CMD}}
+      - go build -ldflags "-X main.CLIVersion={{.TAG}}#{{.HASH}}" -o {{.CMD}}
     sources:
       - "*.go"
       - "embed/*"
