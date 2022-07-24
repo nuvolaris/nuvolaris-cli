@@ -164,7 +164,13 @@ func (config *KindConfig) rewriteKindConfigFile() (string, error) {
 		os.Remove(path)
 	}
 
-	replacedConfigYaml := strings.ReplaceAll(string(config.kindYaml), "$NUV_HOME", filepath.Join(config.homedir, config.nuvolarisConfigDir))
+	// set the path for the data dir
+	dataDir := filepath.Join(config.homedir, ".nuvolaris_data")
+	// here docker is remote to we cannot know the remote home and we use /tmp
+	if os.Getenv("DOCKER_HOST") != "" {
+		dataDir = "/tmp/nuvolaris_data"
+	}
+	replacedConfigYaml := strings.ReplaceAll(string(config.kindYaml), "$NUV_DATA_DIR", dataDir)
 	if err := os.WriteFile(path, []byte(replacedConfigYaml), 0600); err != nil {
 		return "", err
 	}

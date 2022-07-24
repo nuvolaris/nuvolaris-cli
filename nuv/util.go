@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -102,6 +103,9 @@ func sysErr(dryRun bool, cli string, args ...string) (string, error) {
 }
 
 func ExecutingInContainer() bool {
+	if runtime.GOOS != "linux" {
+		return false
+	}
 	fsys := os.DirFS("/")
 	// if .dockerenv exists and is a regular file
 	if info, err := fs.Stat(fsys, ".dockerenv"); os.IsNotExist(err) || !info.Mode().IsRegular() {
