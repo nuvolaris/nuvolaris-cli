@@ -127,11 +127,11 @@ func createWhiskOperatorObject(c *KubeClient, apiHost string) error {
 }
 
 func crdProbe(c *KubeClient) error {
-	fmt.Println("Waiting for crd definition to be ready...")
+	fmt.Print("Waiting for crd definition to be ready...")
 	err := waitForCrdDefinition(c)
 	if err != nil {
 		return err
 	}
-	fmt.Println("✓ CRD definition ready")
+	fmt.Println("\n✓ CRD definition ready")
 	return nil
 }

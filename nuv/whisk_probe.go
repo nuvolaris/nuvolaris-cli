@@ -34,7 +34,7 @@ type WskProbe struct {
 var helloContent []byte
 
 func readinessProbe(c *KubeClient) error {
-	fmt.Println("Reading Nuvolaris cluster config...")
+	fmt.Print("Reading Nuvolaris cluster config...")
 	err := waitForApihostSet(c, NuvolarisConfigmapName)
 	if err != nil {
 		return err
@@ -49,13 +49,14 @@ func readinessProbe(c *KubeClient) error {
 	pods := []string{"controller", "couchdb", "redis"}
 	for _, pod := range pods {
 		fmt.Printf("\nWaiting for %s Running...", pod)
+		waitForPod(c, pod+"-0")
 		err = waitForPodRunning(c, pod+"-0")
 		if err != nil {
 			return err
 		}
 	}
 
-	runtimes := []string{"go117", "nodejs14", "python37"}
+	runtimes := []string{"nodejs", "python", "go"}
 	for _, runtime := range runtimes {
 		fmt.Printf("\nWaiting for Runtime %s Ready...", runtime)
 		podName := "preload-runtime-" + runtime
@@ -66,9 +67,9 @@ func readinessProbe(c *KubeClient) error {
 		}
 	}
 
-	fmt.Println("✓ Openwhisk running")
+	fmt.Println("\n✓ Openwhisk running")
 
-	fmt.Println("Creating an action...")
+	fmt.Println("Creating an action.\n(It can take a few minutes please be patient)")
 	path, err := WriteFileToNuvolarisConfigDir("hello.js", helloContent)
 	if err != nil {
 		return err

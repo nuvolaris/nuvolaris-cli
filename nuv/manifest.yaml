@@ -1,0 +1,8 @@
+packages:
+  test:
+    actions:
+      hi:
+        function: tests/hi.js
+      ping:
+        function: tests/ping.js
+

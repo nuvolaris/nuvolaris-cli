@@ -114,12 +114,12 @@ func (c *KubeClient) createOperatorPod(dockerImg string) error {
 	_, err := getPod(c, operatorName)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			fmt.Println("Deploying nuvolaris operator image " + dockerImg)
+			fmt.Println("Deploying nuvolaris operator.\n(" + dockerImg + ")\n")
 			_, err := c.clientset.CoreV1().Pods(c.namespace).Create(c.ctx, configOperatorPod(dockerImg), metaV1.CreateOptions{})
 			if err != nil {
 				return err
 			}
-			fmt.Println("Waiting for nuvolaris operator pod...hang tight")
+			fmt.Print("Waiting for nuvolaris operator...")
 			err = waitForPodRunning(c, operatorName)
 			if err != nil {
 				return err

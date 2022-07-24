@@ -21,16 +21,7 @@
 			"path": "nuv"
 		},
 		{
-			"path": "openwhisk-cli"
-		},
-		{
-			"path": "task"
-		},
-		{
-			"path": "kind"
-		},
-		{
-			"path": "."
+			"path": "../nuvolaris-operator"
 		}
 	],
 	"settings": {
