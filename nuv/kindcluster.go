@@ -65,6 +65,7 @@ func (config *KindConfig) manageKindCluster(logger *Logger, action string) error
 		if err := config.createCluster(logger); err != nil {
 			return err
 		}
+		return nil
 	}
 	if action == "destroy" {
 		removeConfigYaml()
