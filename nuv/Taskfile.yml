@@ -18,7 +18,7 @@
 version: '3'
 
 vars:
-  BASETAG: 0.2.1-trinity
+  BASETAG: 0.2.2-trinity
   OPERATOR: "-t ../../nuvolaris-operator/Taskfile.yml"
   DIR: "../../nuvolaris-operator/"
   CFG: '{{default "kind" .CFG}}'
