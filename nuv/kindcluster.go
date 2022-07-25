@@ -65,11 +65,15 @@ func (config *KindConfig) manageKindCluster(logger *Logger, action string) error
 		if err := config.createCluster(logger); err != nil {
 			return err
 		}
-	} else {
+	}
+	if action == "destroy" {
+		removeConfigYaml()
 		if err := config.destroyCluster(); err != nil {
 			return err
 		}
+		return nil
 	}
+	fmt.Println("subcommand not available")
 	return nil
 }
 
@@ -132,6 +136,21 @@ func (config *KindConfig) destroyCluster() error {
 	return nil
 }
 
+func removeConfigYaml() {
+	// remove configuation
+	homeDir, _ := GetHomeDir()
+	configYaml := filepath.Join(homeDir, ".nuvolaris", "config.yaml")
+
+	if _, err := os.Stat(configYaml); err == nil {
+		err = os.Remove(configYaml)
+		if err == nil {
+			fmt.Printf("%s removed \n", configYaml)
+		} else {
+			fmt.Printf("cannot remove %s - please remove it manually\n", configYaml)
+		}
+	}
+}
+
 func (config *KindConfig) clusterAlreadyRunning() (bool, error) {
 	//capture cmd output
 	rescueStdout := os.Stdout
@@ -179,7 +198,7 @@ func (config *KindConfig) rewriteKindConfigFile() (string, error) {
 }
 
 func (config *KindConfig) startCluster() error {
-	if err := config.kind("create", "cluster", "--wait=1m", "--config="+config.fullConfigPath); err != nil {
+	if err := config.kind("create", "cluster", "--wait=5m", "--config="+config.fullConfigPath); err != nil {
 		return err
 	}
 	return nil
