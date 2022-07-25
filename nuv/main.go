@@ -20,13 +20,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/alecthomas/kong"
 )
 
 // CLIVersion holds the current version, to be set by the build with
 //  go build -ldflags "-X main.CLIVersion=<version>"
-var CLIVersion = "latest"
+var CLIVersion = "vX.Y.Z-milestone.build"
 
 // ImageTag holds the version of the Docker image used for the nuvolaris
 // operator used in setup
@@ -34,6 +35,7 @@ var defaultOperatorTag = "0.2.1-trinity.22070510"
 var defaultOperatorImage = "ghcr.io/nuvolaris/nuvolaris-operator"
 
 func main() {
+
 
 	cli := CLI{}
 	logger := NewLogger()
@@ -48,6 +50,14 @@ func main() {
 		operatorTag = defaultOperatorTag
 	}
 
+	// parse timestamp
+	version := CLIVersion
+	re, _ := regexp.Compile("v(.*)-([a-z]+).([0-9]+)")
+	res := re.FindStringSubmatch(CLIVersion)
+	if len(res) > 0 {
+		version = fmt.Sprintf("nuv: v%s (milestone: %s, build: %s)", res[1], res[2], res[3])
+	}
+
 	ctx := kong.Parse(&cli,
 		kong.Name(Name),
 		kong.Description(Description),
@@ -57,7 +67,7 @@ func main() {
 			NoExpandSubcommands: true,
 		}),
 		kong.Vars{
-			"version":        "nuv: " + CLIVersion + "\nnuvolaris-operator: " + operatorImage + ":" + operatorTag,
+			"version":        version + "\nnuvolaris-operator: " + operatorImage + ":" + operatorTag,
 			"operator_image": operatorImage,
 			"operator_tag":   operatorTag,
 		},
