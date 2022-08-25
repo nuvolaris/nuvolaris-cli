@@ -24,7 +24,7 @@
 
 ## Goals
 
-The tool `nuv` built in the repo [nuvolaris-cli](https://github.com/nuvolaris/nuvolaris-cli) it the Command Line Interface for the Nuvolaris project.
+The tool `nuv` built in the repo [nuvolaris-cli](https://github.com/nuvolaris/nuvolaris-cli) it is the Command Line Interface for the Nuvolaris project.
 
 It embeds the functionalities of the tool [wsk](https://github.com/apache/openwhisk-cli) for creating actions. Since wsk is written in Go, we can directly include the code in `nuv`
 
@@ -56,7 +56,7 @@ An example of a project to deploy can be [this](https://github.com/pagopa/io-sdk
 
 If it finds here a file, it will create a package for each subfolder.
 
-If it finds files in the file `packages`, it will deploy them as [single file actions](#single-file-actions) in the package `default`. If it finds files in the subfolders of `packages` it will deploy them as [single file actions](#single-file-actions) in packages named as the the subfolder. If it finds folders it will build [multi file actions](#multi-file-actions).
+If it finds files in the folder `packages`, it will deploy them as [single file actions](#single-file-actions) in the package `default`. If it finds files in the subfolders of `packages` it will deploy them as [single file actions](#single-file-actions) in packages named as the the subfolder. If it finds folders it will build [multi file actions](#multi-file-actions).
 
 ## Single File Actions
 
@@ -88,7 +88,7 @@ The path where the assets are published depends on the path in the action hierar
 
 The sub-folder `web` is published as "/".
 
-Any subfolder `web` under `packages/<package>/web` is published unser `/<packages>/`.
+Any subfolder `web` under `packages/<package>/web` is published under `/<packages>/`.
 
 Any subfolder `web` under `packages/default/<action>\web` is published as `/<action>`.
 
