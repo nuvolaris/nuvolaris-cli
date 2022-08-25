@@ -73,9 +73,11 @@ func WriteFileToNuvolarisConfigDir(filename string, content []byte) (string, err
 // ReadFileFromNuvolarisConfigDir reads file from .nuvolaris dir
 func ReadFileFromNuvolarisConfigDir(filename string) ([]byte, error) {
 	nuvHomedir, err := GetOrCreateNuvolarisConfigDir()
+
 	if err != nil {
 		return nil, err
 	}
+
 	path := filepath.Join(nuvHomedir, filename)
 	if _, err := os.Stat(path); err != nil {
 		fmt.Println("File reading error", err)

@@ -43,7 +43,7 @@ nodes:
   - containerPort: 30984
     hostPort: 5984
     protocol: TCP  
-  - containerPort: 30017
+  - containerPort: 32717
     hostPort: 27017
     protocol: TCP
   - containerPort: 30444

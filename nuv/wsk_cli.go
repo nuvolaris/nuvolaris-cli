@@ -145,6 +145,8 @@ func (wsk *PollCmd) Run() error {
 type AuthCmd struct {
 	Apihost string `help:"manually specify apihost" type:"string"`
 	Auth    string `help:"manually specify authorization key" type:"string"`
+	Redis   string `help:"manually specify redis url" type:"string"`
+	Mongodb string `help:"manually specify mongodb url" type:"string"`
 	Show    bool   `help:"show current auth"`
 }
 
