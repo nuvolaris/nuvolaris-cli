@@ -110,6 +110,20 @@ func flattenWskPropsMap(annotations map[string]string) []wskPropsKeyValue {
 	return wskPropsEntries
 }
 
+func setWskPropsAsEnvVariable() error {
+	propMap, err := readWskPropsAsMap()
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return err
+	}
+
+	for k, v := range propMap {
+		os.Setenv(k, v)
+	}
+
+	return nil
+}
+
 type wskPropsKeyValue struct {
 	wskPropsKey   string
 	wskPropsValue string

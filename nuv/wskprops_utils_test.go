@@ -102,6 +102,17 @@ func TestReadWskPropsAsMap(t *testing.T) {
 	assert.Equal(t, len(keyvalues), 2)
 }
 
+func TestWskPropsAsEnvVar(t *testing.T) {
+	WriteFileToNuvolarisConfigDir(".wskprops", []byte("APIHOST=http://localhost:3232\nAUTH=23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP\n"))
+	err := setWskPropsAsEnvVariable()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	assert.Equal(t, os.Getenv("APIHOST"), "http://localhost:3232")
+	assert.Equal(t, os.Getenv("AUTH"), "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP")
+}
+
 func TestFlattenWskPropsMap(t *testing.T) {
 	annotations := make(map[string]string)
 	annotations["APIHOST"] = "somehost"

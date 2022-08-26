@@ -77,6 +77,7 @@ type ProjectCmd struct {
 }
 
 func (wsk *ProjectCmd) Run() error {
+	setWskPropsAsEnvVariable()
 	return Wsk([]string{"wsk", "project"}, wsk.Args...)
 }
 
