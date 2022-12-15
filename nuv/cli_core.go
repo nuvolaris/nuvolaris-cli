@@ -40,6 +40,7 @@ type CLI struct {
 	Logs   LogsCmd   `aliases:"l" cmd:"" passthrough:"" help:"show activation logs"`
 	Result ResultCmd `aliases:"r"  cmd:"" passthrough:"" help:"show activation results"`
 	Poll   PollCmd   `aliases:"po" cmd:"" help:"poll activations"`
+	Bundle BundleCmd `aliases:"bu" cmd:"" help:"creates a web application bundle"`
 
 	// Setup
 	Setup      SetupCmd      `cmd:"" help:"setup nuvolaris"`
