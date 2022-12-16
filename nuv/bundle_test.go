@@ -27,11 +27,51 @@ import (
 func Test_bundleRun(t *testing.T) {
 	hd, _ := GetHomeDir()
 	targetFile := filepath.Join(hd, "test-bundle-output.zip")
-	bundleCmd := BundleCmd{Path: "./test-bundle", Target: targetFile}
+	bundleCmd := BundleCmd{Path: "./test-bundle/test0", Target: targetFile}
 	bundleCmd.Run()
 
 	exists := fileExists(targetFile)
 	assert.True(t, exists)
 	err := os.Remove(targetFile)
 	assert.NoError(t, err)
+}
+
+func Test_bundleFolderDoesNotExist(t *testing.T) {
+	hd, _ := GetHomeDir()
+	targetFile := filepath.Join(hd, "test-bundle-output.zip")
+	bundleCmd := BundleCmd{Path: "./test-bundle/fake", Target: targetFile}
+	err := bundleCmd.Run()
+	assert.ErrorContains(t, err, "folder './test-bundle/fake' not found!")
+}
+
+func Test_indexFileDoesNotExist(t *testing.T) {
+	hd, _ := GetHomeDir()
+	targetFile := filepath.Join(hd, "test-bundle-output.zip")
+	bundleCmd := BundleCmd{Path: "./test-bundle/test1", Target: targetFile}
+	err := bundleCmd.Run()
+	assert.ErrorContains(t, err, "folder './test-bundle/test1' does not contain an index.html file")
+}
+
+func Test_indexJsFileExist(t *testing.T) {
+	hd, _ := GetHomeDir()
+	targetFile := filepath.Join(hd, "test-bundle-output.zip")
+	bundleCmd := BundleCmd{Path: "./test-bundle/test2", Target: targetFile}
+	err := bundleCmd.Run()
+	assert.ErrorContains(t, err, "folder './test-bundle/test2' contains an index.js file. Bundle structure not valid.")
+}
+
+func Test_PackageJsonFileExist(t *testing.T) {
+	hd, _ := GetHomeDir()
+	targetFile := filepath.Join(hd, "test-bundle-output.zip")
+	bundleCmd := BundleCmd{Path: "./test-bundle/test3", Target: targetFile}
+	err := bundleCmd.Run()
+	assert.ErrorContains(t, err, "folder './test-bundle/test3' contains a package.json file. Bundle structure not valid.")
+}
+
+func Test_NonValidBundleTarget(t *testing.T) {
+	hd, _ := GetHomeDir()
+	targetFile := filepath.Join(hd, "test-bundle-output.tar")
+	bundleCmd := BundleCmd{Path: "./test-bundle/test0", Target: targetFile}
+	err := bundleCmd.Run()
+	assert.ErrorContains(t, err, "target '"+targetFile+"' is not valid! Please use .zip extension.")
 }

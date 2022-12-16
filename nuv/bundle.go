@@ -39,8 +39,9 @@ type BundleCmd struct {
 }
 
 func (s *BundleCmd) Run() error {
-	if !dirExists(s.Path) {
-		return fmt.Errorf("folder '%s' not found! Bundle requires an existing folder containing a valid web application source code", s.Path)
+	err := validateBundleStructure(s.Path)
+	if err != nil {
+		return err
 	}
 
 	targetFile, err := getTargetOutput(filepath.Base(s.Path), s.Target)
@@ -53,10 +54,33 @@ func (s *BundleCmd) Run() error {
 	return err
 }
 
+func validateBundleStructure(basePath string) error {
+	if !dirExists(basePath) {
+		return fmt.Errorf("folder '%s' not found! Bundle requires an existing folder containing a valid web application source code", basePath)
+	}
+
+	fileToCheck := filepath.Join(basePath, "index.html")
+	if !fileExists(fileToCheck) {
+		return fmt.Errorf("folder '%s' does not contain an index.html file. Bundle structure not valid.", basePath)
+	}
+
+	fileToCheck = filepath.Join(basePath, "index.js")
+	if fileExists(fileToCheck) {
+		return fmt.Errorf("folder '%s' contains an index.js file. Bundle structure not valid.", basePath)
+	}
+
+	fileToCheck = filepath.Join(basePath, "package.json")
+	if fileExists(fileToCheck) {
+		return fmt.Errorf("folder '%s' contains a package.json file. Bundle structure not valid.", basePath)
+	}
+
+	return nil
+}
+
 // Calculates target zip filename
 func getTargetOutput(basePath, target string) (string, error) {
 	if target != "" && !strings.HasSuffix(target, ".zip") {
-		return "", fmt.Errorf("target '%s' is not valid! Name should end with .zip", target)
+		return "", fmt.Errorf("target '%s' is not valid! Please use .zip extension.", target)
 	}
 
 	if target != "" && strings.HasSuffix(target, ".zip") {
