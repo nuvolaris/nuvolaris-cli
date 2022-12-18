@@ -40,6 +40,7 @@ type WhiskSpec struct {
 	MongoDb    MongoDbS    `json:"mongodb" yaml:"mongodb"`
 	Kafka      KafkaS      `json:"kafka" yaml:"kafka"`
 	S3         S3S         `json:"s3" yaml:"s3"`
+	Scheduler  SchedulerS  `json:"scheduler,omitempty" yaml:"scheduler, omitempty"`
 }
 
 type ComponentsS struct {
@@ -49,12 +50,13 @@ type ComponentsS struct {
 	Kafka     bool `json:"kafka" yaml:"kafka"`
 	MongoDb   bool `json:"mongodb" yaml:"mongodb"`
 	Redis     bool `json:"redis" yaml:"redis"`
+	Cron      bool `json:"cron" yaml:"cron"`
 	S3Bucket  bool `json:"s3bucket" yaml:"redis"`
 }
 
 type OpenWhiskS struct {
 	Namespaces NamespacesS `json:"namespaces" yaml:"namespaces"`
-	Limits     LimitsS     `json:"limits" yaml:"limits"`
+	Limits     LimitsS     `json:"limits, omitempty" yaml:"limits, omitempty"`
 }
 
 type NamespacesS struct {
@@ -98,6 +100,7 @@ type MongoDbS struct {
 	Host       string `json:"host" yaml:"host"`
 	VolumeSize int    `json:"volume-size" yaml:"volume-size"`
 	Admin      AdminS `json:"admin" yaml:"admin"`
+	Nuvolaris  AdminS `json:"nuvolaris" yaml:"nuvolaris"`
 }
 
 type KafkaS struct {
@@ -110,6 +113,10 @@ type S3S struct {
 	Id         string `json:"id" yaml:"id"`
 	Key        string `json:"key" yaml:"key"`
 	Region     string `json:"region" yaml:"region"`
+}
+
+type SchedulerS struct {
+	Schedule string `json:"schedule" yaml:"schedule"`
 }
 
 type Whisk struct {

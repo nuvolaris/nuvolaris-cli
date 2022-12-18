@@ -20,6 +20,12 @@ packages:
     actions:
       hi:
         function: tests/hi.js
+        inputs:
+          mongodbUri: "${MONGODB_URI}"
+          redis: "${REDIS_URI}"
       ping:
         function: tests/ping.js
+        inputs:
+          mongodbUri: "${MONGODB_URI}"
+          redis: "${REDIS_URI}"
 

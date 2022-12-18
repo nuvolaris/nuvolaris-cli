@@ -24,18 +24,27 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func setupWskProps(cmd *AuthCmd) error {
-	var auth, apihost string
+func getWhiskSpec() (WhiskSpec, error) {
+	config, err := ReadFileFromNuvolarisConfigDir("config.yaml")
 
+	if err != nil {
+		return WhiskSpec{}, err
+	}
+	var result WhiskSpec
+	err = yaml.Unmarshal(config, &result)
+	return result, err
+}
+
+func setupWskProps(cmd *AuthCmd) error {
+	var auth, apihost, redisurl, mongodburl, mdb_username, mdb_password string
+	result, err := getWhiskSpec()
 	var errMessage = "nuvolaris setup config file not found. Please setup nuvolaris or specify both --apihost and --auth"
 
 	if cmd.Apihost == "" || cmd.Auth == "" {
-		config, err := ReadFileFromNuvolarisConfigDir("config.yaml")
 		if err != nil {
 			return fmt.Errorf(errMessage)
 		}
-		var result WhiskSpec
-		yaml.Unmarshal(config, &result)
+
 		auth = result.OpenWhisk.Namespaces.Nuvolaris
 		if result.Nuvolaris == nil {
 			result.Nuvolaris = &NuvolarisS{}
@@ -62,6 +71,40 @@ func setupWskProps(cmd *AuthCmd) error {
 		wskPropsKey:   "APIHOST",
 		wskPropsValue: apihost,
 	})
+
+	// ADD REDIS URL
+	if cmd.Redis == "" && result.Components.Redis {
+		redisurl = "redis://redis"
+	} else {
+		redisurl = cmd.Redis
+	}
+
+	if redisurl != "" {
+		fmt.Println("Adding REDIS_URI to whisk properties")
+		writeWskPropsFile(wskPropsKeyValue{
+			wskPropsKey:   "REDIS_URI",
+			wskPropsValue: redisurl,
+		})
+	}
+
+	// ADD MONGODB IF IT IS THE CASE
+	// TODO if enabled the url could be retrieved issuing a kubectl command similar to kubectl get secret -n nuvolaris -ojson nuvolaris-mongodb-nuvolaris-nuvolaris
+	if cmd.Mongodb == "" && result.Components.MongoDb {
+		mdb_username = result.MongoDb.Nuvolaris.User
+		mdb_password = result.MongoDb.Nuvolaris.Password
+		mongodburl = "mongodb://" + mdb_username + ":" + mdb_password + "@nuvolaris-mongodb-0.nuvolaris-mongodb-svc.nuvolaris.svc.cluster.local:27017/nuvolaris?replicaSet=nuvolaris-mongodb&ssl=false"
+	} else {
+		mongodburl = cmd.Mongodb
+	}
+
+	if mongodburl != "" {
+		fmt.Println("Adding MONGODB_URI to whisk properties")
+		writeWskPropsFile(wskPropsKeyValue{
+			wskPropsKey:   "MONGODB_URI",
+			wskPropsValue: mongodburl,
+		})
+	}
+
 	if cmd.Show {
 		fmt.Printf("nuv auth --apihost %s --auth %s\n", apihost, auth)
 	} else {
