@@ -175,3 +175,23 @@ func generateAwsSecretAccessKey() string {
 func awsKeygen() string {
 	return generateAwsAccessKeyId() + ":" + GenerateRandomSeq(awsBase64, 40)
 }
+
+// FileExists reports whether the named file exists as a boolean
+func fileExists(name string) bool {
+	if fi, err := os.Stat(name); err == nil {
+		if fi.Mode().IsRegular() {
+			return true
+		}
+	}
+	return false
+}
+
+// DirExists reports whether the dir exists as a boolean
+func dirExists(name string) bool {
+	if fi, err := os.Stat(name); err == nil {
+		if fi.Mode().IsDir() {
+			return true
+		}
+	}
+	return false
+}
