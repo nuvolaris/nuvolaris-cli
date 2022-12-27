@@ -18,7 +18,7 @@
 version: '3'
 
 vars:
-  BASETAG: 0.2.2-trinity
+  BASETAG: 0.3.0-morpheus
   OPERATOR: "-t ../../nuvolaris-operator/Taskfile.yml"
   DIR: "../../nuvolaris-operator/"
   CFG: '{{default "kind" .CFG}}'
@@ -50,7 +50,6 @@ tasks:
   cli-tag: git tag -d $(git tag) ; git tag -f v{{.BASETAG}}.$(date +%y%m%d%H)
 
   build:
-    description: full build
     cmds:
       - go build -ldflags "-X main.CLIVersion={{.TAG}}" -o {{.CMD}}
     sources:
@@ -59,13 +58,14 @@ tasks:
     generates:
       - "{{.CMD}}"
 
+  clean: rm nuv
+
   install:
     - task: build
     - sudo install ./nuv /usr/bin/nuv
     - nuv -v
 
   fast:
-    description: fast build with debugging without subcommands
     cmds:
       - go build -ldflags "-X main.CLIVersion={{.TAG}}-fast" -tags fast -o {{.CMD}}-fast -gcflags '-N -l'
     sources:
@@ -75,7 +75,6 @@ tasks:
       - "{{.CMD}}-fast"
 
   debug:
-    description: full build with debugging and vendoring
     deps:
       - vendor
     sources:
@@ -102,7 +101,6 @@ tasks:
     
   dtest:
     - task: t:test
-
 
   gclean: 
     - rm -f {{.CMD}} {{.CMD}}-debug {{.CMD}}-fast
