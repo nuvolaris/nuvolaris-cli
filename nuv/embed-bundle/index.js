@@ -26,7 +26,8 @@ ctypes = {
     "ico": "image/vnd.microsoft.icon",
     "ttf": "font/ttf",
     "woff": "font/woff",
-    "woff2": "font/woff2"
+    "woff2": "font/woff2",
+    "svg": "image/svg"
 }
 
 function isBinary(file) {
@@ -36,7 +37,8 @@ function isBinary(file) {
         file.endsWith(".ico") ||
         file.endsWith(".ttf") ||
         file.endsWith(".woff") ||
-        file.endsWith(".woff2")
+        file.endsWith(".woff2") ||
+        file.endsWith(".svg")        
 }
 
 // replace base in html and css
@@ -56,11 +58,7 @@ function replaceBase(path, body) {
 function body(path) {
     let file = `${__dirname}${path}`
     if (!fs.existsSync(file)) {
-        console.log("cannot find "+file)
-        return {
-            body: "<h1>504 not found</h1>",
-            statusCode: 504
-        }
+        file = ${__dirname}/index.html`
     }
     let data = fs.readFileSync(file)
     if(isBinary(path)) 
@@ -97,7 +95,7 @@ function main(args) {
         return body(path) 
     }
     // return redirect if no path
-    return { "body": `<script>location.href += "/index.html"</script>` }
+    return { "body": `<script>location.href += "/"</script>` }
 }
 
 module.exports.main = main
