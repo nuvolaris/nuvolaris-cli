@@ -29,3 +29,5 @@ bin/
 config/
 ./task/
 *.off
+kind/
+task/
